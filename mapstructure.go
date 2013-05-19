@@ -2,6 +2,7 @@ package mapstructure
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -58,6 +59,15 @@ func MapToStruct(m map[string]interface{}, rawVal interface{}) error {
 			// This should never happen because we got the value out
 			// of the map.
 			panic("map value is not valid")
+		}
+
+		mapValType := mapVal.Type()
+		if !mapValType.AssignableTo(field.Type()) {
+			// If the value in the map can't be assigned to the field
+			// in the struct, then this is a problem...
+			return fmt.Errorf(
+				"field '%s' expected type '%s', got '%s'",
+				fieldName, field.Type(), mapValType)
 		}
 
 		field.Set(mapVal)

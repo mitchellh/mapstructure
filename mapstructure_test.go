@@ -4,8 +4,9 @@ import "testing"
 
 type Basic struct {
 	Vstring string
-	Vint int
-	Vbool bool
+	Vint    int
+	Vbool   bool
+	Vextra  string
 }
 
 func TestBasicTypes(t *testing.T) {
@@ -13,8 +14,8 @@ func TestBasicTypes(t *testing.T) {
 
 	input := map[string]interface{}{
 		"vstring": "foo",
-		"vint": 42,
-		"vbool": true,
+		"vint":    42,
+		"vbool":   true,
 	}
 
 	var result Basic
@@ -34,6 +35,29 @@ func TestBasicTypes(t *testing.T) {
 
 	if result.Vbool != true {
 		t.Errorf("vbool value should be true: %#v", result.Vbool)
+	}
+
+	if result.Vextra != "" {
+		t.Errorf("vextra value should be empty: %#v", result.Vextra)
+	}
+}
+
+func TestInvalidType(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": 42,
+	}
+
+	var result Basic
+	err := MapToStruct(input, &result)
+	if err == nil {
+		t.Error("error should exist")
+		t.FailNow()
+	}
+
+	if err.Error() != "field 'Vstring' expected type 'string', got 'int'" {
+		t.Errorf("got unexpected error: %s", err)
 	}
 }
 
