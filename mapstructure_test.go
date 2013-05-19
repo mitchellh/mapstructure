@@ -9,6 +9,11 @@ type Basic struct {
 	Vextra  string
 }
 
+type Map struct {
+	Vfoo   string
+	Vother map[string]interface{}
+}
+
 type Nested struct {
 	Vfoo string
 	Vbar Basic
@@ -44,6 +49,46 @@ func TestBasicTypes(t *testing.T) {
 
 	if result.Vextra != "" {
 		t.Errorf("vextra value should be empty: %#v", result.Vextra)
+	}
+}
+
+func TestMap(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vfoo": "foo",
+		"vother": map[string]interface{}{
+			"foo": 42,
+			"bar": true,
+		},
+	}
+
+	var result Map
+	err := Decode(input, &result)
+	if err != nil {
+		t.Errorf("got an error: %s", err)
+		t.FailNow()
+	}
+
+	if result.Vfoo != "foo" {
+		t.Errorf("vfoo value should be 'foo': %#v", result.Vfoo)
+	}
+
+	if result.Vother == nil {
+		t.Error("vother should not be nil")
+		t.FailNow()
+	}
+
+	if len(result.Vother) != 2 {
+		t.Error("vother should have two items")
+	}
+
+	if result.Vother["foo"].(int) != 42 {
+		t.Errorf("'foo' key should be 42, got: %#v", result.Vother["foo"])
+	}
+
+	if result.Vother["bar"].(bool) != true {
+		t.Errorf("'bar' key should be true, got: %#v", result.Vother["bar"])
 	}
 }
 

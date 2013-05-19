@@ -49,6 +49,8 @@ func decode(name string, data interface{}, val reflect.Value) error {
 		return decodeBasic(name, data, val)
 	case reflect.Struct:
 		return decodeStruct(name, data, val)
+	case reflect.Map:
+		return decodeMap(name, data, val)
 	}
 
 	// If we reached this point then we weren't able to decode it
@@ -72,6 +74,25 @@ func decodeBasic(name string, data interface{}, val reflect.Value) error {
 	}
 
 	val.Set(dataVal)
+	return nil
+}
+
+func decodeMap(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
+	if dataVal.Kind() != reflect.Map {
+		return fmt.Errorf("'%s' expected a map, got '%s'", name, dataVal.Kind())
+	}
+
+	dataValType := dataVal.Type()
+	if dataValType.Key().Kind() != reflect.String {
+		return fmt.Errorf(
+			"'%s' needs a map with string keys, has '%s' keys",
+			name, dataValType.Key().Kind())
+	}
+
+	// Just go ahead and set one map to the other...
+	val.Set(dataVal)
+
 	return nil
 }
 
