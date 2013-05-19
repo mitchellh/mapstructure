@@ -9,7 +9,12 @@ import (
 // MapToStruct takes a map and uses reflection to convert it into the
 // given Go native structure. val must be a pointer to a struct.
 func MapToStruct(m map[string]interface{}, rawVal interface{}) error {
-	val := reflect.ValueOf(rawVal).Elem()
+	val := reflect.ValueOf(rawVal)
+	if val.Kind() != reflect.Ptr {
+		return errors.New("val must be a pointer")
+	}
+
+	val = val.Elem()
 	if !val.CanAddr() {
 		return errors.New("val must be addressable (a pointer)")
 	}

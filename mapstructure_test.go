@@ -36,3 +36,32 @@ func TestBasicTypes(t *testing.T) {
 		t.Errorf("vbool value should be true: %#v", result.Vbool)
 	}
 }
+
+func TestNonPtrValue(t *testing.T) {
+	t.Parallel()
+
+	err := MapToStruct(map[string]interface{}{}, Basic{})
+	if err == nil {
+		t.Error("error should exist")
+		t.FailNow()
+	}
+
+	if err.Error() != "val must be a pointer" {
+		t.Errorf("got unexpected error: %s", err)
+	}
+}
+
+func TestNontStructValue(t *testing.T) {
+	t.Parallel()
+
+	result := 42
+	err := MapToStruct(map[string]interface{}{}, &result)
+	if err == nil {
+		t.Error("error should exist")
+		t.FailNow()
+	}
+
+	if err.Error() != "val must be an addressable struct" {
+		t.Errorf("got unexpected error: %s", err)
+	}
+}
