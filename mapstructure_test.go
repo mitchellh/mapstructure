@@ -87,6 +87,46 @@ func TestNestedType(t *testing.T) {
 	}
 }
 
+func TestNestedTypePointer(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vfoo": "foo",
+		"vbar": &map[string]interface{}{
+			"vstring": "foo",
+			"vint":    42,
+			"vbool":   true,
+		},
+	}
+
+	var result Nested
+	err := MapToStruct(input, &result)
+	if err != nil {
+		t.Errorf("got an err: %s", err.Error())
+		t.FailNow()
+	}
+
+	if result.Vfoo != "foo" {
+		t.Errorf("vfoo value should be 'foo': %#v", result.Vfoo)
+	}
+
+	if result.Vbar.Vstring != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Vbar.Vstring)
+	}
+
+	if result.Vbar.Vint != 42 {
+		t.Errorf("vint value should be 42: %#v", result.Vbar.Vint)
+	}
+
+	if result.Vbar.Vbool != true {
+		t.Errorf("vbool value should be true: %#v", result.Vbar.Vbool)
+	}
+
+	if result.Vbar.Vextra != "" {
+		t.Errorf("vextra value should be empty: %#v", result.Vbar.Vextra)
+	}
+}
+
 func TestInvalidType(t *testing.T) {
 	t.Parallel()
 

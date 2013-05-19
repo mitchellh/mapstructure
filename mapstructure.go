@@ -76,7 +76,7 @@ func decodeBasic(name string, data interface{}, val reflect.Value) error {
 }
 
 func decodeStruct(name string, data interface{}, val reflect.Value) error {
-	dataVal := reflect.ValueOf(data)
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	dataValKind := dataVal.Kind()
 	if dataValKind != reflect.Map {
 		return fmt.Errorf("'%s' expected a map, got '%s'", name, dataValKind)
@@ -91,7 +91,7 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 
 	// At this point we know that data is a map with string keys, so
 	// we can properly cast it here.
-	m, ok := data.(map[string]interface{})
+	m, ok := dataVal.Interface().(map[string]interface{})
 	if !ok {
 		panic("data could not be cast as map[string]interface{}")
 	}
