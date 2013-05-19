@@ -24,8 +24,79 @@ func MapToStruct(m map[string]interface{}, rawVal interface{}) error {
 		return errors.New("val must be an addressable struct")
 	}
 
-	valType := val.Type()
+	return decode("root", m, val)
+}
 
+// Decodes an unknown data type into a specific reflection value.
+func decode(name string, data interface{}, val reflect.Value) error {
+	k := val.Kind()
+
+	// Some shortcuts because we treat all ints and uints the same way
+	if k >= reflect.Int && k <= reflect.Int64 {
+		k = reflect.Int
+	} else if k >= reflect.Uint && k <= reflect.Uint64 {
+		k = reflect.Uint
+	}
+
+	switch k {
+	case reflect.Bool:
+		fallthrough
+	case reflect.Int:
+		fallthrough
+	case reflect.String:
+		fallthrough
+	case reflect.Uint:
+		return decodeBasic(name, data, val)
+	case reflect.Struct:
+		return decodeStruct(name, data, val)
+	}
+
+	// If we reached this point then we weren't able to decode it
+	return fmt.Errorf("unsupported type: %s", k)
+}
+
+// This decodes a basic type (bool, int, string, etc.) and sets the
+// value to "data" of that type.
+func decodeBasic(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.ValueOf(data)
+	if !dataVal.IsValid() {
+		// This should never happen because upstream makes sure it is valid
+		panic("data is invalid")
+	}
+
+	dataValType := dataVal.Type()
+	if !dataValType.AssignableTo(val.Type()) {
+		return fmt.Errorf(
+			"'%s' expected type '%s', got '%s'",
+			name, val.Type(), dataValType)
+	}
+
+	val.Set(dataVal)
+	return nil
+}
+
+func decodeStruct(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.ValueOf(data)
+	dataValKind := dataVal.Kind()
+	if dataValKind != reflect.Map {
+		return fmt.Errorf("'%s' expected a map, got '%s'", name, dataValKind)
+	}
+
+	dataValType := dataVal.Type()
+	if dataValType.Key().Kind() != reflect.String {
+		return fmt.Errorf(
+			"'%s' needs a map with string keys, has '%s' keys",
+			name, dataValType.Key().Kind())
+	}
+
+	// At this point we know that data is a map with string keys, so
+	// we can properly cast it here.
+	m, ok := data.(map[string]interface{})
+	if !ok {
+		panic("data could not be cast as map[string]interface{}")
+	}
+
+	valType := val.Type()
 	for i := 0; i < valType.NumField(); i++ {
 		fieldType := valType.Field(i)
 		fieldName := fieldType.Name
@@ -54,23 +125,10 @@ func MapToStruct(m map[string]interface{}, rawVal interface{}) error {
 			panic("field is not valid")
 		}
 
-		mapVal := reflect.ValueOf(rawMapVal)
-		if !mapVal.IsValid() {
-			// This should never happen because we got the value out
-			// of the map.
-			panic("map value is not valid")
+		fieldName = fmt.Sprintf("%s.%s", name, fieldName)
+		if err := decode(fieldName, rawMapVal, field); err != nil {
+			return err
 		}
-
-		mapValType := mapVal.Type()
-		if !mapValType.AssignableTo(field.Type()) {
-			// If the value in the map can't be assigned to the field
-			// in the struct, then this is a problem...
-			return fmt.Errorf(
-				"field '%s' expected type '%s', got '%s'",
-				fieldName, field.Type(), mapValType)
-		}
-
-		field.Set(mapVal)
 	}
 
 	return nil
