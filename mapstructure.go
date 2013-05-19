@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-// MapToStruct takes a map and uses reflection to convert it into the
+// Decode takes a map and uses reflection to convert it into the
 // given Go native structure. val must be a pointer to a struct.
-func MapToStruct(m map[string]interface{}, rawVal interface{}) error {
+func Decode(m map[string]interface{}, rawVal interface{}) error {
 	val := reflect.ValueOf(rawVal)
 	if val.Kind() != reflect.Ptr {
 		return errors.New("val must be a pointer")
@@ -90,7 +90,9 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 	}
 
 	// At this point we know that data is a map with string keys, so
-	// we can properly cast it here.
+	// we can properly cast it here. We use the "Interface()" value because
+	// this gets us the proper interface whether or not data is a pointer
+	// or not.
 	m, ok := dataVal.Interface().(map[string]interface{})
 	if !ok {
 		panic("data could not be cast as map[string]interface{}")

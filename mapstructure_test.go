@@ -24,7 +24,7 @@ func TestBasicTypes(t *testing.T) {
 	}
 
 	var result Basic
-	err := MapToStruct(input, &result)
+	err := Decode(input, &result)
 	if err != nil {
 		t.Errorf("got an err: %s", err.Error())
 		t.FailNow()
@@ -60,7 +60,7 @@ func TestNestedType(t *testing.T) {
 	}
 
 	var result Nested
-	err := MapToStruct(input, &result)
+	err := Decode(input, &result)
 	if err != nil {
 		t.Errorf("got an err: %s", err.Error())
 		t.FailNow()
@@ -100,7 +100,7 @@ func TestNestedTypePointer(t *testing.T) {
 	}
 
 	var result Nested
-	err := MapToStruct(input, &result)
+	err := Decode(input, &result)
 	if err != nil {
 		t.Errorf("got an err: %s", err.Error())
 		t.FailNow()
@@ -135,7 +135,7 @@ func TestInvalidType(t *testing.T) {
 	}
 
 	var result Basic
-	err := MapToStruct(input, &result)
+	err := Decode(input, &result)
 	if err == nil {
 		t.Error("error should exist")
 		t.FailNow()
@@ -149,7 +149,7 @@ func TestInvalidType(t *testing.T) {
 func TestNonPtrValue(t *testing.T) {
 	t.Parallel()
 
-	err := MapToStruct(map[string]interface{}{}, Basic{})
+	err := Decode(map[string]interface{}{}, Basic{})
 	if err == nil {
 		t.Error("error should exist")
 		t.FailNow()
@@ -164,7 +164,7 @@ func TestNontStructValue(t *testing.T) {
 	t.Parallel()
 
 	result := 42
-	err := MapToStruct(map[string]interface{}{}, &result)
+	err := Decode(map[string]interface{}{}, &result)
 	if err == nil {
 		t.Error("error should exist")
 		t.FailNow()
