@@ -33,7 +33,7 @@ func (e *Error) Error() string {
 
 // Decode takes a map and uses reflection to convert it into the
 // given Go native structure. val must be a pointer to a struct.
-func Decode(m map[string]interface{}, rawVal interface{}) error {
+func Decode(m interface{}, rawVal interface{}) error {
 	val := reflect.ValueOf(rawVal)
 	if val.Kind() != reflect.Ptr {
 		return errors.New("val must be a pointer")
