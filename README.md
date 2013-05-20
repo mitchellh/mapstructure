@@ -17,54 +17,30 @@ Standard `go get`:
 $ go get github.com/mitchellh/mapstructure
 ```
 
-## Example
+## Usage & Example
 
-```go
-import (
-  "fmt"
-  "github.com/mitchellh/mapstructure"
-)
+For usage and examples see the [Godoc](http://godoc.org/github.com/mitchellh/mapstructure).
 
-type Person struct {
-	Name   string
-	Age    int
-	Emails []string
-	Extra  map[string]string
+The `Decode` function has examples assocaited with it there.
+
+## But Why?!
+
+Go offers fantastic standard libraries for decoding formats such as JSON.
+The standard method is to have a struct pre-created, and populate that struct
+from the bytes of the encoded format. This is great, but the problem is if
+you have configuration or an encoding that changes slightly depending on
+specific fields. For example, consider this JSON:
+
+```json
+{
+  "type": "person",
+  "name": "Mitchell"
 }
-
-// This input can come from anywhere, but typically comes from
-// something like decoding JSON where we're not quite sure of the
-// struct initially.
-input := map[string]interface{}{
-	"name":   "Mitchell",
-	"age":    91,
-	"emails": []string{"one", "two", "three"},
-	"extra": map[string]string{
-		"twitter": "mitchellh",
-	},
-}
-
-var result Person
-err := mapstructure.Decode(input, &result)
-if err != nil {
-	panic(err)
-}
-
-// The value of "result" now contains what you would expect. The decoding
-// process is properly type-checked and human-friendly errors are returned,
-// if any.
-fmt.Printf("%#v", result)
 ```
 
-If decoding fails for any reason, very helpful errors are returned. For
-example, the string format of a `mapstructure.Error` may look like this:
-
-```
-5 error(s) decoding:
-
-* 'Name' expected type 'string', got 'int'
-* 'Age' expected type 'int', got 'string'
-* 'Emails[0]' expected type 'string', got 'int'
-* 'Emails[1]' expected type 'string', got 'int'
-* 'Emails[2]' expected type 'string', got 'int'
-```
+Perhaps we can't populate a specific structure without first reading
+the "type" field from the JSON. We could always do two passes over the
+decoding of the JSON (reading the "type" first, and the rest later).
+However, it is much simpler to just decode this into a `map[string]interface{}`
+structure, read the "type" key, then use something like this library
+to decode it into the proper structure.
