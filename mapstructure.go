@@ -14,6 +14,16 @@ import (
 	"strings"
 )
 
+// Error implements the error interface and can represents multiple
+// errors that occur in the course of a single decode.
+type Error struct {
+	Errors []string
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf("%d error(s) decoding", len(e.Errors))
+}
+
 // Decode takes a map and uses reflection to convert it into the
 // given Go native structure. val must be a pointer to a struct.
 func Decode(m map[string]interface{}, rawVal interface{}) error {
@@ -169,6 +179,8 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 			name, dataValType.Key().Kind())
 	}
 
+	errors := make([]string, 0)
+
 	valType := val.Type()
 	for i := 0; i < valType.NumField(); i++ {
 		fieldType := valType.Field(i)
@@ -202,8 +214,17 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 
 		fieldName = fmt.Sprintf("%s.%s", name, fieldName)
 		if err := decode(fieldName, rawMapVal.Interface(), field); err != nil {
-			return err
+			switch e := err.(type) {
+			case *Error:
+				errors = append(errors, e.Errors...)
+			default:
+				errors = append(errors, e.Error())
+			}
 		}
+	}
+
+	if len(errors) > 0 {
+		return &Error{errors}
 	}
 
 	return nil

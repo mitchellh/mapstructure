@@ -287,7 +287,13 @@ func TestInvalidType(t *testing.T) {
 		t.FailNow()
 	}
 
-	if err.Error() != "'root.Vstring' expected type 'string', got 'int'" {
+	derr, ok := err.(*Error)
+	if !ok {
+		t.Errorf("error should be kind of Error, instead: %#v", err)
+		t.FailNow()
+	}
+
+	if derr.Errors[0] != "'root.Vstring' expected type 'string', got 'int'" {
 		t.Errorf("got unexpected error: %s", err)
 	}
 }
