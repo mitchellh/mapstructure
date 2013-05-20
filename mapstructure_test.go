@@ -33,6 +33,10 @@ type SliceOfStruct struct {
 	Value []Basic
 }
 
+type Tagged struct {
+	Value string `mapstructure:"foo"`
+}
+
 func TestBasicTypes(t *testing.T) {
 	t.Parallel()
 
@@ -318,7 +322,7 @@ func TestNonPtrValue(t *testing.T) {
 	}
 }
 
-func TestNontStructValue(t *testing.T) {
+func TestNonStructValue(t *testing.T) {
 	t.Parallel()
 
 	result := 42
@@ -330,6 +334,25 @@ func TestNontStructValue(t *testing.T) {
 
 	if err.Error() != "val must be an addressable struct" {
 		t.Errorf("got unexpected error: %s", err)
+	}
+}
+
+func TestTagged(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "bar",
+	}
+
+	var result Tagged
+	err := Decode(input, &result)
+	if err != nil {
+		t.Errorf("unexpected error: %s", err)
+		t.FailNow()
+	}
+
+	if result.Value != "bar" {
+		t.Errorf("value should be 'bar', got: %#v", result.Value)
 	}
 }
 

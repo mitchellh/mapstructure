@@ -210,6 +210,11 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 		fieldType := valType.Field(i)
 		fieldName := fieldType.Name
 
+		tagValue := fieldType.Tag.Get("mapstructure")
+		if tagValue != "" {
+			fieldName = tagValue
+		}
+
 		rawMapVal := dataVal.MapIndex(reflect.ValueOf(fieldName))
 		if !rawMapVal.IsValid() {
 			// Do a slower search by iterating over each key and
