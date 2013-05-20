@@ -15,21 +15,26 @@ structure.
 import "mapstructure"
 
 type Person struct {
-	name   string
-	age    uint
-	emails []string
+	Name   string
+	Age    int
+	Emails []string
+	Extra  map[string]string
 }
 
-// You can imagine that the "input" comes from some external source
-// such as decoding JSON or something.
+// This input can come from anywhere, but typically comes from
+// something like decoding JSON where we're not quite sure of the
+// struct initially.
 input := map[string]interface{}{
-	"name": "Mitchell",
-	"age": 91,
-	"emails": []string{"foo@bar.com", "bar@baz.com"},
+	"name":   "Mitchell",
+	"age":    91,
+	"emails": []string{"one", "two", "three"},
+	"extra": map[string]string{
+		"twitter": "mitchellh",
+	},
 }
 
 var result Person
-err := mapstructure.Decode(input, &result)
+err := Decode(input, &result)
 if err != nil {
 	panic(err)
 }
@@ -37,4 +42,5 @@ if err != nil {
 // The value of "result" now contains what you would expect. The decoding
 // process is properly type-checked and human-friendly errors are returned,
 // if any.
+fmt.Printf("%#v", result)
 ```
