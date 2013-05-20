@@ -9,6 +9,14 @@ until you read a part of it. You can therefore read a `map[string]interface{}`
 and use this library to decode it into the proper underlying native Go
 structure.
 
+## Installation
+
+Standard `go get`:
+
+```
+$ go get github.com/mitchellh/mapstructure
+```
+
 ## Example
 
 ```go
