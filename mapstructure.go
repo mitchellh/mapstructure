@@ -1,3 +1,10 @@
+// The mapstructure package exposes functionality to convert an
+// abitrary map[string]interface{} into a native Go structure.
+//
+// The Go structure can be arbitrarily complex, containing slices,
+// other structs, etc. and the decoder will properly decode nested
+// maps and so on into the proper structures in the native Go struct.
+// See the examples to see what the decoder is capable of.
 package mapstructure
 
 import (
