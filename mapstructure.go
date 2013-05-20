@@ -117,19 +117,28 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 	mapType := reflect.MapOf(valKeyType, valElemType)
 	valMap := reflect.MakeMap(mapType)
 
+	// Accumulate errors
+	errors := make([]string, 0)
+
 	for _, k := range dataVal.MapKeys() {
 		currentData := dataVal.MapIndex(k).Interface()
 		currentVal := reflect.Indirect(reflect.New(valElemType))
 
 		fieldName := fmt.Sprintf("%s[%s]", name, k)
 		if err := decode(fieldName, currentData, currentVal); err != nil {
-			return err
+			errors = appendErrors(errors, err)
 		}
 
 		valMap.SetMapIndex(k, currentVal)
 	}
 
+	// Set the built up map to the value
 	val.Set(valMap)
+
+	// If we had errors, return those
+	if len(errors) > 0 {
+		return &Error{errors}
+	}
 
 	return nil
 }
@@ -149,18 +158,26 @@ func decodeSlice(name string, data interface{}, val reflect.Value) error {
 	sliceType := reflect.SliceOf(valElemType)
 	valSlice := reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
 
+	// Accumulate any errors
+	errors := make([]string, 0)
+
 	for i := 0; i < dataVal.Len(); i++ {
 		currentData := dataVal.Index(i).Interface()
 		currentField := valSlice.Index(i)
 
 		fieldName := fmt.Sprintf("%s[%d]", name, i)
 		if err := decode(fieldName, currentData, currentField); err != nil {
-			return err
+			errors = appendErrors(errors, err)
 		}
 	}
 
 	// Finally, set the value to the slice we built up
 	val.Set(valSlice)
+
+	// If there were errors, we return those
+	if len(errors) > 0 {
+		return &Error{errors}
+	}
 
 	return nil
 }
@@ -214,12 +231,7 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 
 		fieldName = fmt.Sprintf("%s.%s", name, fieldName)
 		if err := decode(fieldName, rawMapVal.Interface(), field); err != nil {
-			switch e := err.(type) {
-			case *Error:
-				errors = append(errors, e.Errors...)
-			default:
-				errors = append(errors, e.Error())
-			}
+			errors = appendErrors(errors, err)
 		}
 	}
 
@@ -228,4 +240,13 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 	}
 
 	return nil
+}
+
+func appendErrors(errors []string, err error) []string {
+	switch e := err.(type) {
+	case *Error:
+		return append(errors, e.Errors...)
+	default:
+		return append(errors, e.Error())
+	}
 }
