@@ -128,8 +128,6 @@ func decodeSlice(name string, data interface{}, val reflect.Value) error {
 	valType := val.Type()
 	valElemType := valType.Elem()
 
-	// TODO: Error checking to make sure data is an array/slice type
-
 	// Make a new slice to hold our result, same size as the original data.
 	sliceType := reflect.SliceOf(valElemType)
 	valSlice := reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
