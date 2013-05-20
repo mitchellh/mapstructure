@@ -48,7 +48,7 @@ func Decode(m map[string]interface{}, rawVal interface{}) error {
 		return errors.New("val must be an addressable struct")
 	}
 
-	return decode("root", m, val)
+	return decode("", m, val)
 }
 
 // Decodes an unknown data type into a specific reflection value.
@@ -236,7 +236,12 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 			panic("field is not valid")
 		}
 
-		fieldName = fmt.Sprintf("%s.%s", name, fieldName)
+		// If the name is empty string, then we're at the root, and we
+		// don't dot-join the fields.
+		if name != "" {
+			fieldName = fmt.Sprintf("%s.%s", name, fieldName)
+		}
+
 		if err := decode(fieldName, rawMapVal.Interface(), field); err != nil {
 			errors = appendErrors(errors, err)
 		}

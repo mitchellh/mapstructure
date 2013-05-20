@@ -55,9 +55,9 @@ func ExampleDecode_errors() {
 	// Output:
 	// 5 error(s) decoding:
 	//
-	// * 'root.Name' expected type 'string', got 'int'
-	// * 'root.Age' expected type 'int', got 'string'
-	// * 'root.Emails[0]' expected type 'string', got 'int'
-	// * 'root.Emails[1]' expected type 'string', got 'int'
-	// * 'root.Emails[2]' expected type 'string', got 'int'
+	// * 'Name' expected type 'string', got 'int'
+	// * 'Age' expected type 'int', got 'string'
+	// * 'Emails[0]' expected type 'string', got 'int'
+	// * 'Emails[1]' expected type 'string', got 'int'
+	// * 'Emails[2]' expected type 'string', got 'int'
 }
