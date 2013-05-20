@@ -21,7 +21,7 @@ $ go get github.com/mitchellh/mapstructure
 
 For usage and examples see the [Godoc](http://godoc.org/github.com/mitchellh/mapstructure).
 
-The `Decode` function has examples assocaited with it there.
+The `Decode` function has examples associated with it there.
 
 ## But Why?!
 
