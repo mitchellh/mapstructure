@@ -119,6 +119,12 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 
 func decodeSlice(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.Indirect(reflect.ValueOf(data))
+	dataValKind := dataVal.Kind()
+	if dataValKind != reflect.Array && dataValKind != reflect.Slice {
+		return fmt.Errorf(
+			"'%s': source data must be an array or slice, got %s", name, dataValKind)
+	}
+
 	valType := val.Type()
 	valElemType := valType.Elem()
 
