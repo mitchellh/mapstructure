@@ -21,7 +21,14 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("%d error(s) decoding", len(e.Errors))
+	points := make([]string, 0, len(e.Errors))
+	for i, err := range e.Errors {
+		points[i] = fmt.Sprintf("* %s", err)
+	}
+
+	return fmt.Sprintf(
+		"%d error(s) decoding:\n\n%s",
+		len(e.Errors), strings.Join(points, "\n"))
 }
 
 // Decode takes a map and uses reflection to convert it into the
