@@ -20,7 +20,7 @@ $ go get github.com/mitchellh/mapstructure
 ## Example
 
 ```go
-import "mapstructure"
+import "github.com/mitchellh/mapstructure"
 
 type Person struct {
 	Name   string
