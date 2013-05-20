@@ -236,6 +236,12 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 			panic("field is not valid")
 		}
 
+		// If we can't set the field, then it is unexported or something,
+		// and we just continue onwards.
+		if !field.CanSet() {
+			continue
+		}
+
 		// If the name is empty string, then we're at the root, and we
 		// don't dot-join the fields.
 		if name != "" {
