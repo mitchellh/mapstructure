@@ -20,7 +20,10 @@ $ go get github.com/mitchellh/mapstructure
 ## Example
 
 ```go
-import "github.com/mitchellh/mapstructure"
+import (
+  "fmt"
+  "github.com/mitchellh/mapstructure"
+)
 
 type Person struct {
 	Name   string
@@ -42,7 +45,7 @@ input := map[string]interface{}{
 }
 
 var result Person
-err := Decode(input, &result)
+err := mapstructure.Decode(input, &result)
 if err != nil {
 	panic(err)
 }
