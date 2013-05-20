@@ -21,7 +21,7 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	points := make([]string, 0, len(e.Errors))
+	points := make([]string, len(e.Errors))
 	for i, err := range e.Errors {
 		points[i] = fmt.Sprintf("* %s", err)
 	}
