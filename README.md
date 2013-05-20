@@ -52,3 +52,16 @@ if err != nil {
 // if any.
 fmt.Printf("%#v", result)
 ```
+
+If decoding fails for any reason, very helpful errors are returned. For
+example, the string format of a `mapstructure.Error` may look like this:
+
+```
+5 error(s) decoding:
+
+* 'Name' expected type 'string', got 'int'
+* 'Age' expected type 'int', got 'string'
+* 'Emails[0]' expected type 'string', got 'int'
+* 'Emails[1]' expected type 'string', got 'int'
+* 'Emails[2]' expected type 'string', got 'int'
+```
