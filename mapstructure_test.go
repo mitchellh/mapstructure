@@ -11,7 +11,11 @@ type Basic struct {
 
 type Map struct {
 	Vfoo   string
-	Vother map[string]interface{}
+	Vother map[string]string
+}
+
+type MapOfStruct struct {
+	Value map[string]Basic
 }
 
 type Nested struct {
@@ -67,8 +71,8 @@ func TestMap(t *testing.T) {
 	input := map[string]interface{}{
 		"vfoo": "foo",
 		"vother": map[string]interface{}{
-			"foo": 42,
-			"bar": true,
+			"foo": "foo",
+			"bar": "bar",
 		},
 	}
 
@@ -92,12 +96,47 @@ func TestMap(t *testing.T) {
 		t.Error("vother should have two items")
 	}
 
-	if result.Vother["foo"].(int) != 42 {
-		t.Errorf("'foo' key should be 42, got: %#v", result.Vother["foo"])
+	if result.Vother["foo"] != "foo" {
+		t.Errorf("'foo' key should be foo, got: %#v", result.Vother["foo"])
 	}
 
-	if result.Vother["bar"].(bool) != true {
-		t.Errorf("'bar' key should be true, got: %#v", result.Vother["bar"])
+	if result.Vother["bar"] != "bar" {
+		t.Errorf("'bar' key should be bar, got: %#v", result.Vother["bar"])
+	}
+}
+
+func TestMapOfStruct(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"value": map[string]interface{}{
+			"foo": map[string]string{"vstring": "one"},
+			"bar": map[string]string{"vstring": "two"},
+		},
+	}
+
+	var result MapOfStruct
+	err := Decode(input, &result)
+	if err != nil {
+		t.Errorf("got an err: %s", err)
+		t.FailNow()
+	}
+
+	if result.Value == nil {
+		t.Error("value should not be nil")
+		t.FailNow()
+	}
+
+	if len(result.Value) != 2 {
+		t.Error("value should have two items")
+	}
+
+	if result.Value["foo"].Vstring != "one" {
+		t.Errorf("foo value should be 'one', got: %s", result.Value["foo"].Vstring)
+	}
+
+	if result.Value["bar"].Vstring != "two" {
+		t.Errorf("bar value should be 'two', got: %s", result.Value["bar"].Vstring)
 	}
 }
 

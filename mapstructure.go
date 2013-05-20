@@ -92,8 +92,27 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 			name, dataValType.Key().Kind())
 	}
 
-	// Just go ahead and set one map to the other...
-	val.Set(dataVal)
+	valType := val.Type()
+	valKeyType := valType.Key()
+	valElemType := valType.Elem()
+
+	// Make a new map to hold our result
+	mapType := reflect.MapOf(valKeyType, valElemType)
+	valMap := reflect.MakeMap(mapType)
+
+	for _, k := range dataVal.MapKeys() {
+		currentData := dataVal.MapIndex(k).Interface()
+		currentVal := reflect.Indirect(reflect.New(valElemType))
+
+		fieldName := fmt.Sprintf("%s[%s]", name, k)
+		if err := decode(fieldName, currentData, currentVal); err != nil {
+			return err
+		}
+
+		valMap.SetMapIndex(k, currentVal)
+	}
+
+	val.Set(valMap)
 
 	return nil
 }
@@ -139,32 +158,25 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 			name, dataValType.Key().Kind())
 	}
 
-	// At this point we know that data is a map with string keys, so
-	// we can properly cast it here. We use the "Interface()" value because
-	// this gets us the proper interface whether or not data is a pointer
-	// or not.
-	m, ok := dataVal.Interface().(map[string]interface{})
-	if !ok {
-		panic("data could not be cast as map[string]interface{}")
-	}
-
 	valType := val.Type()
 	for i := 0; i < valType.NumField(); i++ {
 		fieldType := valType.Field(i)
 		fieldName := fieldType.Name
 
-		rawMapVal, ok := m[fieldName]
-		if !ok {
+		rawMapVal := dataVal.MapIndex(reflect.ValueOf(fieldName))
+		if !rawMapVal.IsValid() {
 			// Do a slower search by iterating over each key and
 			// doing case-insensitive search.
-			for mK, mV := range m {
+			for _, dataKeyVal := range dataVal.MapKeys() {
+				mK := dataKeyVal.Interface().(string)
+
 				if strings.EqualFold(mK, fieldName) {
-					rawMapVal = mV
+					rawMapVal = dataVal.MapIndex(dataKeyVal)
 					break
 				}
 			}
 
-			if rawMapVal == nil {
+			if !rawMapVal.IsValid() {
 				// There was no matching key in the map for the value in
 				// the struct. Just ignore.
 				continue
@@ -178,7 +190,7 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 		}
 
 		fieldName = fmt.Sprintf("%s.%s", name, fieldName)
-		if err := decode(fieldName, rawMapVal, field); err != nil {
+		if err := decode(fieldName, rawMapVal.Interface(), field); err != nil {
 			return err
 		}
 	}
