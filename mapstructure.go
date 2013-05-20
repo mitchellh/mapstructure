@@ -51,6 +51,8 @@ func decode(name string, data interface{}, val reflect.Value) error {
 		return decodeStruct(name, data, val)
 	case reflect.Map:
 		return decodeMap(name, data, val)
+	case reflect.Slice:
+		return decodeSlice(name, data, val)
 	}
 
 	// If we reached this point then we weren't able to decode it
@@ -93,6 +95,12 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 	// Just go ahead and set one map to the other...
 	val.Set(dataVal)
 
+	return nil
+}
+
+func decodeSlice(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
+	val.Set(dataVal)
 	return nil
 }
 

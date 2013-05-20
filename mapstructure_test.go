@@ -19,6 +19,11 @@ type Nested struct {
 	Vbar Basic
 }
 
+type Slice struct {
+	Vfoo string
+	Vbar []string
+}
+
 func TestBasicTypes(t *testing.T) {
 	t.Parallel()
 
@@ -172,6 +177,28 @@ func TestNestedTypePointer(t *testing.T) {
 	}
 }
 
+func TestSlice(t *testing.T) {
+	t.Parallel()
+
+	inputStringSlice := map[string]interface{}{
+		"vfoo": "foo",
+		"vbar": []string{"foo", "bar", "baz"},
+	}
+
+	inputStringSlicePointer := map[string]interface{}{
+		"vfoo": "foo",
+		"vbar": &[]string{"foo", "bar", "baz"},
+	}
+
+	outputStringSlice := &Slice{
+		"foo",
+		[]string{"foo", "bar", "baz"},
+	}
+
+	testSliceInput(t, inputStringSlice, outputStringSlice)
+	testSliceInput(t, inputStringSlicePointer, outputStringSlice)
+}
+
 func TestInvalidType(t *testing.T) {
 	t.Parallel()
 
@@ -217,5 +244,35 @@ func TestNontStructValue(t *testing.T) {
 
 	if err.Error() != "val must be an addressable struct" {
 		t.Errorf("got unexpected error: %s", err)
+	}
+}
+
+func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice) {
+	var result Slice
+	err := Decode(input, &result)
+	if err != nil {
+		t.Errorf("got error: %s", err)
+		t.FailNow()
+	}
+
+	if result.Vfoo != expected.Vfoo {
+		t.Errorf("Vfoo expected '%s', got '%s'", expected.Vfoo, result.Vfoo)
+	}
+
+	if result.Vbar == nil {
+		t.Errorf("Vbar a slice, got '%#v'", result.Vbar)
+		t.FailNow()
+	}
+
+	if len(result.Vbar) != len(expected.Vbar) {
+		t.Errorf("Vbar length should be %d, got %d", len(expected.Vbar), len(result.Vbar))
+	}
+
+	for i, v := range result.Vbar {
+		if v != expected.Vbar[i] {
+			t.Errorf(
+				"Vbar[%d] should be '%#v', got '%#v'",
+				i, expected.Vbar[i], v)
+		}
 	}
 }
