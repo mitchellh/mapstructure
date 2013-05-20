@@ -24,6 +24,10 @@ type Slice struct {
 	Vbar []string
 }
 
+type SliceOfStruct struct {
+	Value []Basic
+}
+
 func TestBasicTypes(t *testing.T) {
 	t.Parallel()
 
@@ -197,6 +201,37 @@ func TestSlice(t *testing.T) {
 
 	testSliceInput(t, inputStringSlice, outputStringSlice)
 	testSliceInput(t, inputStringSlicePointer, outputStringSlice)
+}
+
+func TestSliceOfStruct(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"value": []map[string]interface{}{
+			{"vstring": "one"},
+			{"vstring": "two"},
+		},
+	}
+
+	var result SliceOfStruct
+	err := Decode(input, &result)
+	if err != nil {
+		t.Errorf("got unexpected error: %s", err)
+		t.FailNow()
+	}
+
+	if len(result.Value) != 2 {
+		t.Errorf("expected two values, got %d", len(result.Value))
+		t.FailNow()
+	}
+
+	if result.Value[0].Vstring != "one" {
+		t.Errorf("first value should be 'one', got: %s", result.Value[0].Vstring)
+	}
+
+	if result.Value[1].Vstring != "two" {
+		t.Errorf("second value should be 'two', got: %s", result.Value[1].Vstring)
+	}
 }
 
 func TestInvalidType(t *testing.T) {

@@ -100,7 +100,28 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 
 func decodeSlice(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.Indirect(reflect.ValueOf(data))
-	val.Set(dataVal)
+	valType := val.Type()
+	valElemType := valType.Elem()
+
+	// TODO: Error checking to make sure data is an array/slice type
+
+	// Make a new slice to hold our result, same size as the original data.
+	sliceType := reflect.SliceOf(valElemType)
+	valSlice := reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
+
+	for i := 0; i < dataVal.Len(); i++ {
+		currentData := dataVal.Index(i).Interface()
+		currentField := valSlice.Index(i)
+
+		fieldName := fmt.Sprintf("%s[%d]", name, i)
+		if err := decode(fieldName, currentData, currentField); err != nil {
+			return err
+		}
+	}
+
+	// Finally, set the value to the slice we built up
+	val.Set(valSlice)
+
 	return nil
 }
 
