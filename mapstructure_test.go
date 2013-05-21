@@ -103,8 +103,7 @@ func TestMap(t *testing.T) {
 	var result Map
 	err := Decode(input, &result)
 	if err != nil {
-		t.Errorf("got an error: %s", err)
-		t.FailNow()
+		t.Fatalf("got an error: %s", err)
 	}
 
 	if result.Vfoo != "foo" {
@@ -112,8 +111,7 @@ func TestMap(t *testing.T) {
 	}
 
 	if result.Vother == nil {
-		t.Error("vother should not be nil")
-		t.FailNow()
+		t.Fatal("vother should not be nil")
 	}
 
 	if len(result.Vother) != 2 {
@@ -142,13 +140,11 @@ func TestMapOfStruct(t *testing.T) {
 	var result MapOfStruct
 	err := Decode(input, &result)
 	if err != nil {
-		t.Errorf("got an err: %s", err)
-		t.FailNow()
+		t.Fatalf("got an err: %s", err)
 	}
 
 	if result.Value == nil {
-		t.Error("value should not be nil")
-		t.FailNow()
+		t.Fatal("value should not be nil")
 	}
 
 	if len(result.Value) != 2 {
@@ -179,8 +175,7 @@ func TestNestedType(t *testing.T) {
 	var result Nested
 	err := Decode(input, &result)
 	if err != nil {
-		t.Errorf("got an err: %s", err.Error())
-		t.FailNow()
+		t.Fatalf("got an err: %s", err.Error())
 	}
 
 	if result.Vfoo != "foo" {
@@ -219,8 +214,7 @@ func TestNestedTypePointer(t *testing.T) {
 	var result Nested
 	err := Decode(input, &result)
 	if err != nil {
-		t.Errorf("got an err: %s", err.Error())
-		t.FailNow()
+		t.Fatalf("got an err: %s", err.Error())
 	}
 
 	if result.Vfoo != "foo" {
@@ -279,13 +273,11 @@ func TestSliceOfStruct(t *testing.T) {
 	var result SliceOfStruct
 	err := Decode(input, &result)
 	if err != nil {
-		t.Errorf("got unexpected error: %s", err)
-		t.FailNow()
+		t.Fatalf("got unexpected error: %s", err)
 	}
 
 	if len(result.Value) != 2 {
-		t.Errorf("expected two values, got %d", len(result.Value))
-		t.FailNow()
+		t.Fatalf("expected two values, got %d", len(result.Value))
 	}
 
 	if result.Value[0].Vstring != "one" {
@@ -307,14 +299,12 @@ func TestInvalidType(t *testing.T) {
 	var result Basic
 	err := Decode(input, &result)
 	if err == nil {
-		t.Error("error should exist")
-		t.FailNow()
+		t.Fatal("error should exist")
 	}
 
 	derr, ok := err.(*Error)
 	if !ok {
-		t.Errorf("error should be kind of Error, instead: %#v", err)
-		t.FailNow()
+		t.Fatalf("error should be kind of Error, instead: %#v", err)
 	}
 
 	if derr.Errors[0] != "'Vstring' expected type 'string', got 'int'" {
@@ -327,8 +317,7 @@ func TestNonPtrValue(t *testing.T) {
 
 	err := Decode(map[string]interface{}{}, Basic{})
 	if err == nil {
-		t.Error("error should exist")
-		t.FailNow()
+		t.Fatal("error should exist")
 	}
 
 	if err.Error() != "val must be a pointer" {
@@ -342,8 +331,7 @@ func TestNonStructValue(t *testing.T) {
 	result := 42
 	err := Decode(map[string]interface{}{}, &result)
 	if err == nil {
-		t.Error("error should exist")
-		t.FailNow()
+		t.Fatal("error should exist")
 	}
 
 	if err.Error() != "val must be an addressable struct" {
@@ -361,8 +349,7 @@ func TestTagged(t *testing.T) {
 	var result Tagged
 	err := Decode(input, &result)
 	if err != nil {
-		t.Errorf("unexpected error: %s", err)
-		t.FailNow()
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if result.Value != "bar" {
@@ -374,8 +361,7 @@ func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice)
 	var result Slice
 	err := Decode(input, &result)
 	if err != nil {
-		t.Errorf("got error: %s", err)
-		t.FailNow()
+		t.Fatalf("got error: %s", err)
 	}
 
 	if result.Vfoo != expected.Vfoo {
@@ -383,8 +369,7 @@ func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice)
 	}
 
 	if result.Vbar == nil {
-		t.Errorf("Vbar a slice, got '%#v'", result.Vbar)
-		t.FailNow()
+		t.Fatalf("Vbar a slice, got '%#v'", result.Vbar)
 	}
 
 	if len(result.Vbar) != len(expected.Vbar) {
