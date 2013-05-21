@@ -4,14 +4,14 @@ import (
 	"fmt"
 )
 
-type Person struct {
-	Name   string
-	Age    int
-	Emails []string
-	Extra  map[string]string
-}
-
 func ExampleDecode() {
+	type Person struct {
+		Name   string
+		Age    int
+		Emails []string
+		Extra  map[string]string
+	}
+
 	// This input can come from anywhere, but typically comes from
 	// something like decoding JSON where we're not quite sure of the
 	// struct initially.
@@ -36,6 +36,13 @@ func ExampleDecode() {
 }
 
 func ExampleDecode_errors() {
+	type Person struct {
+		Name   string
+		Age    int
+		Emails []string
+		Extra  map[string]string
+	}
+
 	// This input can come from anywhere, but typically comes from
 	// something like decoding JSON where we're not quite sure of the
 	// struct initially.
@@ -56,7 +63,7 @@ func ExampleDecode_errors() {
 	// 5 error(s) decoding:
 	//
 	// * 'Name' expected type 'string', got 'int'
-	// * 'Age' expected type 'int', got 'string'
+	// * 'Age' expected type 'int', got unconvertible type 'string'
 	// * 'Emails[0]' expected type 'string', got 'int'
 	// * 'Emails[1]' expected type 'string', got 'int'
 	// * 'Emails[2]' expected type 'string', got 'int'

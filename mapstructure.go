@@ -65,12 +65,12 @@ func decode(name string, data interface{}, val reflect.Value) error {
 	switch k {
 	case reflect.Bool:
 		fallthrough
+	case reflect.String:
+		return decodeBasic(name, data, val)
 	case reflect.Int:
 		fallthrough
-	case reflect.String:
-		fallthrough
 	case reflect.Uint:
-		return decodeBasic(name, data, val)
+		return decodeInt(name, data, val)
 	case reflect.Struct:
 		return decodeStruct(name, data, val)
 	case reflect.Map:
@@ -100,6 +100,59 @@ func decodeBasic(name string, data interface{}, val reflect.Value) error {
 	}
 
 	val.Set(dataVal)
+	return nil
+}
+
+func decodeInt(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.ValueOf(data)
+	if !dataVal.IsValid() {
+		// This should never happen
+		panic("data is invalid")
+	}
+
+	dataKind := dataVal.Kind()
+	if dataKind >= reflect.Int && dataKind <= reflect.Int64 {
+		dataKind = reflect.Int
+	} else if dataKind >= reflect.Uint && dataKind <= reflect.Uint64 {
+		dataKind = reflect.Uint
+	} else if dataKind >= reflect.Float32 && dataKind <= reflect.Float64 {
+		dataKind = reflect.Float32
+	} else {
+		return fmt.Errorf(
+			"'%s' expected type '%s', got unconvertible type '%s'",
+			name, val.Type(), dataVal.Type())
+	}
+
+	valKind := val.Kind()
+	if valKind >= reflect.Int && valKind <= reflect.Int64 {
+		valKind = reflect.Int
+	} else if valKind >= reflect.Uint && valKind <= reflect.Uint64 {
+		valKind = reflect.Uint
+	}
+
+	switch dataKind {
+	case reflect.Int:
+		if valKind == reflect.Int {
+			val.SetInt(dataVal.Int())
+		} else {
+			val.SetUint(uint64(dataVal.Uint()))
+		}
+	case reflect.Uint:
+		if valKind == reflect.Int {
+			val.SetInt(int64(dataVal.Uint()))
+		} else {
+			val.SetUint(dataVal.Uint())
+		}
+	case reflect.Float32:
+		if valKind == reflect.Int {
+			val.SetInt(int64(dataVal.Float()))
+		} else {
+			val.SetUint(uint64(dataVal.Float()))
+		}
+	default:
+		panic("should never reach")
+	}
+
 	return nil
 }
 

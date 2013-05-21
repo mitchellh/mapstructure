@@ -75,6 +75,20 @@ func TestBasicTypes(t *testing.T) {
 	}
 }
 
+func TestBasic_IntWithFloat(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vint": float64(42),
+	}
+
+	var result Basic
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+}
+
 func TestMap(t *testing.T) {
 	t.Parallel()
 
