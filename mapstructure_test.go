@@ -8,6 +8,7 @@ type Basic struct {
 	Vbool   bool
 	Vextra  string
 	vsilent bool
+	Vdata   interface{}
 }
 
 type Map struct {
@@ -45,6 +46,7 @@ func TestBasicTypes(t *testing.T) {
 		"vint":    42,
 		"vbool":   true,
 		"vsilent": true,
+		"vdata":   42,
 	}
 
 	var result Basic
@@ -72,6 +74,10 @@ func TestBasicTypes(t *testing.T) {
 
 	if result.vsilent != false {
 		t.Error("vsilent should not be set, it is unexported")
+	}
+
+	if result.Vdata != 42 {
+		t.Error("vdata should be valid")
 	}
 }
 

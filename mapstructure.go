@@ -65,6 +65,8 @@ func decode(name string, data interface{}, val reflect.Value) error {
 	switch k {
 	case reflect.Bool:
 		fallthrough
+	case reflect.Interface:
+		fallthrough
 	case reflect.String:
 		return decodeBasic(name, data, val)
 	case reflect.Int:
