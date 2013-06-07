@@ -5,6 +5,7 @@ import "testing"
 type Basic struct {
 	Vstring string
 	Vint    int
+	Vuint   uint
 	Vbool   bool
 	Vextra  string
 	vsilent bool
@@ -44,6 +45,7 @@ func TestBasicTypes(t *testing.T) {
 	input := map[string]interface{}{
 		"vstring": "foo",
 		"vint":    42,
+		"Vuint":   42,
 		"vbool":   true,
 		"vsilent": true,
 		"vdata":   42,
@@ -62,6 +64,10 @@ func TestBasicTypes(t *testing.T) {
 
 	if result.Vint != 42 {
 		t.Errorf("vint value should be 42: %#v", result.Vint)
+	}
+
+	if result.Vuint != 42 {
+		t.Errorf("vuint value should be 42: %#v", result.Vuint)
 	}
 
 	if result.Vbool != true {

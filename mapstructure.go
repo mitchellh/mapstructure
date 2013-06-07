@@ -137,7 +137,7 @@ func decodeInt(name string, data interface{}, val reflect.Value) error {
 		if valKind == reflect.Int {
 			val.SetInt(dataVal.Int())
 		} else {
-			val.SetUint(uint64(dataVal.Uint()))
+			val.SetUint(uint64(dataVal.Int()))
 		}
 	case reflect.Uint:
 		if valKind == reflect.Int {
