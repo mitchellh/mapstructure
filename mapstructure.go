@@ -164,9 +164,6 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 		return fmt.Errorf("'%s' expected a map, got '%s'", name, dataVal.Kind())
 	}
 
-	//dataValType := dataVal.Type()
-	//dataKeyType := dataValType.Key()
-
 	valType := val.Type()
 	valKeyType := valType.Key()
 	valElemType := valType.Elem()
