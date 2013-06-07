@@ -82,7 +82,7 @@ func decode(name string, data interface{}, val reflect.Value) error {
 	}
 
 	// If we reached this point then we weren't able to decode it
-	return fmt.Errorf("unsupported type: %s", k)
+	return fmt.Errorf("%s: unsupported type: %s", name, k)
 }
 
 // This decodes a basic type (bool, int, string, etc.) and sets the
@@ -164,12 +164,8 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 		return fmt.Errorf("'%s' expected a map, got '%s'", name, dataVal.Kind())
 	}
 
-	dataValType := dataVal.Type()
-	if dataValType.Key().Kind() != reflect.String {
-		return fmt.Errorf(
-			"'%s' needs a map with string keys, has '%s' keys",
-			name, dataValType.Key().Kind())
-	}
+	//dataValType := dataVal.Type()
+	//dataKeyType := dataValType.Key()
 
 	valType := val.Type()
 	valKeyType := valType.Key()
@@ -183,15 +179,24 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 	errors := make([]string, 0)
 
 	for _, k := range dataVal.MapKeys() {
-		currentData := dataVal.MapIndex(k).Interface()
-		currentVal := reflect.Indirect(reflect.New(valElemType))
-
 		fieldName := fmt.Sprintf("%s[%s]", name, k)
-		if err := decode(fieldName, currentData, currentVal); err != nil {
+
+		// First decode the key into the proper type
+		currentKey := reflect.Indirect(reflect.New(valKeyType))
+		if err := decode(fieldName, k.Interface(), currentKey); err != nil {
 			errors = appendErrors(errors, err)
+			continue
 		}
 
-		valMap.SetMapIndex(k, currentVal)
+		// Next decode the data into the proper type
+		v := dataVal.MapIndex(k).Interface()
+		currentVal := reflect.Indirect(reflect.New(valElemType))
+		if err := decode(fieldName, v, currentVal); err != nil {
+			errors = appendErrors(errors, err)
+			continue
+		}
+
+		valMap.SetMapIndex(currentKey, currentVal)
 	}
 
 	// Set the built up map to the value

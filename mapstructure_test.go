@@ -106,7 +106,7 @@ func TestMap(t *testing.T) {
 
 	input := map[string]interface{}{
 		"vfoo": "foo",
-		"vother": map[string]interface{}{
+		"vother": map[interface{}]interface{}{
 			"foo": "foo",
 			"bar": "bar",
 		},
