@@ -90,8 +90,9 @@ func decode(name string, data interface{}, val reflect.Value) error {
 func decodeBasic(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.ValueOf(data)
 	if !dataVal.IsValid() {
-		// This should never happen because upstream makes sure it is valid
-		panic("data is invalid")
+		// If the data isn't valid (the zero type), then we set the
+		// value to be the zero type of the field we want to set.
+		dataVal = reflect.Zero(val.Type())
 	}
 
 	dataValType := dataVal.Type()
