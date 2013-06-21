@@ -5,7 +5,7 @@ import "testing"
 // GH-1
 func TestDecode_NilValue(t *testing.T) {
 	input := map[string]interface{}{
-		"vfoo": nil,
+		"vfoo":   nil,
 		"vother": nil,
 	}
 
