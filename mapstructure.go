@@ -53,6 +53,14 @@ func Decode(m interface{}, rawVal interface{}) error {
 
 // Decodes an unknown data type into a specific reflection value.
 func decode(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.ValueOf(data)
+	if !dataVal.IsValid() {
+		// If the data value is invalid, then we just set the value
+		// to be the zero value.
+		val.Set(reflect.Zero(val.Type()))
+		return nil
+	}
+
 	k := val.Kind()
 
 	// Some shortcuts because we treat all ints and uints the same way
@@ -89,12 +97,6 @@ func decode(name string, data interface{}, val reflect.Value) error {
 // value to "data" of that type.
 func decodeBasic(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.ValueOf(data)
-	if !dataVal.IsValid() {
-		// If the data isn't valid (the zero type), then we set the
-		// value to be the zero type of the field we want to set.
-		dataVal = reflect.Zero(val.Type())
-	}
-
 	dataValType := dataVal.Type()
 	if !dataValType.AssignableTo(val.Type()) {
 		return fmt.Errorf(
@@ -108,11 +110,6 @@ func decodeBasic(name string, data interface{}, val reflect.Value) error {
 
 func decodeInt(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.ValueOf(data)
-	if !dataVal.IsValid() {
-		// This should never happen
-		panic("data is invalid")
-	}
-
 	dataKind := dataVal.Kind()
 	if dataKind >= reflect.Int && dataKind <= reflect.Int64 {
 		dataKind = reflect.Int

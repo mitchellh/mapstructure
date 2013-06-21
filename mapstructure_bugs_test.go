@@ -5,17 +5,21 @@ import "testing"
 // GH-1
 func TestDecode_NilValue(t *testing.T) {
 	input := map[string]interface{}{
-		"vstring": nil,
+		"vfoo": nil,
+		"vother": nil,
 	}
 
-	var result Basic
+	var result Map
 	err := Decode(input, &result)
 	if err != nil {
 		t.Fatalf("should not error: %s", err)
 	}
 
-	if result.Vstring != "" {
-		t.Fatalf("value should be default: %s", result.Vstring)
+	if result.Vfoo != "" {
+		t.Fatalf("value should be default: %s", result.Vfoo)
+	}
+
+	if result.Vother != nil {
+		t.Fatalf("Vother should be nil: %s", result.Vother)
 	}
 }
-
