@@ -44,10 +44,6 @@ func Decode(m interface{}, rawVal interface{}) error {
 		return errors.New("val must be addressable (a pointer)")
 	}
 
-	if val.Kind() != reflect.Struct {
-		return errors.New("val must be an addressable struct")
-	}
-
 	return decode("", m, val)
 }
 

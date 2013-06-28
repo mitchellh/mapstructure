@@ -101,6 +101,25 @@ func TestBasic_IntWithFloat(t *testing.T) {
 	}
 }
 
+func TestDecode_NonStruct(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "bar",
+		"bar": "baz",
+	}
+
+	var result map[string]string
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if result["foo"] != "bar" {
+		t.Fatal("foo is not bar")
+	}
+}
+
 func TestMap(t *testing.T) {
 	t.Parallel()
 
@@ -333,20 +352,6 @@ func TestNonPtrValue(t *testing.T) {
 	}
 
 	if err.Error() != "val must be a pointer" {
-		t.Errorf("got unexpected error: %s", err)
-	}
-}
-
-func TestNonStructValue(t *testing.T) {
-	t.Parallel()
-
-	result := 42
-	err := Decode(map[string]interface{}{}, &result)
-	if err == nil {
-		t.Fatal("error should exist")
-	}
-
-	if err.Error() != "val must be an addressable struct" {
 		t.Errorf("got unexpected error: %s", err)
 	}
 }
