@@ -14,21 +14,31 @@ import (
 	"strings"
 )
 
-// Error implements the error interface and can represents multiple
-// errors that occur in the course of a single decode.
-type Error struct {
-	Errors []string
+// ErrorAccumulator accumulates error messages during a single decode.
+type ErrorAccumulator []string
+
+func (e ErrorAccumulator) append(err error) ErrorAccumulator {
+	if es, ok := err.(Error); ok {
+		return append(e, es...)
+	}
+	return append(e, err.Error())
 }
 
-func (e *Error) Error() string {
-	points := make([]string, len(e.Errors))
-	for i, err := range e.Errors {
-		points[i] = fmt.Sprintf("* %s", err)
+func (e ErrorAccumulator) flush() error {
+	if len(e) == 0 {
+		return nil
 	}
+	return Error(e)
+}
 
+// Error represents multiple errors that occur in the course
+// of a single decode.
+type Error []string
+
+func (e Error) Error() string {
 	return fmt.Sprintf(
 		"%d error(s) decoding:\n\n%s",
-		len(e.Errors), strings.Join(points, "\n"))
+		len(e), "* "+strings.Join([]string(e), "\n* "))
 }
 
 // Decode takes a map and uses reflection to convert it into the
@@ -167,7 +177,7 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 	valMap := reflect.MakeMap(mapType)
 
 	// Accumulate errors
-	errors := make([]string, 0)
+	var errors ErrorAccumulator = nil
 
 	for _, k := range dataVal.MapKeys() {
 		fieldName := fmt.Sprintf("%s[%s]", name, k)
@@ -175,7 +185,7 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 		// First decode the key into the proper type
 		currentKey := reflect.Indirect(reflect.New(valKeyType))
 		if err := decode(fieldName, k.Interface(), currentKey); err != nil {
-			errors = appendErrors(errors, err)
+			errors = errors.append(err)
 			continue
 		}
 
@@ -183,7 +193,7 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 		v := dataVal.MapIndex(k).Interface()
 		currentVal := reflect.Indirect(reflect.New(valElemType))
 		if err := decode(fieldName, v, currentVal); err != nil {
-			errors = appendErrors(errors, err)
+			errors = errors.append(err)
 			continue
 		}
 
@@ -193,12 +203,7 @@ func decodeMap(name string, data interface{}, val reflect.Value) error {
 	// Set the built up map to the value
 	val.Set(valMap)
 
-	// If we had errors, return those
-	if len(errors) > 0 {
-		return &Error{errors}
-	}
-
-	return nil
+	return errors.flush()
 }
 
 func decodeSlice(name string, data interface{}, val reflect.Value) error {
@@ -217,7 +222,7 @@ func decodeSlice(name string, data interface{}, val reflect.Value) error {
 	valSlice := reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
 
 	// Accumulate any errors
-	errors := make([]string, 0)
+	var errors ErrorAccumulator = nil
 
 	for i := 0; i < dataVal.Len(); i++ {
 		currentData := dataVal.Index(i).Interface()
@@ -225,19 +230,14 @@ func decodeSlice(name string, data interface{}, val reflect.Value) error {
 
 		fieldName := fmt.Sprintf("%s[%d]", name, i)
 		if err := decode(fieldName, currentData, currentField); err != nil {
-			errors = appendErrors(errors, err)
+			errors = errors.append(err)
 		}
 	}
 
 	// Finally, set the value to the slice we built up
 	val.Set(valSlice)
 
-	// If there were errors, we return those
-	if len(errors) > 0 {
-		return &Error{errors}
-	}
-
-	return nil
+	return errors.flush()
 }
 
 func decodeStruct(name string, data interface{}, val reflect.Value) error {
@@ -254,7 +254,7 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 			name, dataValType.Key().Kind())
 	}
 
-	errors := make([]string, 0)
+	var errors ErrorAccumulator = nil
 
 	valType := val.Type()
 	for i := 0; i < valType.NumField(); i++ {
@@ -305,22 +305,9 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 		}
 
 		if err := decode(fieldName, rawMapVal.Interface(), field); err != nil {
-			errors = appendErrors(errors, err)
+			errors = errors.append(err)
 		}
 	}
 
-	if len(errors) > 0 {
-		return &Error{errors}
-	}
-
-	return nil
-}
-
-func appendErrors(errors []string, err error) []string {
-	switch e := err.(type) {
-	case *Error:
-		return append(errors, e.Errors...)
-	default:
-		return append(errors, e.Error())
-	}
+	return errors.flush()
 }

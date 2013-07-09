@@ -333,12 +333,12 @@ func TestInvalidType(t *testing.T) {
 		t.Fatal("error should exist")
 	}
 
-	derr, ok := err.(*Error)
+	derr, ok := err.(Error)
 	if !ok {
 		t.Fatalf("error should be kind of Error, instead: %#v", err)
 	}
 
-	if derr.Errors[0] != "'Vstring' expected type 'string', got 'int'" {
+	if derr[0] != "'Vstring' expected type 'string', got 'int'" {
 		t.Errorf("got unexpected error: %s", err)
 	}
 }
