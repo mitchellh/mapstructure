@@ -262,6 +262,12 @@ func decodeStruct(name string, data interface{}, val reflect.Value) error {
 		fieldName := fieldType.Name
 
 		tagValue := fieldType.Tag.Get("mapstructure")
+		if tagValue == "" {
+			tagValue = fieldType.Tag.Get("json")
+			if idx := strings.Index(tagValue, ","); idx != -1 {
+				tagValue = tagValue[:idx]
+			}
+		}
 		if tagValue != "" {
 			fieldName = tagValue
 		}

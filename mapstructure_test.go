@@ -39,6 +39,14 @@ type Tagged struct {
 	Value string `mapstructure:"foo"`
 }
 
+type JsonTagged struct {
+	Value string `json:"foo"`
+}
+
+type JsonOptionTagged struct {
+	Value string `json:"foo,omitempty"`
+}
+
 func TestBasicTypes(t *testing.T) {
 	t.Parallel()
 
@@ -364,6 +372,42 @@ func TestTagged(t *testing.T) {
 	}
 
 	var result Tagged
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if result.Value != "bar" {
+		t.Errorf("value should be 'bar', got: %#v", result.Value)
+	}
+}
+
+func TestJsonTagged(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "bar",
+	}
+
+	var result JsonTagged
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if result.Value != "bar" {
+		t.Errorf("value should be 'bar', got: %#v", result.Value)
+	}
+}
+
+func TestJsonOptionTagged(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "bar",
+	}
+
+	var result JsonOptionTagged
 	err := Decode(input, &result)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
