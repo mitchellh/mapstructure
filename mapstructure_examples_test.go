@@ -84,6 +84,9 @@ func ExampleDecode_metadata() {
 		"email": "foo@bar.com",
 	}
 
+	// For metadata, we make a more advanced DecoderConfig so we can
+	// more finely configure the decoder that is used. In this case, we
+	// just tell the decoder we want to track metadata.
 	var md Metadata
 	var result Person
 	config := &DecoderConfig{

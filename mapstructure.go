@@ -28,7 +28,10 @@ type DecoderConfig struct {
 
 // A Decoder takes a raw interface value and turns it into structured
 // data, keeping track of rich error information along the way in case
-// anything goes wrong.
+// anything goes wrong. Unlike the basic top-level Decode method, you can
+// more finely control how the Decoder behaves using the DecoderConfig
+// structure. The top-level Decode method is just a convenience that sets
+// up the most basic Decoder.
 type Decoder struct {
 	config *DecoderConfig
 }
