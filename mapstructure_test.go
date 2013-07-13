@@ -410,7 +410,7 @@ func TestJsonTagged(t *testing.T) {
 	}
 
 	if result.Full != "full" {
-		t.Errorf("value should be 'option', got: %#v", result.Full)
+		t.Errorf("value should be 'full', got: %#v", result.Full)
 	}
 }
 
