@@ -40,11 +40,10 @@ type Tagged struct {
 }
 
 type JsonTagged struct {
-	Value string `json:"foo"`
-}
-
-type JsonOptionTagged struct {
-	Value string `json:"foo,omitempty"`
+	Normal string `json:"norm"`
+	Dash   string `json:"-"`
+	Empty  string `json:",omitempty"`
+	Full   string `json:"f,string"`
 }
 
 func TestBasicTypes(t *testing.T) {
@@ -386,7 +385,10 @@ func TestJsonTagged(t *testing.T) {
 	t.Parallel()
 
 	input := map[string]interface{}{
-		"foo": "bar",
+		"norm":  "normal",
+		"dash":  "dash",
+		"empty": "empty",
+		"f":     "full",
 	}
 
 	var result JsonTagged
@@ -395,26 +397,20 @@ func TestJsonTagged(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if result.Value != "bar" {
-		t.Errorf("value should be 'bar', got: %#v", result.Value)
-	}
-}
-
-func TestJsonOptionTagged(t *testing.T) {
-	t.Parallel()
-
-	input := map[string]interface{}{
-		"foo": "bar",
+	if result.Normal != "normal" {
+		t.Errorf("value should be 'normal', got: %#v", result.Normal)
 	}
 
-	var result JsonOptionTagged
-	err := Decode(input, &result)
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if result.Dash != "dash" {
+		t.Errorf("value should be 'dash', got: %#v", result.Dash)
 	}
 
-	if result.Value != "bar" {
-		t.Errorf("value should be 'bar', got: %#v", result.Value)
+	if result.Empty != "empty" {
+		t.Errorf("value should be 'empty', got: %#v", result.Empty)
+	}
+
+	if result.Full != "full" {
+		t.Errorf("value should be 'option', got: %#v", result.Full)
 	}
 }
 
