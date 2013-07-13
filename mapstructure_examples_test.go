@@ -68,3 +68,39 @@ func ExampleDecode_errors() {
 	// * 'Emails[1]' expected type 'string', got 'int'
 	// * 'Emails[2]' expected type 'string', got 'int'
 }
+
+func ExampleDecode_metadata() {
+	type Person struct {
+		Name   string
+		Age    int
+	}
+
+	// This input can come from anywhere, but typically comes from
+	// something like decoding JSON where we're not quite sure of the
+	// struct initially.
+	input := map[string]interface{}{
+		"name":   "Mitchell",
+		"age":    91,
+		"email": "foo@bar.com",
+	}
+
+	var md Metadata
+	var result Person
+	config := &DecoderConfig{
+		Metadata: &md,
+		Result: &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := decoder.Decode(input); err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Unused keys: %#v", md.Unused)
+	// Output:
+	// Unused keys: []string{"email"}
+}
