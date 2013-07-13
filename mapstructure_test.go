@@ -351,7 +351,7 @@ func TestNonPtrValue(t *testing.T) {
 		t.Fatal("error should exist")
 	}
 
-	if err.Error() != "val must be a pointer" {
+	if err.Error() != "result must be a pointer" {
 		t.Errorf("got unexpected error: %s", err)
 	}
 }
