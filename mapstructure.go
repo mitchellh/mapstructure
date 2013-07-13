@@ -49,7 +49,7 @@ type Metadata struct {
 func Decode(m interface{}, rawVal interface{}) error {
 	config := &DecoderConfig{
 		Metadata: nil,
-		Result: rawVal,
+		Result:   rawVal,
 	}
 
 	decoder, err := NewDecoder(config)
@@ -106,27 +106,36 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 		k = reflect.Uint
 	}
 
+	var err error
 	switch k {
 	case reflect.Bool:
 		fallthrough
 	case reflect.Interface:
 		fallthrough
 	case reflect.String:
-		return d.decodeBasic(name, data, val)
+		err = d.decodeBasic(name, data, val)
 	case reflect.Int:
 		fallthrough
 	case reflect.Uint:
-		return d.decodeInt(name, data, val)
+		err = d.decodeInt(name, data, val)
 	case reflect.Struct:
-		return d.decodeStruct(name, data, val)
+		err = d.decodeStruct(name, data, val)
 	case reflect.Map:
-		return d.decodeMap(name, data, val)
+		err = d.decodeMap(name, data, val)
 	case reflect.Slice:
-		return d.decodeSlice(name, data, val)
+		err = d.decodeSlice(name, data, val)
+	default:
+		// If we reached this point then we weren't able to decode it
+		return fmt.Errorf("%s: unsupported type: %s", name, k)
 	}
 
-	// If we reached this point then we weren't able to decode it
-	return fmt.Errorf("%s: unsupported type: %s", name, k)
+	// If we reached here, then we successfully decoded SOMETHING, so
+	// mark the key as used if we're tracking metadata.
+	if d.config.Metadata != nil && name != "" {
+		d.config.Metadata.Keys = append(d.config.Metadata.Keys, name)
+	}
+
+	return err
 }
 
 // This decodes a basic type (bool, int, string, etc.) and sets the
@@ -294,8 +303,14 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 			name, dataValType.Key().Kind())
 	}
 
-	errors := make([]string, 0)
+	dataValKeys := make(map[reflect.Value]struct{})
+	dataValKeysUnused := make(map[interface{}]struct{})
+	for _, dataValKey := range dataVal.MapKeys() {
+		dataValKeys[dataValKey] = struct{}{}
+		dataValKeysUnused[dataValKey.Interface()] = struct{}{}
+	}
 
+	errors := make([]string, 0)
 	valType := val.Type()
 	for i := 0; i < valType.NumField(); i++ {
 		fieldType := valType.Field(i)
@@ -306,15 +321,17 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 			fieldName = tagValue
 		}
 
-		rawMapVal := dataVal.MapIndex(reflect.ValueOf(fieldName))
+		rawMapKey := reflect.ValueOf(fieldName)
+		rawMapVal := dataVal.MapIndex(rawMapKey)
 		if !rawMapVal.IsValid() {
 			// Do a slower search by iterating over each key and
 			// doing case-insensitive search.
-			for _, dataKeyVal := range dataVal.MapKeys() {
-				mK := dataKeyVal.Interface().(string)
+			for dataValKey, _ := range dataValKeys {
+				mK := dataValKey.Interface().(string)
 
 				if strings.EqualFold(mK, fieldName) {
-					rawMapVal = dataVal.MapIndex(dataKeyVal)
+					rawMapKey = dataValKey
+					rawMapVal = dataVal.MapIndex(dataValKey)
 					break
 				}
 			}
@@ -325,6 +342,9 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 				continue
 			}
 		}
+
+		// Delete the key we're using from the unused map so we stop tracking
+		delete(dataValKeysUnused, rawMapKey.Interface())
 
 		field := val.Field(i)
 		if !field.IsValid() {
@@ -351,6 +371,18 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 
 	if len(errors) > 0 {
 		return &Error{errors}
+	}
+
+	// Add the unused keys to the list of unused keys if we're tracking metadata
+	if d.config.Metadata != nil {
+		for rawKey, _ := range dataValKeysUnused {
+			key := rawKey.(string)
+			if name != "" {
+				key = fmt.Sprintf("%s.%s", name, key)
+			}
+
+			d.config.Metadata.Unused = append(d.config.Metadata.Unused, key)
+		}
 	}
 
 	return nil

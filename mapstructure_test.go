@@ -1,6 +1,9 @@
 package mapstructure
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 type Basic struct {
 	Vstring string
@@ -340,6 +343,47 @@ func TestInvalidType(t *testing.T) {
 
 	if derr.Errors[0] != "'Vstring' expected type 'string', got 'int'" {
 		t.Errorf("got unexpected error: %s", err)
+	}
+}
+
+func TestMetadata(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vfoo": "foo",
+		"vbar": map[string]interface{}{
+			"vstring": "foo",
+			"Vuint":   42,
+			"foo":     "bar",
+		},
+		"bar": "nil",
+	}
+
+	var md Metadata
+	var result Nested
+	config := &DecoderConfig{
+		Metadata: &md,
+		Result:   &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err.Error())
+	}
+
+	expectedKeys := []string{"Vfoo", "Vbar.Vstring", "Vbar.Vuint", "Vbar"}
+	if !reflect.DeepEqual(md.Keys, expectedKeys) {
+		t.Fatalf("bad keys: %#v", md.Keys)
+	}
+
+	expectedUnused := []string{"Vbar.foo", "bar"}
+	if !reflect.DeepEqual(md.Unused, expectedUnused) {
+		t.Fatalf("bad unused: %#v", md.Unused)
 	}
 }
 
