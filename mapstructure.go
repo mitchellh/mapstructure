@@ -325,9 +325,15 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		fieldType := valType.Field(i)
 		fieldName := fieldType.Name
 
-		tagValue := fieldType.Tag.Get("mapstructure")
-		if tagValue != "" {
+		if tagValue := fieldType.Tag.Get("mapstructure"); tagValue != "" {
 			fieldName = tagValue
+		} else if tagValue := fieldType.Tag.Get("json"); tagValue != "" {
+			if idx := strings.Index(tagValue, ","); idx != -1 {
+				tagValue = tagValue[:idx]
+			}
+			if tagValue != "" && tagValue[:1] != "-" {
+				fieldName = tagValue
+			}
 		}
 
 		rawMapKey := reflect.ValueOf(fieldName)

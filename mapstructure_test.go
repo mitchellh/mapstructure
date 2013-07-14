@@ -42,6 +42,13 @@ type Tagged struct {
 	Value string `mapstructure:"foo"`
 }
 
+type JsonTagged struct {
+	Normal string `json:"norm"`
+	Dash   string `json:"-"`
+	Empty  string `json:",omitempty"`
+	Full   string `json:"f,string"`
+}
+
 func TestBasicTypes(t *testing.T) {
 	t.Parallel()
 
@@ -440,6 +447,39 @@ func TestTagged(t *testing.T) {
 
 	if result.Value != "bar" {
 		t.Errorf("value should be 'bar', got: %#v", result.Value)
+	}
+}
+
+func TestJsonTagged(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"norm":  "normal",
+		"dash":  "dash",
+		"empty": "empty",
+		"f":     "full",
+	}
+
+	var result JsonTagged
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if result.Normal != "normal" {
+		t.Errorf("value should be 'normal', got: %#v", result.Normal)
+	}
+
+	if result.Dash != "dash" {
+		t.Errorf("value should be 'dash', got: %#v", result.Dash)
+	}
+
+	if result.Empty != "empty" {
+		t.Errorf("value should be 'empty', got: %#v", result.Empty)
+	}
+
+	if result.Full != "full" {
+		t.Errorf("value should be 'full', got: %#v", result.Full)
 	}
 }
 
