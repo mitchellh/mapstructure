@@ -30,6 +30,10 @@ type DecoderConfig struct {
 	// Result is a pointer to the struct that will contain the decoded
 	// value.
 	Result interface{}
+
+	// The tag name that mapstructure reads for field names. This
+	// defaults to "mapstructure"
+	TagName string
 }
 
 // A Decoder takes a raw interface value and turns it into structured
@@ -81,6 +85,10 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 	val = val.Elem()
 	if !val.CanAddr() {
 		return nil, errors.New("result must be addressable (a pointer)")
+	}
+
+	if config.TagName == "" {
+		config.TagName = "mapstructure"
 	}
 
 	result := &Decoder{
@@ -325,7 +333,7 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		fieldType := valType.Field(i)
 		fieldName := fieldType.Name
 
-		tagValue := fieldType.Tag.Get("mapstructure")
+		tagValue := fieldType.Tag.Get(d.config.TagName)
 		if tagValue != "" {
 			fieldName = tagValue
 		}
