@@ -123,6 +123,31 @@ func TestDecode_NonStruct(t *testing.T) {
 	}
 }
 
+func TestDecoder_ErrorUnused(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "hello",
+		"foo": "bar",
+	}
+
+	var result Basic
+	config := &DecoderConfig{
+		ErrorUnused: true,
+		Result:   &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
 func TestMap(t *testing.T) {
 	t.Parallel()
 

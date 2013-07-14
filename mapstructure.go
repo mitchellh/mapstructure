@@ -11,12 +11,18 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 )
 
 // DecoderConfig is the configuration that is used to create a new decoder
 // and allows customization of various aspects of decoding.
 type DecoderConfig struct {
+	// If ErrorUnused is true, then it is an error for there to exist
+	// keys in the original map that were unused in the decoding process
+	// (extra keys).
+	ErrorUnused bool
+
 	// Metadata is the struct that will contain extra metadata about
 	// the decoding. If this is nil, then no metadata will be tracked.
 	Metadata *Metadata
@@ -370,6 +376,17 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		if err := d.decode(fieldName, rawMapVal.Interface(), field); err != nil {
 			errors = appendErrors(errors, err)
 		}
+	}
+
+	if d.config.ErrorUnused && len(dataValKeysUnused) > 0 {
+		keys := make([]string, 0, len(dataValKeysUnused))
+		for rawKey, _ := range dataValKeysUnused {
+			keys = append(keys, rawKey.(string))
+		}
+		sort.Strings(keys)
+
+		err := fmt.Errorf("'%s' has invalid keys: %s", name, strings.Join(keys, ", "))
+		errors = appendErrors(errors, err)
 	}
 
 	if len(errors) > 0 {
