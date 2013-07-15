@@ -333,6 +333,29 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		fieldType := valType.Field(i)
 		fieldName := fieldType.Name
 
+		if fieldType.Anonymous {
+			// We have an embedded field. We "squash" the fields down if
+			// specified in the tag.
+			squash := false
+			tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
+			for _, tag := range tagParts[1:] {
+				if tag == "squash" {
+					squash = true
+					break
+				}
+			}
+
+			if squash {
+				inner := val.FieldByName(fieldName)
+				err := d.decodeStruct(name, data, inner)
+				if err != nil {
+					errors = appendErrors(errors, err)
+				}
+
+				continue
+			}
+		}
+
 		tagValue := fieldType.Tag.Get(d.config.TagName)
 		if tagValue != "" {
 			fieldName = tagValue

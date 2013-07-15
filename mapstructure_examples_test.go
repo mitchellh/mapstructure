@@ -71,16 +71,16 @@ func ExampleDecode_errors() {
 
 func ExampleDecode_metadata() {
 	type Person struct {
-		Name   string
-		Age    int
+		Name string
+		Age  int
 	}
 
 	// This input can come from anywhere, but typically comes from
 	// something like decoding JSON where we're not quite sure of the
 	// struct initially.
 	input := map[string]interface{}{
-		"name":   "Mitchell",
-		"age":    91,
+		"name":  "Mitchell",
+		"age":   91,
 		"email": "foo@bar.com",
 	}
 
@@ -91,7 +91,7 @@ func ExampleDecode_metadata() {
 	var result Person
 	config := &DecoderConfig{
 		Metadata: &md,
-		Result: &result,
+		Result:   &result,
 	}
 
 	decoder, err := NewDecoder(config)
