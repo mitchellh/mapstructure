@@ -471,6 +471,42 @@ func TestMetadata(t *testing.T) {
 	}
 }
 
+func TestMetadata_Embedded(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+		"vunique": "bar",
+	}
+
+	var md Metadata
+	var result EmbeddedSquash
+	config := &DecoderConfig{
+		Metadata: &md,
+		Result:   &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err.Error())
+	}
+
+	expectedKeys := []string{"Vunique", "Vstring"}
+	if !reflect.DeepEqual(md.Keys, expectedKeys) {
+		t.Fatalf("bad keys: %#v", md.Keys)
+	}
+
+	expectedUnused := []string{}
+	if !reflect.DeepEqual(md.Unused, expectedUnused) {
+		t.Fatalf("bad unused: %#v", md.Unused)
+	}
+}
+
 func TestNonPtrValue(t *testing.T) {
 	t.Parallel()
 
