@@ -381,9 +381,9 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 	for fieldType, field := range fields {
 		fieldName := fieldType.Name
 
-		tagValue := fieldType.Tag.Get(d.config.TagName)
-		if tagValue != "" {
-			fieldName = tagValue
+		tagParts := strings.SplitN(fieldType.Tag.Get(d.config.TagName), ",", 2)
+		if tagParts[0] != "" {
+			fieldName = tagParts[0]
 		}
 
 		rawMapKey := reflect.ValueOf(fieldName)
