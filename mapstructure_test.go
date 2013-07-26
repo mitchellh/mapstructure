@@ -49,6 +49,7 @@ type SliceOfStruct struct {
 }
 
 type Tagged struct {
+	Extra string `mapstructure:"bar,what,what"`
 	Value string `mapstructure:"foo"`
 }
 
@@ -525,6 +526,7 @@ func TestTagged(t *testing.T) {
 
 	input := map[string]interface{}{
 		"foo": "bar",
+		"bar": "value",
 	}
 
 	var result Tagged
@@ -535,6 +537,10 @@ func TestTagged(t *testing.T) {
 
 	if result.Value != "bar" {
 		t.Errorf("value should be 'bar', got: %#v", result.Value)
+	}
+
+	if result.Extra != "value" {
+		t.Errorf("extra should be 'value', got: %#v", result.Extra)
 	}
 }
 

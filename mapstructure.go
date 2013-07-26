@@ -382,6 +382,7 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		fieldName := fieldType.Name
 
 		tagValue := fieldType.Tag.Get(d.config.TagName)
+		tagValue = strings.SplitN(tagValue, ",", 2)[0]
 		if tagValue != "" {
 			fieldName = tagValue
 		}
