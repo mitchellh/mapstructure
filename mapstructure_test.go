@@ -10,6 +10,7 @@ type Basic struct {
 	Vint    int
 	Vuint   uint
 	Vbool   bool
+	Vfloat  float64
 	Vextra  string
 	vsilent bool
 	Vdata   interface{}
@@ -61,6 +62,7 @@ func TestBasicTypes(t *testing.T) {
 		"vint":    42,
 		"Vuint":   42,
 		"vbool":   true,
+		"Vfloat":  42.42,
 		"vsilent": true,
 		"vdata":   42,
 	}
@@ -86,6 +88,10 @@ func TestBasicTypes(t *testing.T) {
 
 	if result.Vbool != true {
 		t.Errorf("vbool value should be true: %#v", result.Vbool)
+	}
+
+	if result.Vfloat != 42.42 {
+		t.Errorf("vfloat value should be 42.42: %#v", result.Vfloat)
 	}
 
 	if result.Vextra != "" {
