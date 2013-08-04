@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -22,6 +23,15 @@ type DecoderConfig struct {
 	// keys in the original map that were unused in the decoding process
 	// (extra keys).
 	ErrorUnused bool
+
+	// If WeaklyTypedInput is true, the decoder will convert values between
+	// the following types:
+	//
+	//    - numbers and bools
+	//    - strings and numbers
+	//    - strings and bools
+	//    - empty arrays/slices and empty maps
+	WeaklyTypedInput bool
 
 	// Metadata is the struct that will contain extra metadata about
 	// the decoding. If this is nil, then no metadata will be tracked.
@@ -124,27 +134,22 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 		return nil
 	}
 
-	k := val.Kind()
-
-	// Some shortcuts because we treat all ints and uints the same way
-	if k >= reflect.Int && k <= reflect.Int64 {
-		k = reflect.Int
-	} else if k >= reflect.Uint && k <= reflect.Uint64 {
-		k = reflect.Uint
-	}
-
 	var err error
-	switch k {
+	dataKind := d.getKind(val)
+
+	switch dataKind {
 	case reflect.Bool:
-		fallthrough
+		err = d.decodeBool(name, data, val)
 	case reflect.Interface:
-		fallthrough
-	case reflect.String:
 		err = d.decodeBasic(name, data, val)
+	case reflect.String:
+		err = d.decodeString(name, data, val)
 	case reflect.Int:
-		fallthrough
-	case reflect.Uint:
 		err = d.decodeInt(name, data, val)
+	case reflect.Uint:
+		err = d.decodeUint(name, data, val)
+	case reflect.Float32:
+		err = d.decodeFloat(name, data, val)
 	case reflect.Struct:
 		err = d.decodeStruct(name, data, val)
 	case reflect.Map:
@@ -153,7 +158,7 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 		err = d.decodeSlice(name, data, val)
 	default:
 		// If we reached this point then we weren't able to decode it
-		return fmt.Errorf("%s: unsupported type: %s", name, k)
+		return fmt.Errorf("%s: unsupported type: %s", name, dataKind)
 	}
 
 	// If we reached here, then we successfully decoded SOMETHING, so
@@ -163,6 +168,21 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 	}
 
 	return err
+}
+
+func (d *Decoder) getKind(val reflect.Value) reflect.Kind {
+	kind := val.Kind()
+
+	switch {
+	case kind >= reflect.Int && kind <= reflect.Int64:
+		return reflect.Int
+	case kind >= reflect.Uint && kind <= reflect.Uint64:
+		return reflect.Uint
+	case kind >= reflect.Float32 && kind <= reflect.Float64:
+		return reflect.Float32
+	default:
+		return kind
+	}
 }
 
 // This decodes a basic type (bool, int, string, etc.) and sets the
@@ -180,60 +200,165 @@ func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) 
 	return nil
 }
 
-func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) error {
+func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.ValueOf(data)
-	dataKind := dataVal.Kind()
-	if dataKind >= reflect.Int && dataKind <= reflect.Int64 {
-		dataKind = reflect.Int
-	} else if dataKind >= reflect.Uint && dataKind <= reflect.Uint64 {
-		dataKind = reflect.Uint
-	} else if dataKind >= reflect.Float32 && dataKind <= reflect.Float64 {
-		dataKind = reflect.Float32
-	} else {
+	dataKind := d.getKind(dataVal)
+
+	switch {
+	case dataKind == reflect.String:
+		val.SetString(dataVal.String())
+	case dataKind == reflect.Bool && d.config.WeaklyTypedInput:
+		if dataVal.Bool() {
+			val.SetString("1")
+		} else {
+			val.SetString("0")
+		}
+	case dataKind == reflect.Int && d.config.WeaklyTypedInput:
+		val.SetString(strconv.FormatInt(dataVal.Int(), 10))
+	case dataKind == reflect.Uint && d.config.WeaklyTypedInput:
+		val.SetString(strconv.FormatUint(dataVal.Uint(), 10))
+	case dataKind == reflect.Float32 && d.config.WeaklyTypedInput:
+		val.SetString(strconv.FormatFloat(dataVal.Float(), 'f', -1, 64))
+	default:
 		return fmt.Errorf(
 			"'%s' expected type '%s', got unconvertible type '%s'",
 			name, val.Type(), dataVal.Type())
 	}
 
-	valKind := val.Kind()
-	if valKind >= reflect.Int && valKind <= reflect.Int64 {
-		valKind = reflect.Int
-	} else if valKind >= reflect.Uint && valKind <= reflect.Uint64 {
-		valKind = reflect.Uint
-	}
+	return nil
+}
 
-	switch dataKind {
-	case reflect.Int:
-		if valKind == reflect.Int {
-			val.SetInt(dataVal.Int())
+func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.ValueOf(data)
+	dataKind := d.getKind(dataVal)
+
+	switch {
+	case dataKind == reflect.Int:
+		val.SetInt(dataVal.Int())
+	case dataKind == reflect.Uint:
+		val.SetInt(int64(dataVal.Uint()))
+	case dataKind == reflect.Bool && d.config.WeaklyTypedInput:
+		if dataVal.Bool() {
+			val.SetInt(1)
 		} else {
-			val.SetUint(uint64(dataVal.Int()))
+			val.SetInt(0)
 		}
-	case reflect.Uint:
-		if valKind == reflect.Int {
-			val.SetInt(int64(dataVal.Uint()))
+	case dataKind == reflect.Float32:
+		val.SetInt(int64(dataVal.Float()))
+	case dataKind == reflect.String && d.config.WeaklyTypedInput:
+		i, err := strconv.ParseInt(dataVal.String(), 0, val.Type().Bits())
+		if err == nil {
+			val.SetInt(i)
 		} else {
-			val.SetUint(dataVal.Uint())
-		}
-	case reflect.Float32:
-		if valKind == reflect.Int {
-			val.SetInt(int64(dataVal.Float()))
-		} else {
-			val.SetUint(uint64(dataVal.Float()))
+			return fmt.Errorf("cannot parse '%s' as int: %s", name, err)
 		}
 	default:
-		panic("should never reach")
+		return fmt.Errorf(
+			"'%s' expected type '%s', got unconvertible type '%s'",
+			name, val.Type(), dataVal.Type())
+	}
+
+	return nil
+}
+
+func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.ValueOf(data)
+	dataKind := d.getKind(dataVal)
+
+	switch {
+	case dataKind == reflect.Int:
+		val.SetUint(uint64(dataVal.Int()))
+	case dataKind == reflect.Uint:
+		val.SetUint(dataVal.Uint())
+	case dataKind == reflect.Bool && d.config.WeaklyTypedInput:
+		if dataVal.Bool() {
+			val.SetUint(1)
+		} else {
+			val.SetUint(0)
+		}
+	case dataKind == reflect.Float32:
+		val.SetUint(uint64(dataVal.Float()))
+	case dataKind == reflect.String && d.config.WeaklyTypedInput:
+		i, err := strconv.ParseUint(dataVal.String(), 0, val.Type().Bits())
+		if err == nil {
+			val.SetUint(i)
+		} else {
+			return fmt.Errorf("cannot parse '%s' as uint: %s", name, err)
+		}
+	default:
+		return fmt.Errorf(
+			"'%s' expected type '%s', got unconvertible type '%s'",
+			name, val.Type(), dataVal.Type())
+	}
+
+	return nil
+}
+
+func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.ValueOf(data)
+	dataKind := d.getKind(dataVal)
+
+	switch {
+	case dataKind == reflect.Bool:
+		val.SetBool(dataVal.Bool())
+	case dataKind == reflect.Int && d.config.WeaklyTypedInput:
+		val.SetBool(dataVal.Int() != 0)
+	case dataKind == reflect.Uint && d.config.WeaklyTypedInput:
+		val.SetBool(dataVal.Uint() != 0)
+	case dataKind == reflect.Float32 && d.config.WeaklyTypedInput:
+		val.SetBool(dataVal.Float() != 0)
+	case dataKind == reflect.String && d.config.WeaklyTypedInput:
+		b, err := strconv.ParseBool(dataVal.String())
+		if err == nil {
+			val.SetBool(b)
+		} else if dataVal.String() == "" {
+			val.SetBool(false)
+		} else {
+			return fmt.Errorf("cannot parse '%s' as bool: %s", name, err)
+		}
+	default:
+		return fmt.Errorf(
+			"'%s' expected type '%s', got unconvertible type '%s'",
+			name, val.Type(), dataVal.Type())
+	}
+
+	return nil
+}
+
+func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.ValueOf(data)
+	dataKind := d.getKind(dataVal)
+
+	switch {
+	case dataKind == reflect.Int:
+		val.SetFloat(float64(dataVal.Int()))
+	case dataKind == reflect.Uint:
+		val.SetFloat(float64(dataVal.Uint()))
+	case dataKind == reflect.Bool && d.config.WeaklyTypedInput:
+		if dataVal.Bool() {
+			val.SetFloat(1)
+		} else {
+			val.SetFloat(0)
+		}
+	case dataKind == reflect.Float32:
+		val.SetFloat(float64(dataVal.Float()))
+	case dataKind == reflect.String && d.config.WeaklyTypedInput:
+		f, err := strconv.ParseFloat(dataVal.String(), val.Type().Bits())
+		if err == nil {
+			val.SetFloat(f)
+		} else {
+			return fmt.Errorf("cannot parse '%s' as float: %s", name, err)
+		}
+	default:
+		return fmt.Errorf(
+			"'%s' expected type '%s', got unconvertible type '%s'",
+			name, val.Type(), dataVal.Type())
 	}
 
 	return nil
 }
 
 func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) error {
-	dataVal := reflect.Indirect(reflect.ValueOf(data))
-	if dataVal.Kind() != reflect.Map {
-		return fmt.Errorf("'%s' expected a map, got '%s'", name, dataVal.Kind())
-	}
-
 	valType := val.Type()
 	valKeyType := valType.Key()
 	valElemType := valType.Elem()
@@ -241,6 +366,20 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 	// Make a new map to hold our result
 	mapType := reflect.MapOf(valKeyType, valElemType)
 	valMap := reflect.MakeMap(mapType)
+
+	// Check input type
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
+	if dataVal.Kind() != reflect.Map {
+		// Accept empty array/slice instead of an empty map in weakly typed mode
+		if d.config.WeaklyTypedInput &&
+			(dataVal.Kind() == reflect.Slice || dataVal.Kind() == reflect.Array) &&
+			dataVal.Len() == 0 {
+			val.Set(valMap)
+			return nil
+		} else {
+			return fmt.Errorf("'%s' expected a map, got '%s'", name, dataVal.Kind())
+		}
+	}
 
 	// Accumulate errors
 	errors := make([]string, 0)
@@ -280,17 +419,24 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	dataValKind := dataVal.Kind()
-	if dataValKind != reflect.Array && dataValKind != reflect.Slice {
-		return fmt.Errorf(
-			"'%s': source data must be an array or slice, got %s", name, dataValKind)
-	}
-
 	valType := val.Type()
 	valElemType := valType.Elem()
 
 	// Make a new slice to hold our result, same size as the original data.
 	sliceType := reflect.SliceOf(valElemType)
 	valSlice := reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
+
+	// Check input type
+	if dataValKind != reflect.Array && dataValKind != reflect.Slice {
+		// Accept empty map instead of array/slice in weakly typed mode
+		if d.config.WeaklyTypedInput && dataVal.Kind() == reflect.Map && dataVal.Len() == 0 {
+			val.Set(valSlice)
+			return nil
+		} else {
+			return fmt.Errorf(
+				"'%s': source data must be an array or slice, got %s", name, dataValKind)
+		}
+	}
 
 	// Accumulate any errors
 	errors := make([]string, 0)
