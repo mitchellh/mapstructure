@@ -236,20 +236,20 @@ func TestDecode_TypeConversion(t *testing.T) {
 		"StringToUint":  "42",
 		"StringToBool":  "1",
 		"StringToFloat": "42.42",
-		"SliceToMap":    []interface{} {},
-		"MapToSlice":    map[string]interface{} {},
+		"SliceToMap":    []interface{}{},
+		"MapToSlice":    map[string]interface{}{},
 	}
 
 	expectedResultStrict := TypeConversionResult{
-		IntToFloat:    42.0,
-		IntToUint:     42,
-		UintToInt:     42,
-		UintToFloat:   42,
-		BoolToInt:     0,
-		BoolToUint:    0,
-		BoolToFloat:   0,
-		FloatToInt:    42,
-		FloatToUint:   42,
+		IntToFloat:  42.0,
+		IntToUint:   42,
+		UintToInt:   42,
+		UintToFloat: 42,
+		BoolToInt:   0,
+		BoolToUint:  0,
+		BoolToFloat: 0,
+		FloatToInt:  42,
+		FloatToUint: 42,
 	}
 
 	expectedResultWeak := TypeConversionResult{
@@ -273,8 +273,8 @@ func TestDecode_TypeConversion(t *testing.T) {
 		StringToUint:  42,
 		StringToBool:  true,
 		StringToFloat: 42.42,
-		SliceToMap:    map[string]interface{} {},
-		MapToSlice:    []interface{} {},
+		SliceToMap:    map[string]interface{}{},
+		MapToSlice:    []interface{}{},
 	}
 
 	// Test strict type conversion
@@ -310,7 +310,6 @@ func TestDecode_TypeConversion(t *testing.T) {
 		t.Errorf("expected \n%#v, got: \n%#v", expectedResultWeak, resultWeak)
 	}
 }
-
 
 func TestDecoder_ErrorUnused(t *testing.T) {
 	t.Parallel()

@@ -24,13 +24,17 @@ type DecoderConfig struct {
 	// (extra keys).
 	ErrorUnused bool
 
-	// If WeaklyTypedInput is true, the decoder will convert values between
-	// the following types:
+	// If WeaklyTypedInput is true, the decoder will make the following
+	// "weak" conversions:
 	//
-	//    - numbers and bools
-	//    - strings and numbers
-	//    - strings and bools
-	//    - empty arrays/slices and empty maps
+	//   - bools to string (true = "1", false = "0")
+	//   - numbers to string (base 10)
+	//   - bools to int (true = 1, false = 0)
+	//   - strings to int (base implied by prefix)
+	//   - int to bool (value != 0 == true)
+	//   - string to bool (false/0 = false, anything else = true)
+	//   - empty array = empty map and vice versa
+	//
 	WeaklyTypedInput bool
 
 	// Metadata is the struct that will contain extra metadata about
@@ -237,14 +241,14 @@ func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) er
 		val.SetInt(dataVal.Int())
 	case dataKind == reflect.Uint:
 		val.SetInt(int64(dataVal.Uint()))
+	case dataKind == reflect.Float32:
+		val.SetInt(int64(dataVal.Float()))
 	case dataKind == reflect.Bool && d.config.WeaklyTypedInput:
 		if dataVal.Bool() {
 			val.SetInt(1)
 		} else {
 			val.SetInt(0)
 		}
-	case dataKind == reflect.Float32:
-		val.SetInt(int64(dataVal.Float()))
 	case dataKind == reflect.String && d.config.WeaklyTypedInput:
 		i, err := strconv.ParseInt(dataVal.String(), 0, val.Type().Bits())
 		if err == nil {
@@ -270,14 +274,14 @@ func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) e
 		val.SetUint(uint64(dataVal.Int()))
 	case dataKind == reflect.Uint:
 		val.SetUint(dataVal.Uint())
+	case dataKind == reflect.Float32:
+		val.SetUint(uint64(dataVal.Float()))
 	case dataKind == reflect.Bool && d.config.WeaklyTypedInput:
 		if dataVal.Bool() {
 			val.SetUint(1)
 		} else {
 			val.SetUint(0)
 		}
-	case dataKind == reflect.Float32:
-		val.SetUint(uint64(dataVal.Float()))
 	case dataKind == reflect.String && d.config.WeaklyTypedInput:
 		i, err := strconv.ParseUint(dataVal.String(), 0, val.Type().Bits())
 		if err == nil {
@@ -334,14 +338,14 @@ func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) 
 		val.SetFloat(float64(dataVal.Int()))
 	case dataKind == reflect.Uint:
 		val.SetFloat(float64(dataVal.Uint()))
+	case dataKind == reflect.Float32:
+		val.SetFloat(float64(dataVal.Float()))
 	case dataKind == reflect.Bool && d.config.WeaklyTypedInput:
 		if dataVal.Bool() {
 			val.SetFloat(1)
 		} else {
 			val.SetFloat(0)
 		}
-	case dataKind == reflect.Float32:
-		val.SetFloat(float64(dataVal.Float()))
 	case dataKind == reflect.String && d.config.WeaklyTypedInput:
 		f, err := strconv.ParseFloat(dataVal.String(), val.Type().Bits())
 		if err == nil {
