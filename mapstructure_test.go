@@ -10,6 +10,7 @@ type Basic struct {
 	Vint    int
 	Vuint   uint
 	Vbool   bool
+	Vfloat  float64
 	Vextra  string
 	vsilent bool
 	Vdata   interface{}
@@ -53,6 +54,31 @@ type Tagged struct {
 	Value string `mapstructure:"foo"`
 }
 
+type TypeConversionResult struct {
+	IntToFloat    float32
+	IntToUint     uint
+	IntToBool     bool
+	IntToString   string
+	UintToInt     int
+	UintToFloat   float32
+	UintToBool    bool
+	UintToString  string
+	BoolToInt     int
+	BoolToUint    uint
+	BoolToFloat   float32
+	BoolToString  string
+	FloatToInt    int
+	FloatToUint   uint
+	FloatToBool   bool
+	FloatToString string
+	StringToInt   int
+	StringToUint  uint
+	StringToBool  bool
+	StringToFloat float32
+	SliceToMap    map[string]interface{}
+	MapToSlice    []interface{}
+}
+
 func TestBasicTypes(t *testing.T) {
 	t.Parallel()
 
@@ -61,6 +87,7 @@ func TestBasicTypes(t *testing.T) {
 		"vint":    42,
 		"Vuint":   42,
 		"vbool":   true,
+		"Vfloat":  42.42,
 		"vsilent": true,
 		"vdata":   42,
 	}
@@ -88,6 +115,10 @@ func TestBasicTypes(t *testing.T) {
 		t.Errorf("vbool value should be true: %#v", result.Vbool)
 	}
 
+	if result.Vfloat != 42.42 {
+		t.Errorf("vfloat value should be 42.42: %#v", result.Vfloat)
+	}
+
 	if result.Vextra != "" {
 		t.Errorf("vextra value should be empty: %#v", result.Vextra)
 	}
@@ -112,6 +143,103 @@ func TestBasic_IntWithFloat(t *testing.T) {
 	err := Decode(input, &result)
 	if err != nil {
 		t.Fatalf("got an err: %s", err)
+	}
+}
+
+func TestTypeConversion(t *testing.T) {
+	input := map[string]interface{}{
+		"IntToFloat":    42,
+		"IntToUint":     42,
+		"IntToBool":     1,
+		"IntToString":   42,
+		"UintToInt":     42,
+		"UintToFloat":   42,
+		"UintToBool":    42,
+		"UintToString":  42,
+		"BoolToInt":     true,
+		"BoolToUint":    true,
+		"BoolToFloat":   true,
+		"BoolToString":  true,
+		"FloatToInt":    42.42,
+		"FloatToUint":   42.42,
+		"FloatToBool":   42.42,
+		"FloatToString": 42.42,
+		"StringToInt":   "42",
+		"StringToUint":  "42",
+		"StringToBool":  "1",
+		"StringToFloat": "42.42",
+		"SliceToMap":    []interface{} {},
+		"MapToSlice":    map[string]interface{} {},
+	}
+
+	expectedResultStrict := TypeConversionResult{
+		IntToFloat:    42.0,
+		IntToUint:     42,
+		UintToInt:     42,
+		UintToFloat:   42,
+		BoolToInt:     0,
+		BoolToUint:    0,
+		BoolToFloat:   0,
+		FloatToInt:    42,
+		FloatToUint:   42,
+	}
+
+	expectedResultWeak := TypeConversionResult{
+		IntToFloat:    42.0,
+		IntToUint:     42,
+		IntToBool:     true,
+		IntToString:   "42",
+		UintToInt:     42,
+		UintToFloat:   42,
+		UintToBool:    true,
+		UintToString:  "42",
+		BoolToInt:     1,
+		BoolToUint:    1,
+		BoolToFloat:   1,
+		BoolToString:  "1",
+		FloatToInt:    42,
+		FloatToUint:   42,
+		FloatToBool:   true,
+		FloatToString: "42.42",
+		StringToInt:   42,
+		StringToUint:  42,
+		StringToBool:  true,
+		StringToFloat: 42.42,
+		SliceToMap:    map[string]interface{} {},
+		MapToSlice:    []interface{} {},
+	}
+
+	// Test strict type conversion
+	var resultStrict TypeConversionResult
+	err := Decode(input, &resultStrict)
+	if err == nil {
+		t.Errorf("should return an error")
+	}
+	if !reflect.DeepEqual(resultStrict, expectedResultStrict) {
+		t.Errorf("expected %v, got: %v", expectedResultStrict, resultStrict)
+	}
+
+	// Test weak type conversion
+	var decoder *Decoder
+	var resultWeak TypeConversionResult
+
+	config := &DecoderConfig{
+		WeaklyTypedInput: true,
+		Result:           &resultWeak,
+	}
+
+	decoder, err = NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if !reflect.DeepEqual(resultWeak, expectedResultWeak) {
+		t.Errorf("expected \n%#v, got: \n%#v", expectedResultWeak, resultWeak)
 	}
 }
 
@@ -426,7 +554,7 @@ func TestInvalidType(t *testing.T) {
 		t.Fatalf("error should be kind of Error, instead: %#v", err)
 	}
 
-	if derr.Errors[0] != "'Vstring' expected type 'string', got 'int'" {
+	if derr.Errors[0] != "'Vstring' expected type 'string', got unconvertible type 'int'" {
 		t.Errorf("got unexpected error: %s", err)
 	}
 }
