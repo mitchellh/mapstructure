@@ -108,7 +108,7 @@ func ExampleDecode_metadata() {
 	// Unused keys: []string{"email"}
 }
 
-func ExampleDecode_WeaklyTypedInput() {
+func ExampleDecode_weaklyTypedInput() {
 	type Person struct {
 		Name   string
 		Age    int
