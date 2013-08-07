@@ -146,7 +146,75 @@ func TestBasic_IntWithFloat(t *testing.T) {
 	}
 }
 
-func TestTypeConversion(t *testing.T) {
+func TestDecode_Embedded(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+		"Basic": map[string]interface{}{
+			"vstring": "innerfoo",
+		},
+		"vunique": "bar",
+	}
+
+	var result Embedded
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Vstring != "innerfoo" {
+		t.Errorf("vstring value should be 'innerfoo': %#v", result.Vstring)
+	}
+
+	if result.Vunique != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecode_EmbeddedSquash(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+		"vunique": "bar",
+	}
+
+	var result EmbeddedSquash
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Vstring != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Vstring)
+	}
+
+	if result.Vunique != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecode_NonStruct(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "bar",
+		"bar": "baz",
+	}
+
+	var result map[string]string
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if result["foo"] != "bar" {
+		t.Fatal("foo is not bar")
+	}
+}
+
+func TestDecode_TypeConversion(t *testing.T) {
 	input := map[string]interface{}{
 		"IntToFloat":    42,
 		"IntToUint":     42,
@@ -243,73 +311,6 @@ func TestTypeConversion(t *testing.T) {
 	}
 }
 
-func TestDecode_Embedded(t *testing.T) {
-	t.Parallel()
-
-	input := map[string]interface{}{
-		"vstring": "foo",
-		"Basic": map[string]interface{}{
-			"vstring": "innerfoo",
-		},
-		"vunique": "bar",
-	}
-
-	var result Embedded
-	err := Decode(input, &result)
-	if err != nil {
-		t.Fatalf("got an err: %s", err.Error())
-	}
-
-	if result.Vstring != "innerfoo" {
-		t.Errorf("vstring value should be 'innerfoo': %#v", result.Vstring)
-	}
-
-	if result.Vunique != "bar" {
-		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
-	}
-}
-
-func TestDecode_EmbeddedSquash(t *testing.T) {
-	t.Parallel()
-
-	input := map[string]interface{}{
-		"vstring": "foo",
-		"vunique": "bar",
-	}
-
-	var result EmbeddedSquash
-	err := Decode(input, &result)
-	if err != nil {
-		t.Fatalf("got an err: %s", err.Error())
-	}
-
-	if result.Vstring != "foo" {
-		t.Errorf("vstring value should be 'foo': %#v", result.Vstring)
-	}
-
-	if result.Vunique != "bar" {
-		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
-	}
-}
-
-func TestDecode_NonStruct(t *testing.T) {
-	t.Parallel()
-
-	input := map[string]interface{}{
-		"foo": "bar",
-		"bar": "baz",
-	}
-
-	var result map[string]string
-	err := Decode(input, &result)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	if result["foo"] != "bar" {
-		t.Fatal("foo is not bar")
-	}
-}
 
 func TestDecoder_ErrorUnused(t *testing.T) {
 	t.Parallel()
