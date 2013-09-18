@@ -29,10 +29,11 @@ type DecoderConfig struct {
 	//
 	//   - bools to string (true = "1", false = "0")
 	//   - numbers to string (base 10)
-	//   - bools to int (true = 1, false = 0)
-	//   - strings to int (base implied by prefix)
-	//   - int to bool (value != 0 == true)
-	//   - string to bool (false/0 = false, anything else = true)
+	//   - bools to int/uint (true = 1, false = 0)
+	//   - strings to int/uint (base implied by prefix)
+	//   - int to bool (true if value != 0)
+	//   - string to bool (accepts: 1, t, T, TRUE, true, True, 0, f, F,
+	//     FALSE, false, False. Anything else is an error)
 	//   - empty array = empty map and vice versa
 	//
 	WeaklyTypedInput bool
