@@ -2,6 +2,7 @@ package mapstructure
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -192,6 +193,24 @@ func TestDecode_EmbeddedSquash(t *testing.T) {
 
 	if result.Vunique != "bar" {
 		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecode_Nil(t *testing.T) {
+	t.Parallel()
+
+	var input interface{} = nil
+	result := Basic{
+		Vstring: "foo",
+	}
+
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if result.Vstring != "foo" {
+		t.Fatalf("bad: %#v", result.Vstring)
 	}
 }
 
@@ -625,7 +644,9 @@ func TestMetadata_Embedded(t *testing.T) {
 		t.Fatalf("err: %s", err.Error())
 	}
 
-	expectedKeys := []string{"Vunique", "Vstring"}
+	expectedKeys := []string{"Vstring", "Vunique"}
+
+	sort.Strings(md.Keys)
 	if !reflect.DeepEqual(md.Keys, expectedKeys) {
 		t.Fatalf("bad keys: %#v", md.Keys)
 	}

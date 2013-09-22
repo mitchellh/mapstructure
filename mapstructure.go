@@ -131,6 +131,11 @@ func (d *Decoder) Decode(raw interface{}) error {
 
 // Decodes an unknown data type into a specific reflection value.
 func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error {
+	if data == nil {
+		// If the data is nil, then we don't set anything.
+		return nil
+	}
+
 	dataVal := reflect.ValueOf(data)
 	if !dataVal.IsValid() {
 		// If the data value is invalid, then we just set the value
