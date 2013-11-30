@@ -493,6 +493,8 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		dataValKeysUnused[dataValKey.Interface()] = struct{}{}
 	}
 
+	errors := make([]string, 0)
+
 	// This slice will keep track of all the structs we'll be decoding.
 	// There can be more than one struct if there are embedded structs
 	// that are squashed.
@@ -511,6 +513,12 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 			fieldType := structType.Field(i)
 
 			if fieldType.Anonymous {
+				fieldKind := fieldType.Type.Kind()
+				if fieldKind != reflect.Struct {
+					errors = appendErrors(errors, fmt.Errorf("%s: unsupported type: %s", fieldType.Name, fieldKind))
+					continue
+				}
+
 				// We have an embedded field. We "squash" the fields down
 				// if specified in the tag.
 				squash := false
@@ -533,7 +541,6 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		}
 	}
 
-	errors := make([]string, 0)
 	for fieldType, field := range fields {
 		fieldName := fieldType.Name
 
