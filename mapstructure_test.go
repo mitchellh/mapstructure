@@ -22,6 +22,11 @@ type Embedded struct {
 	Vunique string
 }
 
+type EmbeddedPointer struct {
+	*Basic
+	Vunique string
+}
+
 type EmbeddedSquash struct {
 	Basic   `mapstructure:",squash"`
 	Vunique string
@@ -170,6 +175,24 @@ func TestDecode_Embedded(t *testing.T) {
 
 	if result.Vunique != "bar" {
 		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecode_EmbeddedPointer(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+		"Basic": map[string]interface{}{
+			"vstring": "innerfoo",
+		},
+		"vunique": "bar",
+	}
+
+	var result EmbeddedPointer
+	err := Decode(input, &result)
+	if err == nil {
+		t.Fatal("should get error")
 	}
 }
 
