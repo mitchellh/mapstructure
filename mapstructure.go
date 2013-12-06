@@ -480,7 +480,7 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 	}
 
 	dataValType := dataVal.Type()
-	if dataValType.Key().Kind() != reflect.String {
+	if kind := dataValType.Key().Kind(); kind != reflect.String && kind != reflect.Interface {
 		return fmt.Errorf(
 			"'%s' needs a map with string keys, has '%s' keys",
 			name, dataValType.Key().Kind())
@@ -557,7 +557,11 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 			// Do a slower search by iterating over each key and
 			// doing case-insensitive search.
 			for dataValKey, _ := range dataValKeys {
-				mK := dataValKey.Interface().(string)
+				mK, ok := dataValKey.Interface().(string)
++                               if !ok {
++                                       // Not a string key
++                                       continue
++                               }
 
 				if strings.EqualFold(mK, fieldName) {
 					rawMapKey = dataValKey
