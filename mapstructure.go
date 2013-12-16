@@ -558,10 +558,10 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 			// doing case-insensitive search.
 			for dataValKey, _ := range dataValKeys {
 				mK, ok := dataValKey.Interface().(string)
-+                               if !ok {
-+                                       // Not a string key
-+                                       continue
-+                               }
+				if !ok {
+					// Not a string key
+					continue
+				}
 
 				if strings.EqualFold(mK, fieldName) {
 					rawMapKey = dataValKey
