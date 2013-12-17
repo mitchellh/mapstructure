@@ -16,6 +16,8 @@ import (
 	"strings"
 )
 
+type DecodeHookFunc func(reflect.Kind, reflect.Kind, interface{}) (interface{}, error)
+
 // DecoderConfig is the configuration that is used to create a new decoder
 // and allows customization of various aspects of decoding.
 type DecoderConfig struct {
@@ -25,7 +27,7 @@ type DecoderConfig struct {
 	//
 	// If an error is returned, the entire decode will fail with that
 	// error.
-	DecodeHook func(reflect.Kind, reflect.Kind, interface{}) (interface{}, error)
+	DecodeHook DecodeHookFunc
 
 	// If ErrorUnused is true, then it is an error for there to exist
 	// keys in the original map that were unused in the decoding process
