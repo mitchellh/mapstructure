@@ -19,6 +19,14 @@ import (
 // DecoderConfig is the configuration that is used to create a new decoder
 // and allows customization of various aspects of decoding.
 type DecoderConfig struct {
+	// DecodeHook, if set, will be called before any decoding and any
+	// type conversion (if WeaklyTypedInput is on). This lets you modify
+	// the values before they're set down onto the resulting struct.
+	//
+	// If an error is returned, the entire decode will fail with that
+	// error.
+	DecodeHook func(reflect.Kind, reflect.Kind, interface{}) (interface{}, error)
+
 	// If ErrorUnused is true, then it is an error for there to exist
 	// keys in the original map that were unused in the decoding process
 	// (extra keys).
@@ -144,9 +152,17 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 		return nil
 	}
 
+	if d.config.DecodeHook != nil {
+		// We have a DecodeHook, so let's pre-process the data.
+		var err error
+		data, err = d.config.DecodeHook(d.getKind(dataVal), d.getKind(val), data)
+		if err != nil {
+			return err
+		}
+	}
+
 	var err error
 	dataKind := d.getKind(val)
-
 	switch dataKind {
 	case reflect.Bool:
 		err = d.decodeBool(name, data, val)

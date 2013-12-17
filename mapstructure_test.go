@@ -219,6 +219,42 @@ func TestDecode_EmbeddedSquash(t *testing.T) {
 	}
 }
 
+func TestDecode_DecodeHook(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vint": "WHAT",
+	}
+
+	decodeHook := func(from reflect.Kind, to reflect.Kind, v interface{}) (interface{}, error) {
+		if from == reflect.String && to != reflect.String {
+			return 5, nil
+		}
+
+		return v, nil
+	}
+
+	var result Basic
+	config := &DecoderConfig{
+		DecodeHook: decodeHook,
+		Result:     &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if result.Vint != 5 {
+		t.Errorf("vint should be 5: %#v", result.Vint)
+	}
+}
+
 func TestDecode_Nil(t *testing.T) {
 	t.Parallel()
 
