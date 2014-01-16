@@ -98,6 +98,23 @@ func Decode(m interface{}, rawVal interface{}) error {
 	return decoder.Decode(m)
 }
 
+// DecodePath takes a map and uses reflection to convert it into the
+// given Go native structure. Tags are used to specify the mapping
+// between fields in the map and structure
+func DecodePath(m map[string]interface{}, rawVal interface{}) error {
+	config := &DecoderConfig{
+		Metadata: nil,
+		Result:   nil,
+	}
+
+	decoder, err := NewPathDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.DecodePath(m, rawVal)
+}
+
 // NewDecoder returns a new decoder for the given configuration. Once
 // a decoder has been returned, the same configuration must not be used
 // again.
@@ -133,10 +150,57 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 	return result, nil
 }
 
+// NewPathDecoder returns a new decoder for the given configuration.
+// This is used to decode path specific structures
+func NewPathDecoder(config *DecoderConfig) (*Decoder, error) {
+	if config.Metadata != nil {
+		if config.Metadata.Keys == nil {
+			config.Metadata.Keys = make([]string, 0)
+		}
+
+		if config.Metadata.Unused == nil {
+			config.Metadata.Unused = make([]string, 0)
+		}
+	}
+
+	if config.TagName == "" {
+		config.TagName = "mapstructure"
+	}
+
+	result := &Decoder{
+		config: config,
+	}
+
+	return result, nil
+}
+
 // Decode decodes the given raw interface to the target pointer specified
 // by the configuration.
 func (d *Decoder) Decode(raw interface{}) error {
 	return d.decode("", raw, reflect.ValueOf(d.config.Result).Elem())
+}
+
+// DecodePath decodes the raw interface against the map based on the
+// specified tags
+func (d *Decoder) DecodePath(m map[string]interface{}, rawVal interface{}) error {
+	val := reflect.ValueOf(rawVal).Elem()
+
+	for i := 0; i < val.NumField(); i++ {
+		valueField := val.Field(i)
+		typeField := val.Type().Field(i)
+		tag := typeField.Tag
+
+		keys := strings.Split(tag.Get("xpath"), ".")
+		data := d.findData(m, keys)
+		if data != nil {
+			err := d.decode("", data, valueField)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // Decodes an unknown data type into a specific reflection value.
@@ -196,6 +260,24 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 	}
 
 	return err
+}
+
+// findData locates the data by walking the keys down the map
+func (d *Decoder) findData(m map[string]interface{}, keys []string) interface{} {
+	if len(keys) == 1 {
+		if value, ok := m[keys[0]]; ok == true {
+			return value
+		}
+		return nil
+	}
+
+	if value, ok := m[keys[0]]; ok == true {
+		if m, ok := value.(map[string]interface{}); ok == true {
+			return d.findData(m, keys[1:])
+		}
+	}
+
+	return nil
 }
 
 func (d *Decoder) getKind(val reflect.Value) reflect.Kind {

@@ -1,5 +1,7 @@
 # mapstructure
 
+Forked From: https://github.com/mitchellh/mapstructure
+
 mapstructure is a Go library for decoding generic map values to structures
 and vice versa, while providing helpful error handling.
 
@@ -14,12 +16,12 @@ structure.
 Standard `go get`:
 
 ```
-$ go get github.com/mitchellh/mapstructure
+$ go get github.com/goinggo/mapstructure
 ```
 
 ## Usage & Example
 
-For usage and examples see the [Godoc](http://godoc.org/github.com/mitchellh/mapstructure).
+For usage and examples see the [Godoc](http://godoc.org/github.com/goinggo/mapstructure).
 
 The `Decode` function has examples associated with it there.
 
@@ -44,3 +46,20 @@ decoding of the JSON (reading the "type" first, and the rest later).
 However, it is much simpler to just decode this into a `map[string]interface{}`
 structure, read the "type" key, then use something like this library
 to decode it into the proper structure.
+
+## Extended
+
+I extended this package to provide xpath support:
+
+```
+type User struct {
+		Session   string   `xpath:"userContext.cobrandConversationCredentials.sessionToken"`
+		CobrandId int      `xpath:"userContext.cobrandId"`
+		UserType  UserType `xpath:"userType"`
+		LoginName string   `xpath:"loginName"`
+}
+
+user := User{}
+mapstructure.DecodePath(docMap, &user)
+```
+An example has been provided in the examples file

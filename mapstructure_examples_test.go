@@ -143,3 +143,69 @@ func ExampleDecode_weaklyTypedInput() {
 	fmt.Printf("%#v", result)
 	// Output: mapstructure.Person{Name:"123", Age:42, Emails:[]string{}}
 }
+
+func ExampleDecodePath() {
+	var document string = `{
+    "userContext": {
+        "conversationCredentials": {
+            "sessionToken": "06142010_1:75bf6a413327dd71ebe8f3f30c5a4210a9b11e93c028d6e11abfca7ff1d932b492b73dbda7d7483b8490668bb45a8c699e15647be8d5bc5b05b209c0b3013102"
+        },
+        "valid": true,
+        "isPasswordExpired": false,
+        "cobrandId": 10000004,
+        "channelId": -1,
+        "locale": "en_US",
+        "tncVersion": 2,
+        "applicationId": "17CBE222A42161A3FF450E47CF4C1A00",
+        "cobrandConversationCredentials": {
+            "sessionToken": "06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b5076ebd513fd2ea6f163bd1938dc92f8b9ae5d5539d70867ee2624711b5c372a7e031b7"
+        },
+        "preferenceInfo": {
+            "currencyCode": "USD",
+            "timeZone": "PST",
+            "dateFormat": "MM/dd/yyyy",
+            "currencyNotationType": {
+                "currencyNotationType": "SYMBOL"
+            },
+            "numberFormat": {
+                "decimalSeparator": ".",
+                "groupingSeparator": ",",
+                "groupPattern": "###,##0.##"
+            }
+        }
+    },
+    "lastLoginTime": 1375686841,
+    "loginCount": 299,
+    "passwordRecovered": false,
+    "emailAddress": "johndoe@yodlee.com",
+    "loginName": "sptest1",
+    "userId": 10483860,
+    "userType":
+        {
+        "userTypeId": 1,
+        "userTypeName": "normal_user"
+        }
+}`
+
+	type UserType struct {
+		UserTypeId   int
+		UserTypeName string
+	}
+
+	type User struct {
+		Session   string   `xpath:"userContext.cobrandConversationCredentials.sessionToken"`
+		CobrandId int      `xpath:"userContext.cobrandId"`
+		UserType  UserType `xpath:"userType"`
+		LoginName string   `xpath:"loginName"`
+	}
+
+	docScript := []byte(document)
+	docMap := map[string]interface{}{}
+	json.Unmarshal(docScript, &docMap)
+
+	user := User{}
+	mapstructure.DecodePath(docMap, &user)
+
+	fmt.Printf("%#v", user)
+	// Output: mapstructure.User{Session:"06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b5076ebd513fd2ea6f163bd1938dc92f8b9ae5d5539d70867ee2624711b5c372a7e031b7", CobrandId:10000004, UserType:main.UserType{UserTypeId:1, UserTypeName:"normal_user"}, LoginName:"sptest1"
+}
