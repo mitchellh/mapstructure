@@ -1,6 +1,7 @@
 package mapstructure
 
 import (
+	"encoding/json"
 	"reflect"
 	"sort"
 	"testing"
@@ -777,5 +778,74 @@ func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice)
 				"Vbar[%d] should be '%#v', got '%#v'",
 				i, expected.Vbar[i], v)
 		}
+	}
+}
+
+func TestDecodePath(t *testing.T) {
+	var document string = `{
+    "userContext": {
+        "cobrandId": 10000004,
+        "channelId": -1,
+        "locale": "en_US",
+        "tncVersion": 2,
+        "applicationId": "17CBE222A42161A3FF450E47CF4C1A00",
+        "cobrandConversationCredentials": {
+            "sessionToken": "06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b"
+        }
+    },
+    "loginName": "sptest1",
+    "userId": 10483860,
+    "userType":
+        {
+        "userTypeId": 1,
+        "userTypeName": "normal_user"
+        }
+}`
+
+	type UserType struct {
+		UserTypeId   int
+		UserTypeName string
+	}
+
+	type User struct {
+		Session   string   `xpath:"userContext.cobrandConversationCredentials.sessionToken"`
+		CobrandId int      `xpath:"userContext.cobrandId"`
+		UserType  UserType `xpath:"userType"`
+		LoginName string   `xpath:"loginName"`
+	}
+
+	docScript := []byte(document)
+	docMap := map[string]interface{}{}
+	err := json.Unmarshal(docScript, &docMap)
+	if err != nil {
+		t.Fatalf("Unable To Unmarshal Test Document, %s", err)
+	}
+
+	user := User{}
+	DecodePath(docMap, &user)
+
+	session := "06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b"
+	if user.Session != session {
+		t.Errorf("user.Session should be '%s', we got '%s'", session, user.Session)
+	}
+
+	cobrandId := 10000004
+	if user.CobrandId != cobrandId {
+		t.Errorf("user.CobrandId should be '%d', we got '%d'", cobrandId, user.CobrandId)
+	}
+
+	loginName := "sptest1"
+	if user.LoginName != loginName {
+		t.Errorf("user.LoginName should be '%s', we got '%s'", loginName, user.LoginName)
+	}
+
+	userTypeId := 1
+	if user.UserType.UserTypeId != userTypeId {
+		t.Errorf("user.UserType.UserTypeId should be '%d', we got '%d'", userTypeId, user.UserType.UserTypeId)
+	}
+
+	userTypeName := "normal_user"
+	if user.UserType.UserTypeName != userTypeName {
+		t.Errorf("user.UserType.UserTypeName should be '%s', we got '%s'", userTypeName, user.UserType.UserTypeName)
 	}
 }

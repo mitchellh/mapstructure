@@ -1,6 +1,7 @@
 package mapstructure
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -148,7 +149,7 @@ func ExampleDecodePath() {
 	var document string = `{
     "userContext": {
         "conversationCredentials": {
-            "sessionToken": "06142010_1:75bf6a413327dd71ebe8f3f30c5a4210a9b11e93c028d6e11abfca7ff1d932b492b73dbda7d7483b8490668bb45a8c699e15647be8d5bc5b05b209c0b3013102"
+            "sessionToken": "06142010_1:75bf6a413327dd71ebe8f3f30c5a4210a9b11e93c028d6e11abfca7ff"
         },
         "valid": true,
         "isPasswordExpired": false,
@@ -158,7 +159,7 @@ func ExampleDecodePath() {
         "tncVersion": 2,
         "applicationId": "17CBE222A42161A3FF450E47CF4C1A00",
         "cobrandConversationCredentials": {
-            "sessionToken": "06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b5076ebd513fd2ea6f163bd1938dc92f8b9ae5d5539d70867ee2624711b5c372a7e031b7"
+            "sessionToken": "06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b"
         },
         "preferenceInfo": {
             "currencyCode": "USD",
@@ -204,8 +205,9 @@ func ExampleDecodePath() {
 	json.Unmarshal(docScript, &docMap)
 
 	user := User{}
-	mapstructure.DecodePath(docMap, &user)
+	DecodePath(docMap, &user)
 
 	fmt.Printf("%#v", user)
-	// Output: mapstructure.User{Session:"06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b5076ebd513fd2ea6f163bd1938dc92f8b9ae5d5539d70867ee2624711b5c372a7e031b7", CobrandId:10000004, UserType:main.UserType{UserTypeId:1, UserTypeName:"normal_user"}, LoginName:"sptest1"
+	// Output:
+	// mapstructure.User{Session:"06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b", CobrandId:10000004, UserType:mapstructure.UserType{UserTypeId:1, UserTypeName:"normal_user"}, LoginName:"sptest1"}
 }
