@@ -16,12 +16,12 @@ structure.
 Standard `go get`:
 
 ```
-$ go get github.com/goinggo/mapstructure
+$ go get github.com/mitchellh/mapstructure
 ```
 
 ## Usage & Example
 
-For usage and examples see the [Godoc](http://godoc.org/github.com/goinggo/mapstructure).
+For usage and examples see the [Godoc](http://godoc.org/github.com/mitchellh/mapstructure).
 
 The `Decode` and `DecodePath` functions have examples associated with it there.
 
