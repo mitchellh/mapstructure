@@ -791,6 +791,19 @@ func TestDecodePath(t *testing.T) {
         "applicationId": "17CBE222A42161A3FF450E47CF4C1A00",
         "cobrandConversationCredentials": {
             "sessionToken": "06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b"
+        },
+		"preferenceInfo": {
+            "currencyCode": "USD",
+            "timeZone": "PST",
+            "dateFormat": "MM/dd/yyyy",
+            "currencyNotationType": {
+                "currencyNotationType": "SYMBOL"
+            },
+            "numberFormat": {
+                "decimalSeparator": ".",
+                "groupingSeparator": ",",
+                "groupPattern": "###,##0.##"
+            }
         }
     },
     "loginName": "sptest1",
@@ -807,11 +820,18 @@ func TestDecodePath(t *testing.T) {
 		UserTypeName string
 	}
 
+	type NumberFormat struct {
+		DecimalSeparator  string `jpath:"userContext.preferenceInfo.numberFormat.decimalSeparator"`
+		GroupingSeparator string `jpath:"userContext.preferenceInfo.numberFormat.groupingSeparator"`
+		GroupPattern      string `jpath:"userContext.preferenceInfo.numberFormat.groupPattern"`
+	}
+
 	type User struct {
-		Session   string   `xpath:"userContext.cobrandConversationCredentials.sessionToken"`
-		CobrandId int      `xpath:"userContext.cobrandId"`
-		UserType  UserType `xpath:"userType"`
-		LoginName string   `xpath:"loginName"`
+		Session   string   `jpath:"userContext.cobrandConversationCredentials.sessionToken"`
+		CobrandId int      `jpath:"userContext.cobrandId"`
+		UserType  UserType `jpath:"userType"`
+		LoginName string   `jpath:"loginName"`
+		*NumberFormat
 	}
 
 	docScript := []byte(document)
@@ -847,5 +867,20 @@ func TestDecodePath(t *testing.T) {
 	userTypeName := "normal_user"
 	if user.UserType.UserTypeName != userTypeName {
 		t.Errorf("user.UserType.UserTypeName should be '%s', we got '%s'", userTypeName, user.UserType.UserTypeName)
+	}
+
+	decimalSeparator := "."
+	if user.NumberFormat.DecimalSeparator != decimalSeparator {
+		t.Errorf("user.NumberFormat.DecimalSeparator should be '%s', we got '%s'", decimalSeparator, user.NumberFormat.DecimalSeparator)
+	}
+
+	groupingSeparator := ","
+	if user.NumberFormat.GroupingSeparator != groupingSeparator {
+		t.Errorf("user.NumberFormat.GroupingSeparator should be '%s', we got '%s'", groupingSeparator, user.NumberFormat.GroupingSeparator)
+	}
+
+	groupPattern := "###,##0.##"
+	if user.NumberFormat.GroupPattern != groupPattern {
+		t.Errorf("user.NumberFormat.GroupPattern should be '%s', we got '%s'", groupPattern, user.NumberFormat.GroupPattern)
 	}
 }

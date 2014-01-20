@@ -183,14 +183,47 @@ func (d *Decoder) Decode(raw interface{}) error {
 // DecodePath decodes the raw interface against the map based on the
 // specified tags
 func (d *Decoder) DecodePath(m map[string]interface{}, rawVal interface{}) error {
-	val := reflect.ValueOf(rawVal).Elem()
+	var val reflect.Value
+	reflectRawValue := reflect.ValueOf(rawVal)
+	kind := reflectRawValue.Kind()
 
+	// Looking for structs and pointers to structs
+	switch kind {
+	case reflect.Ptr:
+		val = reflectRawValue.Elem()
+		if val.Kind() != reflect.Struct {
+			return fmt.Errorf("Incompatible Type : %v", kind)
+		}
+	case reflect.Struct:
+		val = rawVal.(reflect.Value)
+	default:
+		return fmt.Errorf("Incompatible Type : %v", kind)
+	}
+
+	// Iterate over the fields in the struct
 	for i := 0; i < val.NumField(); i++ {
 		valueField := val.Field(i)
 		typeField := val.Type().Field(i)
 		tag := typeField.Tag
+		tagValue := tag.Get("jpath")
 
-		keys := strings.Split(tag.Get("xpath"), ".")
+		// Is this a field without a tag
+		if tagValue == "" {
+			if valueField.Kind() == reflect.Struct {
+				// We have a struct that may have indivdual tags. Process separately
+				d.DecodePath(m, valueField)
+			} else if valueField.Kind() == reflect.Ptr && reflect.TypeOf(valueField).Kind() == reflect.Struct {
+				// We have a pointer to a struct
+				if valueField.IsNil() {
+					// Create the object since it doesn't exist
+					valueField.Set(reflect.New(valueField.Type().Elem()))
+				}
+				d.DecodePath(m, valueField.Elem())
+			}
+		}
+
+		// Use mapstructure to populate the fields
+		keys := strings.Split(tagValue, ".")
 		data := d.findData(m, keys)
 		if data != nil {
 			err := d.decode("", data, valueField)

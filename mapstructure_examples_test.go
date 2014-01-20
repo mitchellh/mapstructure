@@ -193,11 +193,18 @@ func ExampleDecodePath() {
 		UserTypeName string
 	}
 
+	type NumberFormat struct {
+		DecimalSeparator  string `jpath:"userContext.preferenceInfo.numberFormat.decimalSeparator"`
+		GroupingSeparator string `jpath:"userContext.preferenceInfo.numberFormat.groupingSeparator"`
+		GroupPattern      string `jpath:"userContext.preferenceInfo.numberFormat.groupPattern"`
+	}
+
 	type User struct {
-		Session   string   `xpath:"userContext.cobrandConversationCredentials.sessionToken"`
-		CobrandId int      `xpath:"userContext.cobrandId"`
-		UserType  UserType `xpath:"userType"`
-		LoginName string   `xpath:"loginName"`
+		Session      string   `jpath:"userContext.cobrandConversationCredentials.sessionToken"`
+		CobrandId    int      `jpath:"userContext.cobrandId"`
+		UserType     UserType `jpath:"userType"`
+		LoginName    string   `jpath:"loginName"`
+		NumberFormat          // This can also be a pointer to the struct (*NumberFormat)
 	}
 
 	docScript := []byte(document)
@@ -209,5 +216,5 @@ func ExampleDecodePath() {
 
 	fmt.Printf("%#v", user)
 	// Output:
-	// mapstructure.User{Session:"06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b", CobrandId:10000004, UserType:mapstructure.UserType{UserTypeId:1, UserTypeName:"normal_user"}, LoginName:"sptest1"}
+	// mapstructure.User{Session:"06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b", CobrandId:10000004, UserType:mapstructure.UserType{UserTypeId:1, UserTypeName:"normal_user"}, LoginName:"sptest1", NumberFormat:mapstructure.NumberFormat{DecimalSeparator:".", GroupingSeparator:",", GroupPattern:"###,##0.##"}}
 }
