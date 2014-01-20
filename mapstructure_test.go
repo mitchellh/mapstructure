@@ -1,6 +1,7 @@
 package mapstructure
 
 import (
+	"encoding/json"
 	"reflect"
 	"sort"
 	"testing"
@@ -777,5 +778,109 @@ func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice)
 				"Vbar[%d] should be '%#v', got '%#v'",
 				i, expected.Vbar[i], v)
 		}
+	}
+}
+
+func TestDecodePath(t *testing.T) {
+	var document string = `{
+    "userContext": {
+        "cobrandId": 10000004,
+        "channelId": -1,
+        "locale": "en_US",
+        "tncVersion": 2,
+        "applicationId": "17CBE222A42161A3FF450E47CF4C1A00",
+        "cobrandConversationCredentials": {
+            "sessionToken": "06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b"
+        },
+		"preferenceInfo": {
+            "currencyCode": "USD",
+            "timeZone": "PST",
+            "dateFormat": "MM/dd/yyyy",
+            "currencyNotationType": {
+                "currencyNotationType": "SYMBOL"
+            },
+            "numberFormat": {
+                "decimalSeparator": ".",
+                "groupingSeparator": ",",
+                "groupPattern": "###,##0.##"
+            }
+        }
+    },
+    "loginName": "sptest1",
+    "userId": 10483860,
+    "userType":
+        {
+        "userTypeId": 1,
+        "userTypeName": "normal_user"
+        }
+}`
+
+	type UserType struct {
+		UserTypeId   int
+		UserTypeName string
+	}
+
+	type NumberFormat struct {
+		DecimalSeparator  string `jpath:"userContext.preferenceInfo.numberFormat.decimalSeparator"`
+		GroupingSeparator string `jpath:"userContext.preferenceInfo.numberFormat.groupingSeparator"`
+		GroupPattern      string `jpath:"userContext.preferenceInfo.numberFormat.groupPattern"`
+	}
+
+	type User struct {
+		Session   string   `jpath:"userContext.cobrandConversationCredentials.sessionToken"`
+		CobrandId int      `jpath:"userContext.cobrandId"`
+		UserType  UserType `jpath:"userType"`
+		LoginName string   `jpath:"loginName"`
+		*NumberFormat
+	}
+
+	docScript := []byte(document)
+	docMap := map[string]interface{}{}
+	err := json.Unmarshal(docScript, &docMap)
+	if err != nil {
+		t.Fatalf("Unable To Unmarshal Test Document, %s", err)
+	}
+
+	user := User{}
+	DecodePath(docMap, &user)
+
+	session := "06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b"
+	if user.Session != session {
+		t.Errorf("user.Session should be '%s', we got '%s'", session, user.Session)
+	}
+
+	cobrandId := 10000004
+	if user.CobrandId != cobrandId {
+		t.Errorf("user.CobrandId should be '%d', we got '%d'", cobrandId, user.CobrandId)
+	}
+
+	loginName := "sptest1"
+	if user.LoginName != loginName {
+		t.Errorf("user.LoginName should be '%s', we got '%s'", loginName, user.LoginName)
+	}
+
+	userTypeId := 1
+	if user.UserType.UserTypeId != userTypeId {
+		t.Errorf("user.UserType.UserTypeId should be '%d', we got '%d'", userTypeId, user.UserType.UserTypeId)
+	}
+
+	userTypeName := "normal_user"
+	if user.UserType.UserTypeName != userTypeName {
+		t.Errorf("user.UserType.UserTypeName should be '%s', we got '%s'", userTypeName, user.UserType.UserTypeName)
+	}
+
+	decimalSeparator := "."
+	if user.NumberFormat.DecimalSeparator != decimalSeparator {
+		t.Errorf("user.NumberFormat.DecimalSeparator should be '%s', we got '%s'", decimalSeparator, user.NumberFormat.DecimalSeparator)
+	}
+
+	groupingSeparator := ","
+	if user.NumberFormat.GroupingSeparator != groupingSeparator {
+		t.Errorf("user.NumberFormat.GroupingSeparator should be '%s', we got '%s'", groupingSeparator, user.NumberFormat.GroupingSeparator)
+	}
+
+	groupPattern := "###,##0.##"
+	if user.NumberFormat.GroupPattern != groupPattern {
+		t.Errorf("user.NumberFormat.GroupPattern should be '%s', we got '%s'", groupPattern, user.NumberFormat.GroupPattern)
 	}
 }

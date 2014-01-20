@@ -1,6 +1,7 @@
 package mapstructure
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -142,4 +143,78 @@ func ExampleDecode_weaklyTypedInput() {
 
 	fmt.Printf("%#v", result)
 	// Output: mapstructure.Person{Name:"123", Age:42, Emails:[]string{}}
+}
+
+func ExampleDecodePath() {
+	var document string = `{
+    "userContext": {
+        "conversationCredentials": {
+            "sessionToken": "06142010_1:75bf6a413327dd71ebe8f3f30c5a4210a9b11e93c028d6e11abfca7ff"
+        },
+        "valid": true,
+        "isPasswordExpired": false,
+        "cobrandId": 10000004,
+        "channelId": -1,
+        "locale": "en_US",
+        "tncVersion": 2,
+        "applicationId": "17CBE222A42161A3FF450E47CF4C1A00",
+        "cobrandConversationCredentials": {
+            "sessionToken": "06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b"
+        },
+        "preferenceInfo": {
+            "currencyCode": "USD",
+            "timeZone": "PST",
+            "dateFormat": "MM/dd/yyyy",
+            "currencyNotationType": {
+                "currencyNotationType": "SYMBOL"
+            },
+            "numberFormat": {
+                "decimalSeparator": ".",
+                "groupingSeparator": ",",
+                "groupPattern": "###,##0.##"
+            }
+        }
+    },
+    "lastLoginTime": 1375686841,
+    "loginCount": 299,
+    "passwordRecovered": false,
+    "emailAddress": "johndoe@yodlee.com",
+    "loginName": "sptest1",
+    "userId": 10483860,
+    "userType":
+        {
+        "userTypeId": 1,
+        "userTypeName": "normal_user"
+        }
+}`
+
+	type UserType struct {
+		UserTypeId   int
+		UserTypeName string
+	}
+
+	type NumberFormat struct {
+		DecimalSeparator  string `jpath:"userContext.preferenceInfo.numberFormat.decimalSeparator"`
+		GroupingSeparator string `jpath:"userContext.preferenceInfo.numberFormat.groupingSeparator"`
+		GroupPattern      string `jpath:"userContext.preferenceInfo.numberFormat.groupPattern"`
+	}
+
+	type User struct {
+		Session      string   `jpath:"userContext.cobrandConversationCredentials.sessionToken"`
+		CobrandId    int      `jpath:"userContext.cobrandId"`
+		UserType     UserType `jpath:"userType"`
+		LoginName    string   `jpath:"loginName"`
+		NumberFormat          // This can also be a pointer to the struct (*NumberFormat)
+	}
+
+	docScript := []byte(document)
+	docMap := map[string]interface{}{}
+	json.Unmarshal(docScript, &docMap)
+
+	user := User{}
+	DecodePath(docMap, &user)
+
+	fmt.Printf("%#v", user)
+	// Output:
+	// mapstructure.User{Session:"06142010_1:b8d011fefbab8bf1753391b074ffedf9578612d676ed2b7f073b5785b", CobrandId:10000004, UserType:mapstructure.UserType{UserTypeId:1, UserTypeName:"normal_user"}, LoginName:"sptest1", NumberFormat:mapstructure.NumberFormat{DecimalSeparator:".", GroupingSeparator:",", GroupPattern:"###,##0.##"}}
 }
