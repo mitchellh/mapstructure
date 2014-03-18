@@ -165,5 +165,5 @@ func ExampleDecode_tags() {
 
 	fmt.Printf("%#v", result)
 	// Output:
-	// main.Person{Name:"Mitchell", Age:91}
+	// mapstructure.Person{Name:"Mitchell", Age:91}
 }
