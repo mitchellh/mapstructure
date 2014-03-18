@@ -143,3 +143,27 @@ func ExampleDecode_weaklyTypedInput() {
 	fmt.Printf("%#v", result)
 	// Output: mapstructure.Person{Name:"123", Age:42, Emails:[]string{}}
 }
+
+func ExampleDecode_tags() {
+	// Note that the mapstructure tags defined in the struct type
+	// can indicate which fields the values are mapped to.
+	type Person struct {
+		Name string `mapstructure:"person_name"`
+		Age  int    `mapstructure:"person_age"`
+	}
+
+	input := map[string]interface{}{
+		"person_name": "Mitchell",
+		"person_age":  91,
+	}
+
+	var result Person
+	err := Decode(input, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%#v", result)
+	// Output:
+	// main.Person{Name:"Mitchell", Age:91}
+}
