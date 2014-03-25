@@ -182,6 +182,8 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 		err = d.decodeStruct(name, data, val)
 	case reflect.Map:
 		err = d.decodeMap(name, data, val)
+	case reflect.Ptr:
+		err = d.decodePtr(name, data, val)
 	case reflect.Slice:
 		err = d.decodeSlice(name, data, val)
 	default:
@@ -441,6 +443,20 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 		return &Error{errors}
 	}
 
+	return nil
+}
+
+func (d *Decoder) decodePtr(name string, data interface{}, val reflect.Value) error {
+	// Create an element of the concrete (non pointer) type and decode
+	// into that. Then set the value of the pointer to this type.
+	valType := val.Type()
+	valElemType := valType.Elem()
+	realVal := reflect.New(valElemType)
+	if err := d.decode(name, data, reflect.Indirect(realVal)); err != nil {
+		return err
+	}
+
+	val.Set(realVal)
 	return nil
 }
 

@@ -46,6 +46,11 @@ type Nested struct {
 	Vbar Basic
 }
 
+type NestedPointer struct {
+	Vfoo string
+	Vbar *Basic
+}
+
 type Slice struct {
 	Vfoo string
 	Vbar []string
@@ -536,7 +541,7 @@ func TestNestedTypePointer(t *testing.T) {
 		},
 	}
 
-	var result Nested
+	var result NestedPointer
 	err := Decode(input, &result)
 	if err != nil {
 		t.Fatalf("got an err: %s", err.Error())
