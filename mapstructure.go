@@ -234,6 +234,7 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 	dataVal := reflect.ValueOf(data)
 	dataKind := d.getKind(dataVal)
 
+	converted := true
 	switch {
 	case dataKind == reflect.String:
 		val.SetString(dataVal.String())
@@ -249,7 +250,20 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 		val.SetString(strconv.FormatUint(dataVal.Uint(), 10))
 	case dataKind == reflect.Float32 && d.config.WeaklyTypedInput:
 		val.SetString(strconv.FormatFloat(dataVal.Float(), 'f', -1, 64))
+	case dataKind == reflect.Slice && d.config.WeaklyTypedInput:
+		dataType := dataVal.Type()
+		elemKind := dataType.Elem().Kind()
+		switch {
+		case elemKind == reflect.Uint8:
+			val.SetString(string(dataVal.Interface().([]uint8)))
+		default:
+			converted = false
+		}
 	default:
+		converted = false
+	}
+
+	if !converted {
 		return fmt.Errorf(
 			"'%s' expected type '%s', got unconvertible type '%s'",
 			name, val.Type(), dataVal.Type())

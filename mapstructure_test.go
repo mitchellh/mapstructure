@@ -66,28 +66,29 @@ type Tagged struct {
 }
 
 type TypeConversionResult struct {
-	IntToFloat    float32
-	IntToUint     uint
-	IntToBool     bool
-	IntToString   string
-	UintToInt     int
-	UintToFloat   float32
-	UintToBool    bool
-	UintToString  string
-	BoolToInt     int
-	BoolToUint    uint
-	BoolToFloat   float32
-	BoolToString  string
-	FloatToInt    int
-	FloatToUint   uint
-	FloatToBool   bool
-	FloatToString string
-	StringToInt   int
-	StringToUint  uint
-	StringToBool  bool
-	StringToFloat float32
-	SliceToMap    map[string]interface{}
-	MapToSlice    []interface{}
+	IntToFloat         float32
+	IntToUint          uint
+	IntToBool          bool
+	IntToString        string
+	UintToInt          int
+	UintToFloat        float32
+	UintToBool         bool
+	UintToString       string
+	BoolToInt          int
+	BoolToUint         uint
+	BoolToFloat        float32
+	BoolToString       string
+	FloatToInt         int
+	FloatToUint        uint
+	FloatToBool        bool
+	FloatToString      string
+	SliceUint8ToString string
+	StringToInt        int
+	StringToUint       uint
+	StringToBool       bool
+	StringToFloat      float32
+	SliceToMap         map[string]interface{}
+	MapToSlice         []interface{}
 }
 
 func TestBasicTypes(t *testing.T) {
@@ -299,28 +300,29 @@ func TestDecode_NonStruct(t *testing.T) {
 
 func TestDecode_TypeConversion(t *testing.T) {
 	input := map[string]interface{}{
-		"IntToFloat":    42,
-		"IntToUint":     42,
-		"IntToBool":     1,
-		"IntToString":   42,
-		"UintToInt":     42,
-		"UintToFloat":   42,
-		"UintToBool":    42,
-		"UintToString":  42,
-		"BoolToInt":     true,
-		"BoolToUint":    true,
-		"BoolToFloat":   true,
-		"BoolToString":  true,
-		"FloatToInt":    42.42,
-		"FloatToUint":   42.42,
-		"FloatToBool":   42.42,
-		"FloatToString": 42.42,
-		"StringToInt":   "42",
-		"StringToUint":  "42",
-		"StringToBool":  "1",
-		"StringToFloat": "42.42",
-		"SliceToMap":    []interface{}{},
-		"MapToSlice":    map[string]interface{}{},
+		"IntToFloat":         42,
+		"IntToUint":          42,
+		"IntToBool":          1,
+		"IntToString":        42,
+		"UintToInt":          42,
+		"UintToFloat":        42,
+		"UintToBool":         42,
+		"UintToString":       42,
+		"BoolToInt":          true,
+		"BoolToUint":         true,
+		"BoolToFloat":        true,
+		"BoolToString":       true,
+		"FloatToInt":         42.42,
+		"FloatToUint":        42.42,
+		"FloatToBool":        42.42,
+		"FloatToString":      42.42,
+		"SliceUint8ToString": []uint8("foo"),
+		"StringToInt":        "42",
+		"StringToUint":       "42",
+		"StringToBool":       "1",
+		"StringToFloat":      "42.42",
+		"SliceToMap":         []interface{}{},
+		"MapToSlice":         map[string]interface{}{},
 	}
 
 	expectedResultStrict := TypeConversionResult{
@@ -336,28 +338,29 @@ func TestDecode_TypeConversion(t *testing.T) {
 	}
 
 	expectedResultWeak := TypeConversionResult{
-		IntToFloat:    42.0,
-		IntToUint:     42,
-		IntToBool:     true,
-		IntToString:   "42",
-		UintToInt:     42,
-		UintToFloat:   42,
-		UintToBool:    true,
-		UintToString:  "42",
-		BoolToInt:     1,
-		BoolToUint:    1,
-		BoolToFloat:   1,
-		BoolToString:  "1",
-		FloatToInt:    42,
-		FloatToUint:   42,
-		FloatToBool:   true,
-		FloatToString: "42.42",
-		StringToInt:   42,
-		StringToUint:  42,
-		StringToBool:  true,
-		StringToFloat: 42.42,
-		SliceToMap:    map[string]interface{}{},
-		MapToSlice:    []interface{}{},
+		IntToFloat:         42.0,
+		IntToUint:          42,
+		IntToBool:          true,
+		IntToString:        "42",
+		UintToInt:          42,
+		UintToFloat:        42,
+		UintToBool:         true,
+		UintToString:       "42",
+		BoolToInt:          1,
+		BoolToUint:         1,
+		BoolToFloat:        1,
+		BoolToString:       "1",
+		FloatToInt:         42,
+		FloatToUint:        42,
+		FloatToBool:        true,
+		FloatToString:      "42.42",
+		SliceUint8ToString: "foo",
+		StringToInt:        42,
+		StringToUint:       42,
+		StringToBool:       true,
+		StringToFloat:      42.42,
+		SliceToMap:         map[string]interface{}{},
+		MapToSlice:         []interface{}{},
 	}
 
 	// Test strict type conversion
