@@ -16,7 +16,13 @@ import (
 	"strings"
 )
 
-type DecodeHookFunc func(reflect.Kind, reflect.Kind, interface{}) (interface{}, error)
+// DecodeHookFunc is the callback function that can be used for
+// data transformations. See "DecodeHook" in the DecoderConfig
+// struct.
+type DecodeHookFunc func(
+	from reflect.Kind,
+	to reflect.Kind,
+	data interface{}) (interface{}, error)
 
 // DecoderConfig is the configuration that is used to create a new decoder
 // and allows customization of various aspects of decoding.
