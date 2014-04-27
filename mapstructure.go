@@ -163,14 +163,14 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 	if d.config.DecodeHook != nil {
 		// We have a DecodeHook, so let's pre-process the data.
 		var err error
-		data, err = d.config.DecodeHook(d.getKind(dataVal), d.getKind(val), data)
+		data, err = d.config.DecodeHook(getKind(dataVal), getKind(val), data)
 		if err != nil {
 			return err
 		}
 	}
 
 	var err error
-	dataKind := d.getKind(val)
+	dataKind := getKind(val)
 	switch dataKind {
 	case reflect.Bool:
 		err = d.decodeBool(name, data, val)
@@ -206,21 +206,6 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 	return err
 }
 
-func (d *Decoder) getKind(val reflect.Value) reflect.Kind {
-	kind := val.Kind()
-
-	switch {
-	case kind >= reflect.Int && kind <= reflect.Int64:
-		return reflect.Int
-	case kind >= reflect.Uint && kind <= reflect.Uint64:
-		return reflect.Uint
-	case kind >= reflect.Float32 && kind <= reflect.Float64:
-		return reflect.Float32
-	default:
-		return kind
-	}
-}
-
 // This decodes a basic type (bool, int, string, etc.) and sets the
 // value to "data" of that type.
 func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) error {
@@ -238,7 +223,7 @@ func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) 
 
 func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.ValueOf(data)
-	dataKind := d.getKind(dataVal)
+	dataKind := getKind(dataVal)
 
 	converted := true
 	switch {
@@ -280,7 +265,7 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 
 func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.ValueOf(data)
-	dataKind := d.getKind(dataVal)
+	dataKind := getKind(dataVal)
 
 	switch {
 	case dataKind == reflect.Int:
@@ -313,7 +298,7 @@ func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) er
 
 func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.ValueOf(data)
-	dataKind := d.getKind(dataVal)
+	dataKind := getKind(dataVal)
 
 	switch {
 	case dataKind == reflect.Int:
@@ -346,7 +331,7 @@ func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) e
 
 func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.ValueOf(data)
-	dataKind := d.getKind(dataVal)
+	dataKind := getKind(dataVal)
 
 	switch {
 	case dataKind == reflect.Bool:
@@ -377,7 +362,7 @@ func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) e
 
 func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.ValueOf(data)
-	dataKind := d.getKind(dataVal)
+	dataKind := getKind(dataVal)
 
 	switch {
 	case dataKind == reflect.Int:
@@ -684,4 +669,19 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 	}
 
 	return nil
+}
+
+func getKind(val reflect.Value) reflect.Kind {
+	kind := val.Kind()
+
+	switch {
+	case kind >= reflect.Int && kind <= reflect.Int64:
+		return reflect.Int
+	case kind >= reflect.Uint && kind <= reflect.Uint64:
+		return reflect.Uint
+	case kind >= reflect.Float32 && kind <= reflect.Float64:
+		return reflect.Float32
+	default:
+		return kind
+	}
 }
