@@ -2,6 +2,7 @@ package mapstructure
 
 import (
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -44,4 +45,36 @@ func StringToSliceHookFunc(sep string) DecodeHookFunc {
 		raw := data.(string)
 		return strings.Split(raw, sep), nil
 	}
+}
+
+func WeaklyTypedHook(
+	f reflect.Kind,
+	t reflect.Kind,
+	data interface{}) (interface{}, error) {
+	dataVal := reflect.ValueOf(data)
+	switch t {
+	case reflect.String:
+		switch f {
+		case reflect.Bool:
+			if dataVal.Bool() {
+				return "1", nil
+			} else {
+				return "0", nil
+			}
+		case reflect.Float32:
+			return strconv.FormatFloat(dataVal.Float(), 'f', -1, 64), nil
+		case reflect.Int:
+			return strconv.FormatInt(dataVal.Int(), 10), nil
+		case reflect.Slice:
+			dataType := dataVal.Type()
+			elemKind := dataType.Elem().Kind()
+			if elemKind == reflect.Uint8 {
+				return string(dataVal.Interface().([]uint8)), nil
+			}
+		case reflect.Uint:
+			return strconv.FormatUint(dataVal.Uint(), 10), nil
+		}
+	}
+
+	return data, nil
 }

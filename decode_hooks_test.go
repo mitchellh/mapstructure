@@ -110,3 +110,75 @@ func TestStringToSliceHookFunc(t *testing.T) {
 		}
 	}
 }
+
+func TestWeaklyTypedHook(t *testing.T) {
+	var f DecodeHookFunc = WeaklyTypedHook
+
+	cases := []struct {
+		f, t   reflect.Kind
+		data   interface{}
+		result interface{}
+		err    bool
+	}{
+		// TO STRING
+		{
+			reflect.Bool,
+			reflect.String,
+			false,
+			"0",
+			false,
+		},
+
+		{
+			reflect.Bool,
+			reflect.String,
+			true,
+			"1",
+			false,
+		},
+
+		{
+			reflect.Float32,
+			reflect.String,
+			float32(7),
+			"7",
+			false,
+		},
+
+		{
+			reflect.Int,
+			reflect.String,
+			int(7),
+			"7",
+			false,
+		},
+
+		{
+			reflect.Slice,
+			reflect.String,
+			[]uint8("foo"),
+			"foo",
+			false,
+		},
+
+		{
+			reflect.Uint,
+			reflect.String,
+			uint(7),
+			"7",
+			false,
+		},
+	}
+
+	for i, tc := range cases {
+		actual, err := f(tc.f, tc.t, tc.data)
+		if tc.err != (err != nil) {
+			t.Fatalf("case %d: expected err %#v", i, tc.err)
+		}
+		if !reflect.DeepEqual(actual, tc.result) {
+			t.Fatalf(
+				"case %d: expected %#v, got %#v",
+				i, tc.result, actual)
+		}
+	}
+}
