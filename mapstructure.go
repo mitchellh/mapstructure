@@ -470,22 +470,22 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 	dataValKind := dataVal.Kind()
 	valType := val.Type()
 	valElemType := valType.Elem()
-
-	// Make a new slice to hold our result, same size as the original data.
 	sliceType := reflect.SliceOf(valElemType)
-	valSlice := reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
 
 	// Check input type
 	if dataValKind != reflect.Array && dataValKind != reflect.Slice {
 		// Accept empty map instead of array/slice in weakly typed mode
 		if d.config.WeaklyTypedInput && dataVal.Kind() == reflect.Map && dataVal.Len() == 0 {
-			val.Set(valSlice)
+			val.Set(reflect.MakeSlice(sliceType, 0, 0))
 			return nil
 		} else {
 			return fmt.Errorf(
 				"'%s': source data must be an array or slice, got %s", name, dataValKind)
 		}
 	}
+
+	// Make a new slice to hold our result, same size as the original data.
+	valSlice := reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
 
 	// Accumulate any errors
 	errors := make([]string, 0)

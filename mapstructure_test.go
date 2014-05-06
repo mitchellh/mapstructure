@@ -593,6 +593,21 @@ func TestSlice(t *testing.T) {
 	testSliceInput(t, inputStringSlicePointer, outputStringSlice)
 }
 
+func TestInvalidSlice(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vfoo": "foo",
+		"vbar": 42,
+	}
+
+	result := Slice{}
+	err := Decode(input, &result)
+	if err == nil {
+		t.Errorf("expected failure")
+	}
+}
+
 func TestSliceOfStruct(t *testing.T) {
 	t.Parallel()
 
