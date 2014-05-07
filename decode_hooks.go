@@ -43,6 +43,10 @@ func StringToSliceHookFunc(sep string) DecodeHookFunc {
 		}
 
 		raw := data.(string)
+		if raw == "" {
+			return []string{}, nil
+		}
+
 		return strings.Split(raw, sep), nil
 	}
 }

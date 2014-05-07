@@ -96,6 +96,13 @@ func TestStringToSliceHookFunc(t *testing.T) {
 			[]string{"foo", "bar", "baz"},
 			false,
 		},
+		{
+			reflect.String,
+			reflect.Slice,
+			"",
+			[]string{},
+			false,
+		},
 	}
 
 	for i, tc := range cases {
