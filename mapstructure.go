@@ -104,6 +104,23 @@ func Decode(m interface{}, rawVal interface{}) error {
 	return decoder.Decode(m)
 }
 
+// WeakDecode is the same as Decode but is shorthand to enable
+// WeaklyTypedInput. See DecoderConfig for more info.
+func WeakDecode(input, output interface{}) error {
+	config := &DecoderConfig{
+		Metadata:         nil,
+		Result:           output,
+		WeaklyTypedInput: true,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(input)
+}
+
 // NewDecoder returns a new decoder for the given configuration. Once
 // a decoder has been returned, the same configuration must not be used
 // again.

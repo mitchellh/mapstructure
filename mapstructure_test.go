@@ -775,6 +775,30 @@ func TestTagged(t *testing.T) {
 	}
 }
 
+func TestWeakDecode(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "4",
+		"bar": "value",
+	}
+
+	var result struct {
+		Foo int
+		Bar string
+	}
+
+	if err := WeakDecode(input, &result); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if result.Foo != 4 {
+		t.Fatalf("bad: %#v", result)
+	}
+	if result.Bar != "value" {
+		t.Fatalf("bad: %#v", result)
+	}
+}
+
 func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice) {
 	var result Slice
 	err := Decode(input, &result)
