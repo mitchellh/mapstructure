@@ -462,6 +462,7 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 
 	// If we had errors, return those
 	if len(errors) > 0 {
+		sort.Strings(errors)
 		return &Error{errors}
 	}
 
@@ -522,6 +523,7 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 
 	// If there were errors, we return those
 	if len(errors) > 0 {
+		sort.Strings(errors)
 		return &Error{errors}
 	}
 
@@ -670,6 +672,7 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 	}
 
 	if len(errors) > 0 {
+		sort.Strings(errors)
 		return &Error{errors}
 	}
 
