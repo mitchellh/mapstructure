@@ -2,6 +2,7 @@ package mapstructure
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -17,6 +18,7 @@ func (e *Error) Error() string {
 		points[i] = fmt.Sprintf("* %s", err)
 	}
 
+	sort.Strings(points)
 	return fmt.Sprintf(
 		"%d error(s) decoding:\n\n%s",
 		len(e.Errors), strings.Join(points, "\n"))
