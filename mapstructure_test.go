@@ -691,8 +691,10 @@ func TestMetadata(t *testing.T) {
 	}
 
 	expectedKeys := []string{"Vfoo", "Vbar.Vstring", "Vbar.Vuint", "Vbar"}
+	sort.Strings(expectedKeys)
+	sort.Strings(md.Keys)
 	if !reflect.DeepEqual(md.Keys, expectedKeys) {
-		t.Fatalf("bad keys: %#v", md.Keys)
+		t.Fatalf("expected keys: %#v\nbad keys: %#v", expectedKeys, md.Keys)
 	}
 
 	expectedUnused := []string{"Vbar.foo", "bar"}
