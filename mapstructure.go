@@ -89,11 +89,31 @@ type Metadata struct {
 }
 
 // Decode takes a map and uses reflection to convert it into the
-// given Go native structure. val must be a pointer to a struct.
+// given Go native structure. val must be a pointer to a struct. Any extra
+// fields in the map that are not in the Go native structure are discarded.
 func Decode(m interface{}, rawVal interface{}) error {
 	config := &DecoderConfig{
 		Metadata: nil,
 		Result:   rawVal,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(m)
+}
+
+// StrictDecode takes a map and uses reflection to convert it into the
+// given Go native structure. val must be a pointer to a struct. Any extra
+// fields in the map that are not in the Go native structure will cause an
+// error to be returned.
+func StrictDecode(m interface{}, rawVal interface{}) error {
+	config := &DecoderConfig{
+		ErrorUnused: true,
+		Metadata:    nil,
+		Result:      rawVal,
 	}
 
 	decoder, err := NewDecoder(config)
