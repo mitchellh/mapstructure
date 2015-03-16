@@ -125,12 +125,15 @@ func WeakDecode(input, output interface{}) error {
 // a decoder has been returned, the same configuration must not be used
 // again.
 func NewDecoder(config *DecoderConfig) (*Decoder, error) {
-	val := reflect.ValueOf(config.Result)
-	if val.Kind() != reflect.Ptr {
-		return nil, errors.New("result must be a pointer")
+	val, ok := config.Result.(reflect.Value)
+	if !ok {
+		val = reflect.ValueOf(config.Result)
+		if val.Kind() != reflect.Ptr {
+			return nil, errors.New("result must be a pointer")
+		}
+		val = val.Elem()
 	}
 
-	val = val.Elem()
 	if !val.CanAddr() {
 		return nil, errors.New("result must be addressable (a pointer)")
 	}
@@ -159,7 +162,11 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 // Decode decodes the given raw interface to the target pointer specified
 // by the configuration.
 func (d *Decoder) Decode(raw interface{}) error {
-	return d.decode("", raw, reflect.ValueOf(d.config.Result).Elem())
+	val, ok := d.config.Result.(reflect.Value)
+	if !ok {
+		val = reflect.ValueOf(d.config.Result).Elem()
+	}
+	return d.decode("", raw, val)
 }
 
 // Decodes an unknown data type into a specific reflection value.

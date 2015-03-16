@@ -184,6 +184,33 @@ func TestDecode_Embedded(t *testing.T) {
 	}
 }
 
+func TestDecode_EmbeddedWithReflect(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+		"Basic": map[string]interface{}{
+			"vstring": "innerfoo",
+		},
+		"vunique": "bar",
+	}
+
+	result := make([]Embedded, 1)
+	rv := reflect.ValueOf(result)
+	err := Decode(input, rv.Index(0))
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result[0].Vstring != "innerfoo" {
+		t.Errorf("vstring value should be 'innerfoo': %#v", result[0].Vstring)
+	}
+
+	if result[0].Vunique != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result[0].Vunique)
+	}
+}
+
 func TestDecode_EmbeddedPointer(t *testing.T) {
 	t.Parallel()
 
