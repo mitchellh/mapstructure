@@ -40,6 +40,10 @@ type DecoderConfig struct {
 	// (extra keys).
 	ErrorUnused bool
 
+	// If ErrorUnset is true, then it is an error for there to exist fields in a struct that
+	// were not populated in the decoding process.
+	ErrorUnsetFields bool
+
 	// If WeaklyTypedInput is true, the decoder will make the following
 	// "weak" conversions:
 	//
@@ -628,7 +632,11 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 
 			if !rawMapVal.IsValid() {
 				// There was no matching key in the map for the value in
-				// the struct. Just ignore.
+				// the struct. Just ignore, unless configured to produce an error.
+				// Pointer fields are treated as optional.
+				if d.config.ErrorUnsetFields && field.Kind() != reflect.Ptr {
+					errors = appendErrors(errors, fmt.Errorf("unset struct key: %s", fieldName))
+				}
 				continue
 			}
 		}
