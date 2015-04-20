@@ -162,6 +162,40 @@ func (d *Decoder) Decode(raw interface{}) error {
 	return d.decode("", raw, reflect.ValueOf(d.config.Result).Elem())
 }
 
+type StringUnmarshaller interface {
+	UnmarshalString(value string) error
+}
+
+type ValueUnmarshaller interface {
+	UnmarshalValue(value interface{}) error
+}
+
+// tryCustomDecode tries to decode data using StringUnmarshaller or ValueUnmarshaller, which
+// can be provided by the users. It returns a flag indicating whether one of the interfaces
+// was implemented.
+func tryCustomDecode(data interface{}, val reflect.Value) (bool, error) {
+	var decoderVal interface{}
+	if val.Kind() == reflect.Ptr {
+		decoderVal = val.Interface()
+	} else if val.CanAddr() {
+		decoderVal = val.Addr().Interface()
+	}
+
+	// See if we can call the string unmershaller.
+	if decoder, ok := decoderVal.(StringUnmarshaller); ok {
+		switch s := data.(type) {
+		case string:
+			return true, decoder.UnmarshalString(s)
+		default:
+		}
+	}
+	// See if we can call the generic value unmarshaller.
+	if decoder, ok := decoderVal.(ValueUnmarshaller); ok {
+		return true, decoder.UnmarshalValue(data)
+	}
+	return false, nil
+}
+
 // Decodes an unknown data type into a specific reflection value.
 func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error {
 	if data == nil {
@@ -187,31 +221,35 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 	}
 
 	var err error
-	dataKind := getKind(val)
-	switch dataKind {
-	case reflect.Bool:
-		err = d.decodeBool(name, data, val)
-	case reflect.Interface:
-		err = d.decodeBasic(name, data, val)
-	case reflect.String:
-		err = d.decodeString(name, data, val)
-	case reflect.Int:
-		err = d.decodeInt(name, data, val)
-	case reflect.Uint:
-		err = d.decodeUint(name, data, val)
-	case reflect.Float32:
-		err = d.decodeFloat(name, data, val)
-	case reflect.Struct:
-		err = d.decodeStruct(name, data, val)
-	case reflect.Map:
-		err = d.decodeMap(name, data, val)
-	case reflect.Ptr:
-		err = d.decodePtr(name, data, val)
-	case reflect.Slice:
-		err = d.decodeSlice(name, data, val)
-	default:
-		// If we reached this point then we weren't able to decode it
-		return fmt.Errorf("%s: unsupported type: %s", name, dataKind)
+	var customDecoded bool
+	customDecoded, err = tryCustomDecode(data, val)
+	if !customDecoded {
+		dataKind := getKind(val)
+		switch dataKind {
+		case reflect.Bool:
+			err = d.decodeBool(name, data, val)
+		case reflect.Interface:
+			err = d.decodeBasic(name, data, val)
+		case reflect.String:
+			err = d.decodeString(name, data, val)
+		case reflect.Int:
+			err = d.decodeInt(name, data, val)
+		case reflect.Uint:
+			err = d.decodeUint(name, data, val)
+		case reflect.Float32:
+			err = d.decodeFloat(name, data, val)
+		case reflect.Struct:
+			err = d.decodeStruct(name, data, val)
+		case reflect.Map:
+			err = d.decodeMap(name, data, val)
+		case reflect.Ptr:
+			err = d.decodePtr(name, data, val)
+		case reflect.Slice:
+			err = d.decodeSlice(name, data, val)
+		default:
+			// If we reached this point then we weren't able to decode it
+			return fmt.Errorf("%s: unsupported type: %s", name, dataKind)
+		}
 	}
 
 	// If we reached here, then we successfully decoded SOMETHING, so
