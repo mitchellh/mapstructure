@@ -13,8 +13,8 @@ import (
 // previous transformation.
 func ComposeDecodeHookFunc(fs ...DecodeHookFunc) DecodeHookFunc {
 	return func(
-		f reflect.Kind,
-		t reflect.Kind,
+		f reflect.Type,
+		t reflect.Type,
 		data interface{}) (interface{}, error) {
 		var err error
 		for _, f1 := range fs {
@@ -24,7 +24,7 @@ func ComposeDecodeHookFunc(fs ...DecodeHookFunc) DecodeHookFunc {
 			}
 
 			// Modify the from kind to be correct with the new data
-			f = getKind(reflect.ValueOf(data))
+			f = reflect.ValueOf(data).Type()
 		}
 
 		return data, nil
@@ -35,10 +35,10 @@ func ComposeDecodeHookFunc(fs ...DecodeHookFunc) DecodeHookFunc {
 // string to []string by splitting on the given sep.
 func StringToSliceHookFunc(sep string) DecodeHookFunc {
 	return func(
-		f reflect.Kind,
-		t reflect.Kind,
+		f reflect.Type,
+		t reflect.Type,
 		data interface{}) (interface{}, error) {
-		if f != reflect.String || t != reflect.Slice {
+		if f.Kind() != reflect.String || t.Kind() != reflect.Slice {
 			return data, nil
 		}
 
@@ -52,13 +52,13 @@ func StringToSliceHookFunc(sep string) DecodeHookFunc {
 }
 
 func WeaklyTypedHook(
-	f reflect.Kind,
-	t reflect.Kind,
+	f reflect.Type,
+	t reflect.Type,
 	data interface{}) (interface{}, error) {
 	dataVal := reflect.ValueOf(data)
-	switch t {
+	switch t.Kind() {
 	case reflect.String:
-		switch f {
+		switch f.Kind() {
 		case reflect.Bool:
 			if dataVal.Bool() {
 				return "1", nil
