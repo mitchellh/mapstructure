@@ -658,6 +658,42 @@ func TestInvalidType(t *testing.T) {
 	if derr.Errors[0] != "'Vstring' expected type 'string', got unconvertible type 'int'" {
 		t.Errorf("got unexpected error: %s", err)
 	}
+
+	inputNegIntUint := map[string]interface{}{
+		"vuint": -42,
+	}
+
+	err = Decode(inputNegIntUint, &result)
+	if err == nil {
+		t.Fatal("error should exist")
+	}
+
+	derr, ok = err.(*Error)
+	if !ok {
+		t.Fatalf("error should be kind of Error, instead: %#v", err)
+	}
+
+	if derr.Errors[0] != "cannot parse 'Vuint', -42 overflows uint" {
+		t.Errorf("got unexpected error: %s", err)
+	}
+
+	inputNegFloatUint := map[string]interface{}{
+		"vuint": -42.0,
+	}
+
+	err = Decode(inputNegFloatUint, &result)
+	if err == nil {
+		t.Fatal("error should exist")
+	}
+
+	derr, ok = err.(*Error)
+	if !ok {
+		t.Fatalf("error should be kind of Error, instead: %#v", err)
+	}
+
+	if derr.Errors[0] != "cannot parse 'Vuint', -42.000000 overflows uint" {
+		t.Errorf("got unexpected error: %s", err)
+	}
 }
 
 func TestMetadata(t *testing.T) {

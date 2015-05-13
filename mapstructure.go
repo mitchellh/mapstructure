@@ -51,6 +51,7 @@ type DecoderConfig struct {
 	//   - string to bool (accepts: 1, t, T, TRUE, true, True, 0, f, F,
 	//     FALSE, false, False. Anything else is an error)
 	//   - empty array = empty map and vice versa
+	//   - negative numbers to overflowed uint values (base 10)
 	//
 	WeaklyTypedInput bool
 
@@ -319,11 +320,21 @@ func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) e
 
 	switch {
 	case dataKind == reflect.Int:
-		val.SetUint(uint64(dataVal.Int()))
+		i := dataVal.Int()
+		if i < 0 && !d.config.WeaklyTypedInput {
+			return fmt.Errorf("cannot parse '%s', %d overflows uint",
+				name, i)
+		}
+		val.SetUint(uint64(i))
 	case dataKind == reflect.Uint:
 		val.SetUint(dataVal.Uint())
 	case dataKind == reflect.Float32:
-		val.SetUint(uint64(dataVal.Float()))
+		f := dataVal.Float()
+		if f < 0 && !d.config.WeaklyTypedInput {
+			return fmt.Errorf("cannot parse '%s', %f overflows uint",
+				name, f)
+		}
+		val.SetUint(uint64(f))
 	case dataKind == reflect.Bool && d.config.WeaklyTypedInput:
 		if dataVal.Bool() {
 			val.SetUint(1)
