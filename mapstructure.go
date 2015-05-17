@@ -20,8 +20,8 @@ import (
 // data transformations. See "DecodeHook" in the DecoderConfig
 // struct.
 type DecodeHookFunc func(
-	from reflect.Kind,
-	to reflect.Kind,
+	from reflect.Type,
+	to reflect.Type,
 	data interface{}) (interface{}, error)
 
 // DecoderConfig is the configuration that is used to create a new decoder
@@ -181,7 +181,7 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 	if d.config.DecodeHook != nil {
 		// We have a DecodeHook, so let's pre-process the data.
 		var err error
-		data, err = d.config.DecodeHook(getKind(dataVal), getKind(val), data)
+		data, err = d.config.DecodeHook(dataVal.Type(), val.Type(), data)
 		if err != nil {
 			return err
 		}

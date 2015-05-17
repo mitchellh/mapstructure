@@ -232,8 +232,8 @@ func TestDecode_DecodeHook(t *testing.T) {
 		"vint": "WHAT",
 	}
 
-	decodeHook := func(from reflect.Kind, to reflect.Kind, v interface{}) (interface{}, error) {
-		if from == reflect.String && to != reflect.String {
+	decodeHook := func(from reflect.Type, to reflect.Type, v interface{}) (interface{}, error) {
+		if from.Kind() == reflect.String && to.Kind() != reflect.String {
 			return 5, nil
 		}
 
