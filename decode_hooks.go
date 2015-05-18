@@ -21,8 +21,7 @@ func typedDecodeHook(h DecodeHookFunc) DecodeHookFunc {
 	v := reflect.ValueOf(h)
 	vt := v.Type()
 	for _, raw := range potential {
-		p := reflect.ValueOf(raw)
-		pt := p.Type()
+		pt := reflect.ValueOf(raw).Type()
 		if vt.ConvertibleTo(pt) {
 			return v.Convert(pt).Interface()
 		}
