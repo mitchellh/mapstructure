@@ -232,12 +232,13 @@ func TestDecode_DecodeHook(t *testing.T) {
 		"vint": "WHAT",
 	}
 
-	decodeHook := func(from reflect.Kind, to reflect.Kind, v interface{}) (interface{}, error) {
-		if from == reflect.String && to != reflect.String {
-			return 5, nil
+	decodeHook := func(from reflect.Value, to reflect.Value) error {
+		if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(0) {
+			to.Set(reflect.ValueOf(5))
+			return ErrDecodeHookAccepted
 		}
 
-		return v, nil
+		return ErrDecodeHookRejected
 	}
 
 	var result Basic

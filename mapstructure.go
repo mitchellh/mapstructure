@@ -16,13 +16,14 @@ import (
 	"strings"
 )
 
-// DecodeHookFunc is the callback function that can be used for
-// data transformations. See "DecodeHook" in the DecoderConfig
-// struct.
-type DecodeHookFunc func(
-	from reflect.Kind,
-	to reflect.Kind,
-	data interface{}) (interface{}, error)
+var ErrDecodeHookAccepted = fmt.Errorf("decode hook accepted responsibility")
+var ErrDecodeHookRejected = error(nil)
+
+// DecodeHookFunc is the callback function that can be used for data
+// transformations. If ErrDecodeHookAccepted is returned, default processing is
+// skipped. If ErrDecodeHookRejected is returned, default processing will be
+// performed. See "DecodeHook" in the DecoderConfig struct.
+type DecodeHookFunc func(from, to reflect.Value) error
 
 // DecoderConfig is the configuration that is used to create a new decoder
 // and allows customization of various aspects of decoding.
@@ -31,8 +32,8 @@ type DecoderConfig struct {
 	// type conversion (if WeaklyTypedInput is on). This lets you modify
 	// the values before they're set down onto the resulting struct.
 	//
-	// If an error is returned, the entire decode will fail with that
-	// error.
+	// If an error other than ErrDecodeHookAccepted or ErrDecodeHookRejected is
+	// returned, the entire decode will fail with that error.
 	DecodeHook DecodeHookFunc
 
 	// If ErrorUnused is true, then it is an error for there to exist
@@ -178,17 +179,24 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 		return nil
 	}
 
+	var dataKind reflect.Kind
+	var err error
+
 	if d.config.DecodeHook != nil {
 		// We have a DecodeHook, so let's pre-process the data.
-		var err error
-		data, err = d.config.DecodeHook(getKind(dataVal), getKind(val), data)
-		if err != nil {
+		err = d.config.DecodeHook(dataVal, val)
+		switch err {
+		case ErrDecodeHookAccepted:
+			err = nil
+			goto decode_hook_accepted
+		case ErrDecodeHookRejected:
+			// control continues
+		default:
 			return err
 		}
 	}
 
-	var err error
-	dataKind := getKind(val)
+	dataKind = getKind(val)
 	switch dataKind {
 	case reflect.Bool:
 		err = d.decodeBool(name, data, val)
@@ -215,6 +223,7 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 		return fmt.Errorf("%s: unsupported type: %s", name, dataKind)
 	}
 
+decode_hook_accepted:
 	// If we reached here, then we successfully decoded SOMETHING, so
 	// mark the key as used if we're tracking metadata.
 	if d.config.Metadata != nil && name != "" {
@@ -681,6 +690,7 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 	}
 
 	if len(errors) > 0 {
+		sort.Strings(errors)
 		return &Error{errors}
 	}
 
