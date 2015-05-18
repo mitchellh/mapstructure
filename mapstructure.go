@@ -554,6 +554,8 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value) error {
 	dataVal := reflect.Indirect(reflect.ValueOf(data))
 
+	// If the type of the value to write to and the data match directly,
+	// then we just set it directly instead of recursing into the structure.
 	if dataVal.Type() == val.Type() {
 		val.Set(dataVal)
 		return nil

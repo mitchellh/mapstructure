@@ -335,6 +335,26 @@ func TestDecode_NonStruct(t *testing.T) {
 	}
 }
 
+func TestDecode_StructMatch(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vbar": Basic{
+			Vstring: "foo",
+		},
+	}
+
+	var result Nested
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Vbar.Vstring != "foo" {
+		t.Errorf("bad: %#v", result)
+	}
+}
+
 func TestDecode_TypeConversion(t *testing.T) {
 	input := map[string]interface{}{
 		"IntToFloat":         42,
