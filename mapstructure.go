@@ -19,10 +19,20 @@ import (
 // DecodeHookFunc is the callback function that can be used for
 // data transformations. See "DecodeHook" in the DecoderConfig
 // struct.
-type DecodeHookFunc func(
-	from reflect.Kind,
-	to reflect.Kind,
-	data interface{}) (interface{}, error)
+//
+// The type should be DecodeHookFuncType or DecodeHookFuncKind.
+// Either is accepted. Types are a superset of Kinds (Types can return
+// Kinds) and are generally a richer thing to use, but Kinds are simpler
+// if you only need those.
+//
+// The reason DecodeHookFunc is multi-typed is for backwards compatibility:
+// we started with Kinds and then realized Types were the better solution,
+// but have a promise to not break backwards compat so we now support
+// both.
+type DecodeHookFunc interface{}
+
+type DecodeHookFuncType func(reflect.Type, reflect.Type, interface{}) (interface{}, error)
+type DecodeHookFuncKind func(reflect.Kind, reflect.Kind, interface{}) (interface{}, error)
 
 // DecoderConfig is the configuration that is used to create a new decoder
 // and allows customization of various aspects of decoding.
@@ -181,7 +191,9 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 	if d.config.DecodeHook != nil {
 		// We have a DecodeHook, so let's pre-process the data.
 		var err error
-		data, err = d.config.DecodeHook(getKind(dataVal), getKind(val), data)
+		data, err = DecodeHookExec(
+			d.config.DecodeHook,
+			dataVal.Type(), val.Type(), data)
 		if err != nil {
 			return err
 		}
