@@ -4,6 +4,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestComposeDecodeHookFunc(t *testing.T) {
@@ -108,6 +109,35 @@ func TestStringToSliceHookFunc(t *testing.T) {
 			[]string{},
 			false,
 		},
+	}
+
+	for i, tc := range cases {
+		actual, err := DecodeHookExec(f, tc.f, tc.t, tc.data)
+		if tc.err != (err != nil) {
+			t.Fatalf("case %d: expected err %#v", i, tc.err)
+		}
+		if !reflect.DeepEqual(actual, tc.result) {
+			t.Fatalf(
+				"case %d: expected %#v, got %#v",
+				i, tc.result, actual)
+		}
+	}
+}
+
+func TestStringToTimeDurationHookFunc(t *testing.T) {
+	f := StringToTimeDurationHookFunc()
+
+	strType := reflect.TypeOf("")
+	timeType := reflect.TypeOf(time.Duration(5))
+	cases := []struct {
+		f, t   reflect.Type
+		data   interface{}
+		result interface{}
+		err    bool
+	}{
+		{strType, timeType, "5s", 5 * time.Second, false},
+		{strType, timeType, "5", time.Duration(0), true},
+		{strType, strType, "5", "5", false},
 	}
 
 	for i, tc := range cases {
