@@ -21,6 +21,14 @@ import (
 // struct.
 //
 // The type should be DecodeHookFuncType or DecodeHookFuncKind.
+// Either is accepted. Types are a superset of Kinds (Types can return
+// Kinds) and are generally a richer thing to use, but Kinds are simpler
+// if you only need those.
+//
+// The reason DecodeHookFunc is multi-typed is for backwards compatibility:
+// we started with Kinds and then realized Types were the better solution,
+// but have a promise to not break backwards compat so we now support
+// both.
 type DecodeHookFunc interface{}
 
 type DecodeHookFuncType func(reflect.Type, reflect.Type, interface{}) (interface{}, error)
