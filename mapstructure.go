@@ -50,6 +50,11 @@ type DecoderConfig struct {
 	// (extra keys).
 	ErrorUnused bool
 
+	// ZeroFields, if set to true, will zero fields before writing them.
+	// For example, a map will be emptied before decoded values are put in
+	// it. If this is false, a map will be merged.
+	ZeroFields bool
+
 	// If WeaklyTypedInput is true, the decoder will make the following
 	// "weak" conversions:
 	//
@@ -438,9 +443,15 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 	valKeyType := valType.Key()
 	valElemType := valType.Elem()
 
-	// Make a new map to hold our result
-	mapType := reflect.MapOf(valKeyType, valElemType)
-	valMap := reflect.MakeMap(mapType)
+	// By default we overwrite keys in the current map
+	valMap := val
+
+	// If the map is nil or we're purposely zeroing fields, make a new map
+	if valMap.IsNil() || d.config.ZeroFields {
+		// Make a new map to hold our result
+		mapType := reflect.MapOf(valKeyType, valElemType)
+		valMap = reflect.MakeMap(mapType)
+	}
 
 	// Check input type
 	dataVal := reflect.Indirect(reflect.ValueOf(data))

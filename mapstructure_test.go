@@ -517,6 +517,38 @@ func TestMap(t *testing.T) {
 	}
 }
 
+func TestMapMerge(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vfoo": "foo",
+		"vother": map[interface{}]interface{}{
+			"foo": "foo",
+			"bar": "bar",
+		},
+	}
+
+	var result Map
+	result.Vother = map[string]string{"hello": "world"}
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an error: %s", err)
+	}
+
+	if result.Vfoo != "foo" {
+		t.Errorf("vfoo value should be 'foo': %#v", result.Vfoo)
+	}
+
+	expected := map[string]string{
+		"foo":   "foo",
+		"bar":   "bar",
+		"hello": "world",
+	}
+	if !reflect.DeepEqual(result.Vother, expected) {
+		t.Errorf("bad: %#v", result.Vother)
+	}
+}
+
 func TestMapOfStruct(t *testing.T) {
 	t.Parallel()
 
