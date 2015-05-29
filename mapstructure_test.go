@@ -158,6 +158,29 @@ func TestBasic_IntWithFloat(t *testing.T) {
 	}
 }
 
+func TestBasic_Merge(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vint": 42,
+	}
+
+	var result Basic
+	result.Vuint = 100
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	expected := Basic{
+		Vint:  42,
+		Vuint: 100,
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("bad: %#v", result)
+	}
+}
+
 func TestDecode_Embedded(t *testing.T) {
 	t.Parallel()
 
