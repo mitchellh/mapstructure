@@ -17,6 +17,10 @@ type Basic struct {
 	Vdata   interface{}
 }
 
+type BasicSquash struct {
+	Test Basic `mapstructure:",squash"`
+}
+
 type Embedded struct {
 	Basic
 	Vunique string
@@ -178,6 +182,24 @@ func TestBasic_Merge(t *testing.T) {
 	}
 	if !reflect.DeepEqual(result, expected) {
 		t.Fatalf("bad: %#v", result)
+	}
+}
+
+func TestDecode_BasicSquash(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+	}
+
+	var result BasicSquash
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Test.Vstring != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Test.Vstring)
 	}
 }
 

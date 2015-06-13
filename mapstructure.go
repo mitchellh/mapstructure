@@ -617,22 +617,22 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 						fmt.Errorf("%s: unsupported type: %s", fieldType.Name, fieldKind))
 					continue
 				}
+			}
 
-				// We have an embedded field. We "squash" the fields down
-				// if specified in the tag.
-				squash := false
-				tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
-				for _, tag := range tagParts[1:] {
-					if tag == "squash" {
-						squash = true
-						break
-					}
+			// We have an embedded field. We "squash" the fields down
+			// if specified in the tag.
+			squash := false
+			tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
+			for _, tag := range tagParts[1:] {
+				if tag == "squash" {
+					squash = true
+					break
 				}
+			}
 
-				if squash {
-					structs = append(structs, val.FieldByName(fieldType.Name))
-					continue
-				}
+			if squash {
+				structs = append(structs, val.FieldByName(fieldType.Name))
+				continue
 			}
 
 			// Normal struct field, store it away
