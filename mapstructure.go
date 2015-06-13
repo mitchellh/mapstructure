@@ -619,8 +619,7 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 				}
 			}
 
-			// We have an embedded field. We "squash" the fields down
-			// if specified in the tag.
+			// If "squash" is specified in the tag, we squash the field down.
 			squash := false
 			tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
 			for _, tag := range tagParts[1:] {
