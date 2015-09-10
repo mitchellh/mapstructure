@@ -138,12 +138,12 @@ func WeakDecodeMetadata(input interface{}, output interface{}, metadata *Metadat
 	return decoder.Decode(input)
 }
 
-// Decode takes a map and uses reflection to convert it into the
-// given Go native structure. val must be a pointer to a struct.
-func Decode(m interface{}, rawVal interface{}) error {
+// Decode takes a map, input, and uses reflection to convert it into the
+// given Go native structure. output must be a pointer to a struct.
+func Decode(input interface{}, output interface{}) error {
 	config := &DecoderConfig{
 		Metadata: nil,
-		Result:   rawVal,
+		Result:   output,
 	}
 
 	decoder, err := NewDecoder(config)
@@ -151,7 +151,7 @@ func Decode(m interface{}, rawVal interface{}) error {
 		return err
 	}
 
-	return decoder.Decode(m)
+	return decoder.Decode(input)
 }
 
 // WeakDecode is the same as Decode but is shorthand to enable
