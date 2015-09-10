@@ -104,6 +104,40 @@ type Metadata struct {
 	Unused []string
 }
 
+// DecodeMetadata is the same as Decode, but is shorthand to
+// enable metadata collection. See DecoderConfig for more info.
+func DecodeMetadata(input interface{}, output interface{}, metadata *Metadata) error {
+	config := &DecoderConfig{
+		Metadata: metadata,
+		Result:   output,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(input)
+}
+
+// WeakDecodeMetadata is the same as Decode, but is shorthand to
+// enable both WeaklyTypedInput and metadata collection. See
+// DecoderConfig for more info.
+func WeakDecodeMetadata(input interface{}, output interface{}, metadata *Metadata) error {
+	config := &DecoderConfig{
+		Metadata:         metadata,
+		Result:           output,
+		WeaklyTypedInput: true,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(input)
+}
+
 // Decode takes a map and uses reflection to convert it into the
 // given Go native structure. val must be a pointer to a struct.
 func Decode(m interface{}, rawVal interface{}) error {

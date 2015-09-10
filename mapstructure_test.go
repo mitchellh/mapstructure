@@ -830,6 +830,39 @@ func TestInvalidType(t *testing.T) {
 	}
 }
 
+func TestDecodeMetadata(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vfoo": "foo",
+		"vbar": map[string]interface{}{
+			"vstring": "foo",
+			"Vuint":   42,
+			"foo":     "bar",
+		},
+		"bar": "nil",
+	}
+
+	var md Metadata
+	var result Nested
+
+	err := DecodeMetadata(input, &result, &md)
+	if err != nil {
+		t.Fatalf("err: %s", err.Error())
+	}
+
+	expectedKeys := []string{"Vbar", "Vbar.Vstring", "Vbar.Vuint", "Vfoo"}
+	sort.Strings(md.Keys)
+	if !reflect.DeepEqual(md.Keys, expectedKeys) {
+		t.Fatalf("bad keys: %#v", md.Keys)
+	}
+
+	expectedUnused := []string{"Vbar.foo", "bar"}
+	if !reflect.DeepEqual(md.Unused, expectedUnused) {
+		t.Fatalf("bad unused: %#v", md.Unused)
+	}
+}
+
 func TestMetadata(t *testing.T) {
 	t.Parallel()
 
@@ -967,6 +1000,43 @@ func TestWeakDecode(t *testing.T) {
 	}
 	if result.Bar != "value" {
 		t.Fatalf("bad: %#v", result)
+	}
+}
+
+func TestWeakDecodeMetadata(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo":    "4",
+		"bar":    "value",
+		"unused": "value",
+	}
+
+	var md Metadata
+	var result struct {
+		Foo int
+		Bar string
+	}
+
+	if err := WeakDecodeMetadata(input, &result, &md); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if result.Foo != 4 {
+		t.Fatalf("bad: %#v", result)
+	}
+	if result.Bar != "value" {
+		t.Fatalf("bad: %#v", result)
+	}
+
+	expectedKeys := []string{"Bar", "Foo"}
+	sort.Strings(md.Keys)
+	if !reflect.DeepEqual(md.Keys, expectedKeys) {
+		t.Fatalf("bad keys: %#v", md.Keys)
+	}
+
+	expectedUnused := []string{"unused"}
+	if !reflect.DeepEqual(md.Unused, expectedUnused) {
+		t.Fatalf("bad unused: %#v", md.Unused)
 	}
 }
 
