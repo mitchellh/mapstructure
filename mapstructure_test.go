@@ -22,17 +22,12 @@ type BasicSquash struct {
 }
 
 type Embedded struct {
-	Basic
+	Basic   `mapstructure:"Basic"`
 	Vunique string
 }
 
 type EmbeddedPointer struct {
 	*Basic
-	Vunique string
-}
-
-type EmbeddedSquash struct {
-	Basic   `mapstructure:",squash"`
 	Vunique string
 }
 
@@ -67,6 +62,13 @@ type SliceOfStruct struct {
 type Tagged struct {
 	Extra string `mapstructure:"bar,what,what"`
 	Value string `mapstructure:"foo"`
+}
+
+type EmbeddedSquash struct {
+	Basic   `mapstructure:",squash"` // explicitly squashed
+	Map                              // implicitly squashed
+	Tagged  `mapstructure:",what"`   // implicitly squashed
+	Vunique string
 }
 
 type TypeConversionResult struct {
@@ -251,7 +253,9 @@ func TestDecode_EmbeddedSquash(t *testing.T) {
 	t.Parallel()
 
 	input := map[string]interface{}{
-		"vstring": "foo",
+		"vstring": "explicit foo",
+		"vfoo":    "untagged foo",
+		"foo":     "tagged foo",
 		"vunique": "bar",
 	}
 
@@ -261,8 +265,16 @@ func TestDecode_EmbeddedSquash(t *testing.T) {
 		t.Fatalf("got an err: %s", err.Error())
 	}
 
-	if result.Vstring != "foo" {
-		t.Errorf("vstring value should be 'foo': %#v", result.Vstring)
+	if result.Vstring != "explicit foo" {
+		t.Errorf("vstring value should be 'explicit foo': %#v", result.Vstring)
+	}
+
+	if result.Vfoo != "untagged foo" {
+		t.Errorf("vfoo value should be 'untagged foo': %#v", result.Vfoo)
+	}
+
+	if result.Value != "tagged foo" {
+		t.Errorf("foo value should be 'tagged foo': %#v", result.Value)
 	}
 
 	if result.Vunique != "bar" {
