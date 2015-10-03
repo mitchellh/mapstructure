@@ -609,6 +609,8 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		structType := structVal.Type()
 		for i := 0; i < structType.NumField(); i++ {
 			fieldType := structType.Field(i)
+			tagValue := fieldType.Tag.Get(d.config.TagName)
+			squash := false
 
 			if fieldType.Anonymous {
 				fieldKind := fieldType.Type.Kind()
@@ -617,11 +619,14 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 						fmt.Errorf("%s: unsupported type: %s", fieldType.Name, fieldKind))
 					continue
 				}
+				// Squash embedded structs unless they are explicitly named.
+				if tagValue == "" || tagValue[0] == ',' {
+					squash = true
+				}
 			}
 
 			// If "squash" is specified in the tag, we squash the field down.
-			squash := false
-			tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
+			tagParts := strings.Split(tagValue, ",")
 			for _, tag := range tagParts[1:] {
 				if tag == "squash" {
 					squash = true
