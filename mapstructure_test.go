@@ -771,6 +771,33 @@ func TestSliceOfStruct(t *testing.T) {
 	}
 }
 
+func TestSliceToMap(t *testing.T) {
+	t.Parallel()
+
+	input := []map[string]interface{}{
+		map[string]interface{}{
+			"foo": "bar",
+		},
+		map[string]interface{}{
+			"bar": "baz",
+		},
+	}
+
+	var result map[string]interface{}
+	err := WeakDecode(input, &result)
+	if err != nil {
+		t.Fatalf("got an error: %s", err)
+	}
+
+	expected := map[string]interface{}{
+		"foo": "bar",
+		"bar": "baz",
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("bad: %#v", result)
+	}
+}
+
 func TestInvalidType(t *testing.T) {
 	t.Parallel()
 
