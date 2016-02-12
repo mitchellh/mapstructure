@@ -3,6 +3,7 @@ package mapstructure
 import (
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -34,6 +35,10 @@ type EmbeddedPointer struct {
 type EmbeddedSquash struct {
 	Basic   `mapstructure:",squash"`
 	Vunique string
+}
+
+type SquashOnNonStructType struct {
+	InvalidSquashType int `mapstructure:",squash"`
 }
 
 type Map struct {
@@ -267,6 +272,22 @@ func TestDecode_EmbeddedSquash(t *testing.T) {
 
 	if result.Vunique != "bar" {
 		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecode_SquashOnNonStructType(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"InvalidSquashType": 42,
+	}
+
+	var result SquashOnNonStructType
+	err := Decode(input, &result)
+	if err == nil {
+		t.Fatal("unexpected success decoding invalid squash field type")
+	} else if !strings.Contains(err.Error(), "unsupported type for squash") {
+		t.Fatalf("unexpected error message for invalid squash field type: %s", err)
 	}
 }
 
