@@ -623,11 +623,12 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		structs = structs[1:]
 
 		structType := structVal.Type()
+
 		for i := 0; i < structType.NumField(); i++ {
 			fieldType := structType.Field(i)
+			fieldKind := fieldType.Type.Kind()
 
 			if fieldType.Anonymous {
-				fieldKind := fieldType.Type.Kind()
 				if fieldKind != reflect.Struct {
 					errors = appendErrors(errors,
 						fmt.Errorf("%s: unsupported type: %s", fieldType.Name, fieldKind))
@@ -646,7 +647,12 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 			}
 
 			if squash {
-				structs = append(structs, val.FieldByName(fieldType.Name))
+				if fieldKind != reflect.Struct {
+					errors = appendErrors(errors,
+						fmt.Errorf("%s: unsupported type for squash: %s", fieldType.Name, fieldKind))
+				} else {
+					structs = append(structs, val.FieldByName(fieldType.Name))
+				}
 				continue
 			}
 
