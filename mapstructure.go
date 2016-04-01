@@ -245,6 +245,9 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 // This decodes a basic type (bool, int, string, etc.) and sets the
 // value to "data" of that type.
 func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) error {
+	if val.IsValid() && val.Elem().IsValid() {
+		return d.decode(name, data, val.Elem())
+	}
 	dataVal := reflect.ValueOf(data)
 	dataValType := dataVal.Type()
 	if !dataValType.AssignableTo(val.Type()) {
@@ -523,12 +526,16 @@ func (d *Decoder) decodePtr(name string, data interface{}, val reflect.Value) er
 	// into that. Then set the value of the pointer to this type.
 	valType := val.Type()
 	valElemType := valType.Elem()
-	realVal := reflect.New(valElemType)
-	if err := d.decode(name, data, reflect.Indirect(realVal)); err != nil {
-		return err
-	}
+	if val.CanSet() {
+		realVal := reflect.New(valElemType)
+		if err := d.decode(name, data, reflect.Indirect(realVal)); err != nil {
+			return err
+		}
 
-	val.Set(realVal)
+		val.Set(realVal)
+	} else {
+		return d.decode(name, data, reflect.Indirect(val))
+	}
 	return nil
 }
 
