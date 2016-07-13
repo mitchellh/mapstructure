@@ -1,6 +1,7 @@
 package mapstructure
 
 import (
+	"io"
 	"reflect"
 	"sort"
 	"strings"
@@ -58,6 +59,10 @@ type Nested struct {
 type NestedPointer struct {
 	Vfoo string
 	Vbar *Basic
+}
+
+type NilInterface struct {
+	W io.Writer
 }
 
 type Slice struct {
@@ -379,6 +384,42 @@ func TestDecode_Nil(t *testing.T) {
 
 	if result.Vstring != "foo" {
 		t.Fatalf("bad: %#v", result.Vstring)
+	}
+}
+
+func TestDecode_NilInterfaceHook(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"w": "",
+	}
+
+	decodeHook := func(f, t reflect.Type, v interface{}) (interface{}, error) {
+		if t.String() == "io.Writer" {
+			return nil, nil
+		}
+
+		return v, nil
+	}
+
+	var result NilInterface
+	config := &DecoderConfig{
+		DecodeHook: decodeHook,
+		Result:     &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if result.W != nil {
+		t.Errorf("W should be nil: %#v", result.W)
 	}
 }
 
