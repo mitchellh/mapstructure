@@ -275,6 +275,39 @@ func TestDecode_EmbeddedSquash(t *testing.T) {
 	}
 }
 
+func TestDecode_EmbeddedAlwaysSquash(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+		"vunique": "bar",
+	}
+
+	var result Embedded
+	config := &DecoderConfig{
+		AlwaysSquash: true,
+		Result:       &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Vstring != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Vstring)
+	}
+
+	if result.Vunique != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
 func TestDecode_SquashOnNonStructType(t *testing.T) {
 	t.Parallel()
 
