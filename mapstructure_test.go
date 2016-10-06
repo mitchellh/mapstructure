@@ -856,10 +856,10 @@ func TestSliceToMap(t *testing.T) {
 	t.Parallel()
 
 	input := []map[string]interface{}{
-		map[string]interface{}{
+		{
 			"foo": "bar",
 		},
-		map[string]interface{}{
+		{
 			"bar": "baz",
 		},
 	}
