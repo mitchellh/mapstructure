@@ -42,6 +42,13 @@ type EmbeddedSquash struct {
 	Vunique string
 }
 
+type SliceAlias []string
+
+type EmbeddedSlice struct {
+	SliceAlias `mapstructure:"slice_alias"`
+	Vunique    string
+}
+
 type SquashOnNonStructType struct {
 	InvalidSquashType int `mapstructure:",squash"`
 }
@@ -271,8 +278,41 @@ func TestDecode_EmbeddedPointer(t *testing.T) {
 
 	var result EmbeddedPointer
 	err := Decode(input, &result)
-	if err == nil {
-		t.Fatal("should get error")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	expected := EmbeddedPointer{
+		Basic: &Basic{
+			Vstring: "innerfoo",
+		},
+		Vunique: "bar",
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("bad: %#v", result)
+	}
+}
+
+func TestDecode_EmbeddedSlice(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"slice_alias": []string{"foo", "bar"},
+		"vunique":     "bar",
+	}
+
+	var result EmbeddedSlice
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if !reflect.DeepEqual(result.SliceAlias, SliceAlias([]string{"foo", "bar"})) {
+		t.Errorf("slice value: %#v", result.SliceAlias)
+	}
+
+	if result.Vunique != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
 	}
 }
 
