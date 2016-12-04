@@ -221,6 +221,31 @@ func TestBasic_Merge(t *testing.T) {
 	}
 }
 
+func TestBasic_Struct(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vdata": map[string]interface{}{
+			"vstring": "foo",
+		},
+	}
+
+	var result, inner Basic
+	result.Vdata = &inner
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+	expected := Basic{
+		Vdata: &Basic{
+			Vstring: "foo",
+		},
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("bad: %#v", result)
+	}
+}
+
 func TestDecode_BasicSquash(t *testing.T) {
 	t.Parallel()
 
