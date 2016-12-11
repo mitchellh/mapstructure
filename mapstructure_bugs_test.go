@@ -46,6 +46,7 @@ func TestDecode_mapInterfaceInterface(t *testing.T) {
 	}
 }
 
+// #48
 func TestNestedTypePointerWithDefaults(t *testing.T) {
 	t.Parallel()
 
@@ -90,12 +91,60 @@ func TestNestedTypePointerWithDefaults(t *testing.T) {
 
 	// this is the error
 	if result.Vbar.Vuint != 42 {
-		t.Errorf("vuint value should be 42: %#v", result.Vbar.Vint)
+		t.Errorf("vuint value should be 42: %#v", result.Vbar.Vuint)
 	}
 
 }
 
 
+type NestedSlice struct {
+	Vfoo string
+	Vbars []Basic
+	Vempty []Basic
+}
+
+// #48
+func TestNestedTypeSliceWithDefaults(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vfoo": "foo",
+		"vbars": []map[string]interface{}{
+			{ "vstring": "foo", "vint":    42, "vbool":   true },
+			{ "vint":    42, "vbool":   true },
+		},
+		"vempty": []map[string]interface{}{
+			{ "vstring": "foo", "vint":    42, "vbool":   true },
+			{ "vint":    42, "vbool":   true },
+		},
+	}
+
+	result:=NestedSlice{
+		Vbars: []Basic{
+			{Vuint: 42},
+			{Vstring: "foo"},
+		},
+	}
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Vfoo != "foo" {
+		t.Errorf("vfoo value should be 'foo': %#v", result.Vfoo)
+	}
+
+	if result.Vbars[0].Vstring != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Vbars[0].Vstring)
+	}
+	// this is the error
+	if result.Vbars[0].Vuint != 42 {
+		t.Errorf("vuint value should be 42: %#v", result.Vbars[0].Vuint)
+	}
+
+}
+
+// #48 workaround
 func TestNestedTypeWithDefaults(t *testing.T) {
 	t.Parallel()
 
@@ -140,7 +189,7 @@ func TestNestedTypeWithDefaults(t *testing.T) {
 
 	// this is the error
 	if result.Vbar.Vuint != 42 {
-		t.Errorf("vuint value should be 42: %#v", result.Vbar.Vint)
+		t.Errorf("vuint value should be 42: %#v", result.Vbar.Vuint)
 	}
 
 }
