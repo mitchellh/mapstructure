@@ -98,7 +98,7 @@ func StringToSliceHookFunc(sep string) DecodeHookFunc {
 			return []string{}, nil
 		}
 
-		return strings.Split(raw, sep), nil
+		return strings.Split(strings.Trim(raw, sep), sep), nil
 	}
 }
 
