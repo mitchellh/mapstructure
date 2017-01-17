@@ -202,7 +202,7 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 			d.config.DecodeHook,
 			dataVal.Type(), val.Type(), data)
 		if err != nil {
-			return err
+			return fmt.Errorf("error decoding '%s': %s", name, err)
 		}
 	}
 
@@ -547,7 +547,7 @@ func (d *Decoder) decodePtr(name string, data interface{}, val reflect.Value) er
 	valType := val.Type()
 	valElemType := valType.Elem()
 
-	realVal:=val
+	realVal := val
 	if realVal.IsNil() || d.config.ZeroFields {
 		realVal = reflect.New(valElemType)
 	}
@@ -567,7 +567,7 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 	valElemType := valType.Elem()
 	sliceType := reflect.SliceOf(valElemType)
 
-	valSlice:=val
+	valSlice := val
 	if valSlice.IsNil() || d.config.ZeroFields {
 
 		// Check input type
