@@ -85,6 +85,10 @@ type SliceOfStruct struct {
 	Value []Basic
 }
 
+type Func struct {
+	Foo func() string
+}
+
 type Tagged struct {
 	Extra string `mapstructure:"bar,what,what"`
 	Value string `mapstructure:"foo"`
@@ -479,6 +483,42 @@ func TestDecode_NilInterfaceHook(t *testing.T) {
 
 	if result.W != nil {
 		t.Errorf("W should be nil: %#v", result.W)
+	}
+}
+
+func TestDecode_FuncHook(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "baz",
+	}
+
+	decodeHook := func(f, t reflect.Type, v interface{}) (interface{}, error) {
+		if t.Kind() != reflect.Func {
+			return v, nil
+		}
+		val := v.(string)
+		return func() string { return val }, nil
+	}
+
+	var result Func
+	config := &DecoderConfig{
+		DecodeHook: decodeHook,
+		Result:     &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if result.Foo() != "baz" {
+		t.Errorf("Foo call result should be 'baz': %s", result.Foo())
 	}
 }
 
