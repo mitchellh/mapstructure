@@ -229,6 +229,8 @@ func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error
 		err = d.decodePtr(name, data, val)
 	case reflect.Slice:
 		err = d.decodeSlice(name, data, val)
+	case reflect.Func:
+		err = d.decodeFunc(name, data, val)
 	default:
 		// If we reached this point then we weren't able to decode it
 		return fmt.Errorf("%s: unsupported type: %s", name, dataKind)
@@ -557,6 +559,19 @@ func (d *Decoder) decodePtr(name string, data interface{}, val reflect.Value) er
 	}
 
 	val.Set(realVal)
+	return nil
+}
+
+func (d *Decoder) decodeFunc(name string, data interface{}, val reflect.Value) error {
+	// Create an element of the concrete (non pointer) type and decode
+	// into that. Then set the value of the pointer to this type.
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
+	if val.Type() != dataVal.Type() {
+		return fmt.Errorf(
+			"'%s' expected type '%s', got unconvertible type '%s'",
+			name, val.Type(), dataVal.Type())
+	}
+	val.Set(dataVal)
 	return nil
 }
 
