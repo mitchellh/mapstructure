@@ -59,7 +59,7 @@ func TestNestedTypePointerWithDefaults(t *testing.T) {
 		},
 	}
 
-	result:=NestedPointer{
+	result := NestedPointer{
 		Vbar: &Basic{
 			Vuint: 42,
 		},
@@ -96,10 +96,9 @@ func TestNestedTypePointerWithDefaults(t *testing.T) {
 
 }
 
-
 type NestedSlice struct {
-	Vfoo string
-	Vbars []Basic
+	Vfoo   string
+	Vbars  []Basic
 	Vempty []Basic
 }
 
@@ -110,16 +109,16 @@ func TestNestedTypeSliceWithDefaults(t *testing.T) {
 	input := map[string]interface{}{
 		"vfoo": "foo",
 		"vbars": []map[string]interface{}{
-			{ "vstring": "foo", "vint":    42, "vbool":   true },
-			{ "vint":    42, "vbool":   true },
+			{"vstring": "foo", "vint": 42, "vbool": true},
+			{"vint": 42, "vbool": true},
 		},
 		"vempty": []map[string]interface{}{
-			{ "vstring": "foo", "vint":    42, "vbool":   true },
-			{ "vint":    42, "vbool":   true },
+			{"vstring": "foo", "vint": 42, "vbool": true},
+			{"vint": 42, "vbool": true},
 		},
 	}
 
-	result:=NestedSlice{
+	result := NestedSlice{
 		Vbars: []Basic{
 			{Vuint: 42},
 			{Vstring: "foo"},
@@ -141,7 +140,6 @@ func TestNestedTypeSliceWithDefaults(t *testing.T) {
 	if result.Vbars[0].Vuint != 42 {
 		t.Errorf("vuint value should be 42: %#v", result.Vbars[0].Vuint)
 	}
-
 }
 
 // #48 workaround
@@ -157,7 +155,7 @@ func TestNestedTypeWithDefaults(t *testing.T) {
 		},
 	}
 
-	result:=Nested{
+	result := Nested{
 		Vbar: Basic{
 			Vuint: 42,
 		},
@@ -192,4 +190,71 @@ func TestNestedTypeWithDefaults(t *testing.T) {
 		t.Errorf("vuint value should be 42: %#v", result.Vbar.Vuint)
 	}
 
+}
+
+// #67 panic() on extending slices (decodeSlice with disabled ZeroValues)
+func TestDecodeSliceToEmptySliceWOZeroing(t *testing.T) {
+	t.Parallel()
+
+	type TestStruct struct {
+		Vfoo []string
+	}
+
+	decode := func(m interface{}, rawVal interface{}) error {
+		config := &DecoderConfig{
+			Metadata:   nil,
+			Result:     rawVal,
+			ZeroFields: false,
+		}
+
+		decoder, err := NewDecoder(config)
+		if err != nil {
+			return err
+		}
+
+		return decoder.Decode(m)
+	}
+
+	{
+		input := map[string]interface{}{
+			"vfoo": []string{"1"},
+		}
+
+		result := &TestStruct{}
+
+		err := decode(input, &result)
+		if err != nil {
+			t.Fatalf("got an err: %s", err.Error())
+		}
+	}
+
+	{
+		input := map[string]interface{}{
+			"vfoo": []string{"1"},
+		}
+
+		result := &TestStruct{
+			Vfoo: []string{},
+		}
+
+		err := decode(input, &result)
+		if err != nil {
+			t.Fatalf("got an err: %s", err.Error())
+		}
+	}
+
+	{
+		input := map[string]interface{}{
+			"vfoo": []string{"2", "3"},
+		}
+
+		result := &TestStruct{
+			Vfoo: []string{"1"},
+		}
+
+		err := decode(input, &result)
+		if err != nil {
+			t.Fatalf("got an err: %s", err.Error())
+		}
+	}
 }
