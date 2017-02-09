@@ -1134,6 +1134,21 @@ func TestTagged(t *testing.T) {
 	}
 }
 
+func TestStrictDecode(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "hello",
+		"foo":     "bar",
+	}
+
+	var result Basic
+
+	if err := StrictDecode(input, &result); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
 func TestWeakDecode(t *testing.T) {
 	t.Parallel()
 
