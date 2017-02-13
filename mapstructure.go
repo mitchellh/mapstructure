@@ -420,13 +420,12 @@ func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) e
 			val.SetBool(false)
 		}
 	case dataKind == reflect.String && d.config.WeaklyTypedInput:
-		b, err := strconv.ParseBool(dataVal.String())
-		if err == nil {
-			val.SetBool(b)
-		} else if dataVal.String() == "" {
+		strs := strings.ToLower(dataVal.String())
+		if len(strs) <= 0 {
 			val.SetBool(false)
 		} else {
-			return fmt.Errorf("cannot parse '%s' as bool: %s", name, err)
+			b, _ := strconv.ParseBool(strs)
+			val.SetBool(b)
 		}
 	default:
 		return fmt.Errorf(
