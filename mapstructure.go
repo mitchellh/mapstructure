@@ -293,11 +293,7 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 			uint8s := dataVal.Interface().([]uint8)
 			if uint8s != nil && len(uint8s) > 0 {
 				for index := 0; index < len(uint8s); index++ {
-					if index == 0 {
-						strs = fmt.Sprintf("%d", uint8s[index])
-					} else {
-						strs = fmt.Sprintf("%s,%d", strs, uint8s[index])
-					}
+					strs = fmt.Sprintf("%s%d", strs, uint8s[index])
 				}
 			}
 			val.SetString(strs)
