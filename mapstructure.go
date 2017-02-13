@@ -414,7 +414,11 @@ func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) e
 	case dataKind == reflect.Uint && d.config.WeaklyTypedInput:
 		val.SetBool(dataVal.Uint() != 0)
 	case dataKind == reflect.Float32 && d.config.WeaklyTypedInput:
-		val.SetBool(dataVal.Float() != 0)
+		const EPSINON float64 = 0.00001
+		val.SetBool(true)
+		if dataVal.Float() >= -EPSINON && dataVal.Float() <= EPSINON {
+			val.SetBool(false)
+		}
 	case dataKind == reflect.String && d.config.WeaklyTypedInput:
 		b, err := strconv.ParseBool(dataVal.String())
 		if err == nil {
