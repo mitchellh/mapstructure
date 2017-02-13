@@ -293,7 +293,7 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 			uint8s := dataVal.Interface().([]uint8)
 			if uint8s != nil && len(uint8s) > 0 {
 				for index := 0; index < len(uint8s); index++ {
-					if uint8s[index] >= 9 {
+					if uint8s[index] <= 9 {
 						strs = fmt.Sprintf("%s%d", strs, uint8s[index])
 					} else {
 						strs = fmt.Sprintf("%s%c", strs, uint8s[index])
