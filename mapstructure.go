@@ -289,7 +289,18 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 		elemKind := dataType.Elem().Kind()
 		switch {
 		case elemKind == reflect.Uint8:
-			val.SetString(string(dataVal.Interface().([]uint8)))
+			var strs string
+			uint8s := dataVal.Interface().([]uint8)
+			if uint8s != nil && len(uint8s) > 0 {
+				for index := 0; index < len(uint8s); index++ {
+					if index == 0 {
+						strs = fmt.Sprintf("%d", uint8s[index])
+					} else {
+						strs = fmt.Sprintf("%s,%d", strs, uint8s[index])
+					}
+				}
+			}
+			val.SetString(strs)
 		default:
 			converted = false
 		}
