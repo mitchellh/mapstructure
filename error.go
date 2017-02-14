@@ -28,7 +28,7 @@ func (e *Error) Error() string {
 // WrappedErrors implements the errwrap.Wrapper interface to make this
 // return value more useful with the errwrap and go-multierror libraries.
 func (e *Error) WrappedErrors() []error {
-	if e == nil {
+	if e.Errors == nil || len(e.Errors) <= 0 {
 		return nil
 	}
 

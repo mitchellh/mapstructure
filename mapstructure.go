@@ -403,15 +403,20 @@ func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) e
 	case dataKind == reflect.Uint && d.config.WeaklyTypedInput:
 		val.SetBool(dataVal.Uint() != 0)
 	case dataKind == reflect.Float32 && d.config.WeaklyTypedInput:
-		val.SetBool(dataVal.Float() != 0)
+		// float 0.0 can't be directly compare to 0, it is a approximation
+		const EPSINON float64 = 0.00001
+		val.SetBool(true)
+		if dataVal.Float() >= -EPSINON && dataVal.Float() <= EPSINON {
+			val.SetBool(false)
+		}
 	case dataKind == reflect.String && d.config.WeaklyTypedInput:
-		b, err := strconv.ParseBool(dataVal.String())
-		if err == nil {
-			val.SetBool(b)
-		} else if dataVal.String() == "" {
+		// eg. data's value : "TuRE", "TRUe" and so on. val should be set to true
+		strs := strings.ToLower(dataVal.String())
+		if len(strs) <= 0 {
 			val.SetBool(false)
 		} else {
-			return fmt.Errorf("cannot parse '%s' as bool: %s", name, err)
+			b, _ := strconv.ParseBool(strs)
+			val.SetBool(b)
 		}
 	default:
 		return fmt.Errorf(
