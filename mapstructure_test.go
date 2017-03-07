@@ -118,6 +118,7 @@ type TypeConversionResult struct {
 	StringToFloat      float32
 	SliceToMap         map[string]interface{}
 	MapToSlice         []interface{}
+	StringToSlice      []string
 }
 
 func TestBasicTypes(t *testing.T) {
@@ -586,6 +587,7 @@ func TestDecode_TypeConversion(t *testing.T) {
 		"StringToFloat":      "42.42",
 		"SliceToMap":         []interface{}{},
 		"MapToSlice":         map[string]interface{}{},
+		"StringToSlice":      "42",
 	}
 
 	expectedResultStrict := TypeConversionResult{
@@ -624,6 +626,7 @@ func TestDecode_TypeConversion(t *testing.T) {
 		StringToFloat:      42.42,
 		SliceToMap:         map[string]interface{}{},
 		MapToSlice:         []interface{}{},
+		StringToSlice:      []string{"42"},
 	}
 
 	// Test strict type conversion
@@ -954,6 +957,30 @@ func TestSliceToMap(t *testing.T) {
 		"foo": "bar",
 		"bar": "baz",
 	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("bad: %#v", result)
+	}
+}
+
+func TestStringToSlice(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]string{
+		"foo": "bar",
+		"bar": "baz",
+	}
+
+	expected := map[string][]string{
+		"foo": {"bar"},
+		"bar": {"baz"},
+	}
+
+	var result map[string][]string
+
+	if err := WeakDecode(input, &result); err != nil {
+		t.Fatalf("got an error: %s", err)
+	}
+
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("bad: %#v", result)
 	}
