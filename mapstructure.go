@@ -588,8 +588,12 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 		// Check input type
 		if dataValKind != reflect.Array && dataValKind != reflect.Slice {
 			// Accept empty map instead of array/slice in weakly typed mode
-			if d.config.WeaklyTypedInput && dataVal.Kind() == reflect.Map && dataVal.Len() == 0 {
+			if d.config.WeaklyTypedInput && dataValKind == reflect.Map && dataVal.Len() == 0 {
 				val.Set(reflect.MakeSlice(sliceType, 0, 0))
+				return nil
+			} else if d.config.WeaklyTypedInput && dataValKind == reflect.String {
+				slc := []string{dataVal.String()}
+				val.Set(reflect.ValueOf(slc))
 				return nil
 			} else {
 				return fmt.Errorf(
