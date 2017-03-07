@@ -116,6 +116,8 @@ type TypeConversionResult struct {
 	StringToUint       uint
 	StringToBool       bool
 	StringToFloat      float32
+	StringToStrSlice   []string
+	StringToIntSlice   []int
 	SliceToMap         map[string]interface{}
 	MapToSlice         []interface{}
 }
@@ -584,6 +586,8 @@ func TestDecode_TypeConversion(t *testing.T) {
 		"StringToUint":       "42",
 		"StringToBool":       "1",
 		"StringToFloat":      "42.42",
+		"StringToStrSlice":   "A",
+		"StringToIntSlice":   "42",
 		"SliceToMap":         []interface{}{},
 		"MapToSlice":         map[string]interface{}{},
 	}
@@ -622,6 +626,8 @@ func TestDecode_TypeConversion(t *testing.T) {
 		StringToUint:       42,
 		StringToBool:       true,
 		StringToFloat:      42.42,
+		StringToStrSlice:   []string{"A"},
+		StringToIntSlice:   []int{42},
 		SliceToMap:         map[string]interface{}{},
 		MapToSlice:         []interface{}{},
 	}
