@@ -49,6 +49,34 @@ type EmbeddedSlice struct {
 	Vunique    string
 }
 
+type MapAlias map[string]interface{}
+
+type EmbeddedMapSquash struct {
+	MapAlias `mapstructure:",squash"`
+
+	Vfoo  string   `mapstructure:"foo"`
+	Vlist []string `mapstructure:"c"`
+}
+
+type EmbeddedMapInsideSquashedStruct struct {
+	S   EmbeddedMapSquash `mapstructure:",squash"`
+	Bar string
+}
+
+type MapAndStructSquash struct {
+	EmbeddedSquash `mapstructure:",squash"`
+
+	MapAlias MapAlias `mapstructure:",squash"`
+	Foo      string
+	Bar      string
+}
+
+type MapAndStructSquashInsideStruct struct {
+	MapAndStructSquash `mapstructure:",squash"`
+
+	Baz string
+}
+
 type SquashOnNonStructType struct {
 	InvalidSquashType int `mapstructure:",squash"`
 }
@@ -319,6 +347,166 @@ func TestDecode_EmbeddedSlice(t *testing.T) {
 
 	if result.Vunique != "bar" {
 		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecode_EmbeddedMapSquash(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "bar",
+		"a":   "b",
+		"c":   []interface{}{"d", "e", "f"},
+		"g":   42,
+	}
+
+	var result EmbeddedMapSquash
+	if err := Decode(input, &result); err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if !reflect.DeepEqual(result.MapAlias, MapAlias{"a": "b", "g": 42}) {
+		t.Errorf("map value: %#v", result.MapAlias)
+	}
+
+	if result.Vfoo != "bar" {
+		t.Errorf("Vfoo should be 'bar': %#v", result.Vfoo)
+	}
+
+	if !reflect.DeepEqual(result.Vlist, []string{"d", "e", "f"}) {
+		t.Errorf("Vlist should be 'd', 'e', 'f': %#v", result.Vlist)
+	}
+}
+
+func TestDecode_EmbeddedMapSquashInsideSquashedStruct(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "bar",
+		"bar": "baz",
+		"a":   "b",
+		"c":   []interface{}{"d", "e", "f"},
+		"g":   42,
+	}
+
+	var result EmbeddedMapInsideSquashedStruct
+	if err := Decode(input, &result); err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	wantEmbeddedMapSquash := EmbeddedMapSquash{
+		MapAlias: MapAlias{"a": "b", "g": 42},
+		Vfoo:     "bar",
+		Vlist:    []string{"d", "e", "f"},
+	}
+
+	if !reflect.DeepEqual(result.S, wantEmbeddedMapSquash) {
+		t.Errorf("S: %#v", result.S)
+	}
+
+	if result.Bar != "baz" {
+		t.Errorf("Bar should be 'baz': %#v", result.Bar)
+	}
+}
+
+func TestDecode_MapAndStructSquashInsideStruct(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo":     "a",
+		"bar":     "b",
+		"baz":     "c",
+		"qux":     "d",
+		"vunique": "e",
+		"vextra":  "f",
+	}
+
+	var result MapAndStructSquashInsideStruct
+	if err := Decode(input, &result); err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	want := MapAndStructSquashInsideStruct{
+		MapAndStructSquash: MapAndStructSquash{
+			EmbeddedSquash: EmbeddedSquash{
+				Basic:   Basic{Vextra: "f"},
+				Vunique: "e",
+			},
+			Foo:      "a",
+			Bar:      "b",
+			MapAlias: map[string]interface{}{"qux": "d"},
+		},
+		Baz: "c",
+	}
+
+	if !reflect.DeepEqual(result, want) {
+		t.Errorf("result did not match: %#v", result)
+	}
+}
+
+func TestDecode_MapAndStructSquash(t *testing.T) {
+	t.Parallel()
+
+	input := map[interface{}]interface{}{
+		"vunique": "hello",
+		"vstring": "world",
+		"vuint":   42,
+		"foo":     "bar",
+		"bar":     "baz",
+		"x":       "y",
+		"baz":     []string{"qux"},
+	}
+
+	var result MapAndStructSquash
+	if err := Decode(input, &result); err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	wantMap := MapAlias{
+		"x":   "y",
+		"baz": []string{"qux"},
+	}
+	if !reflect.DeepEqual(result.MapAlias, wantMap) {
+		t.Errorf("map value: %#v", result.MapAlias)
+	}
+
+	wantEmbeddedSquash := EmbeddedSquash{
+		Vunique: "hello",
+		Basic:   Basic{Vstring: "world", Vuint: 42},
+	}
+	if !reflect.DeepEqual(result.EmbeddedSquash, wantEmbeddedSquash) {
+		t.Errorf("EmbeddedSquash value: %#v", result.MapAlias)
+	}
+
+	if result.Foo != "bar" {
+		t.Errorf("Foo should be 'bar': %#v", result.Foo)
+	}
+
+	if result.Bar != "baz" {
+		t.Errorf("Bar should be 'baz': %#v", result.Bar)
+	}
+}
+
+func TestDecode_SquashMultipleMaps(t *testing.T) {
+	t.Parallel()
+
+	var result struct {
+		Foo MapAlias `mapstructure:",squash"`
+		Bar MapAlias `mapstructure:",squash"`
+	}
+
+	err := Decode(map[string]interface{}{}, &result)
+	if err == nil {
+		t.Fatal("error should exist")
+	}
+
+	derr, ok := err.(*Error)
+	if !ok {
+		t.Fatalf("error should be kind of Error, instead: %#v", err)
+	}
+
+	if derr.Errors[0] != "Bar: map 'Foo' has already been squashed into this struct" {
+		t.Errorf("got unexpected error: %s", err)
 	}
 }
 

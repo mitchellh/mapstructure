@@ -678,6 +678,13 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 
 	errors := make([]string, 0)
 
+	// Squashed map, if any. There can be only one. Fields not consumed by the
+	// struct will be fed into the squashed map.
+	var (
+		squashedMapField *reflect.StructField
+		squashedMapValue reflect.Value
+	)
+
 	// This slice will keep track of all the structs we'll be decoding.
 	// There can be more than one struct if there are embedded structs
 	// that are squashed.
@@ -708,11 +715,22 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 			}
 
 			if squash {
-				if fieldKind != reflect.Struct {
+				switch fieldKind {
+				case reflect.Struct:
+					structs = append(structs, val.FieldByName(fieldType.Name))
+				case reflect.Map:
+					if squashedMapField != nil {
+						errors = appendErrors(errors, fmt.Errorf(
+							"%s: map '%s' has already been squashed into this struct",
+							fieldType.Name, squashedMapField.Name))
+						continue
+					}
+
+					squashedMapField = &fieldType
+					squashedMapValue = structVal.Field(i)
+				default:
 					errors = appendErrors(errors,
 						fmt.Errorf("%s: unsupported type for squash: %s", fieldType.Name, fieldKind))
-				} else {
-					structs = append(structs, val.FieldByName(fieldType.Name))
 				}
 				continue
 			}
@@ -778,6 +796,19 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		}
 
 		if err := d.decode(fieldName, rawMapVal.Interface(), field); err != nil {
+			errors = appendErrors(errors, err)
+		}
+	}
+
+	if squashedMapField != nil {
+		leftovers := make(map[interface{}]interface{}, len(dataValKeysUnused))
+		for k := range dataValKeysUnused {
+			leftovers[k] = dataVal.MapIndex(reflect.ValueOf(k)).Interface()
+			delete(dataValKeysUnused, k)
+		}
+
+		fieldName := fmt.Sprintf("%s.%s", name, squashedMapField.Name)
+		if err := d.decode(fieldName, leftovers, squashedMapValue); err != nil {
 			errors = appendErrors(errors, err)
 		}
 	}
