@@ -32,6 +32,14 @@ type Embedded struct {
 	Vunique string
 }
 
+type EmbeddedNoSquash struct {
+	// Opt out of squashing for one embedded type but not another.
+	Basic `mapstructure:",nosquash"`
+	MapAlias
+
+	Vunique string
+}
+
 type EmbeddedPointer struct {
 	*Basic
 	Vunique string
@@ -50,6 +58,13 @@ type EmbeddedSlice struct {
 }
 
 type MapAlias map[string]interface{}
+
+type EmbeddedMap struct {
+	MapAlias
+
+	Vfoo  string
+	Vlist []string
+}
 
 type EmbeddedMapSquash struct {
 	MapAlias `mapstructure:",squash"`
@@ -299,6 +314,78 @@ func TestDecode_Embedded(t *testing.T) {
 	}
 }
 
+func TestDecode_SquashEmbedded_Embedded(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vbool":   true,
+		"vint":    42,
+		"vstring": "foo",
+		"vunique": "bar",
+	}
+
+	var result Embedded
+
+	decoder, err := NewDecoder(&DecoderConfig{Result: &result, SquashEmbedded: true})
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if err := decoder.Decode(input); err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if !result.Vbool {
+		t.Errorf("vbool value should be 'true': %#v", result.Vbool)
+	}
+
+	if result.Vint != 42 {
+		t.Errorf("vint value should be '42': %#v", result.Vint)
+	}
+
+	if result.Vstring != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Vstring)
+	}
+
+	if result.Vunique != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecode_SquashEmbedded_EmbeddedNoSquash(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+		"Basic": map[string]interface{}{
+			"vstring": "innerfoo",
+		},
+		"vunique": "bar",
+	}
+
+	var result EmbeddedNoSquash
+	decoder, err := NewDecoder(&DecoderConfig{Result: &result, SquashEmbedded: true})
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if err := decoder.Decode(input); err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Vstring != "innerfoo" {
+		t.Errorf("vstring value should be 'innerfoo': %#v", result.Vstring)
+	}
+
+	if result.Vunique != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+
+	if result.MapAlias["vstring"] != "foo" {
+		t.Errorf("MapAlias.vstring value should be 'foo': %#v", result.MapAlias["vstring"])
+	}
+}
+
 func TestDecode_EmbeddedPointer(t *testing.T) {
 	t.Parallel()
 
@@ -347,6 +434,38 @@ func TestDecode_EmbeddedSlice(t *testing.T) {
 
 	if result.Vunique != "bar" {
 		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecode_SquashEmbedded_EmbeddedMap(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vbool":   true,
+		"vfoo":    "42",
+		"vlist":   []interface{}{"1", "2", "3"},
+		"vunique": "bar",
+	}
+
+	var result EmbeddedMap
+
+	decoder, err := NewDecoder(&DecoderConfig{Result: &result, SquashEmbedded: true})
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if err := decoder.Decode(input); err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	wantResult := EmbeddedMap{
+		MapAlias: MapAlias{"vbool": true, "vunique": "bar"},
+		Vfoo:     "42",
+		Vlist:    []string{"1", "2", "3"},
+	}
+
+	if !reflect.DeepEqual(wantResult, result) {
+		t.Errorf("result mismatch: %#v", result)
 	}
 }
 

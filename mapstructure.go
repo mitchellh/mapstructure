@@ -61,6 +61,10 @@ type DecoderConfig struct {
 	// it. If this is false, a map will be merged.
 	ZeroFields bool
 
+	// Squash embedded structs by default. If this option is specified, use a
+	// nosquash tag to opt-out of squashing specific structs.
+	SquashEmbedded bool
+
 	// If WeaklyTypedInput is true, the decoder will make the following
 	// "weak" conversions:
 	//
@@ -704,14 +708,21 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 			fieldType := structType.Field(i)
 			fieldKind := fieldType.Type.Kind()
 
-			// If "squash" is specified in the tag, we squash the field down.
-			squash := false
+			// Squash the field if one of the following is true
+			// - SquashEmbedded was set and the field is anonymous
+			// - A squash was explicitly requested
+			squash := d.config.SquashEmbedded && fieldType.Anonymous
 			tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
 			for _, tag := range tagParts[1:] {
-				if tag == "squash" {
+				switch tag {
+				case "squash":
 					squash = true
-					break
+				case "nosquash": // explicit opt-out
+					squash = false
+				default:
+					continue
 				}
+				break
 			}
 
 			if squash {
