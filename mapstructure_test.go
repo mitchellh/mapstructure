@@ -666,6 +666,130 @@ func TestDecode_TypeConversion(t *testing.T) {
 	}
 }
 
+func TestDecoder_CaseSensitiveKeys_NoTagsNoMatches(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "hello",
+		"foo":     "bar",
+	}
+
+	var result Basic
+	var metadata Metadata
+	config := &DecoderConfig{
+		CaseSensitiveKeys: true,
+		Metadata:          &metadata,
+		Result:            &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if len(metadata.Unused) != 2 {
+		t.Errorf("expected 2 unused keys, got %d.", len(metadata.Unused))
+	}
+}
+
+func TestDecoder_CaseSensitiveKeys_NoTagsAllMatches(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"Vstring":  "hello",
+		"VjsonInt": 3,
+	}
+
+	var result Basic
+	var metadata Metadata
+	config := &DecoderConfig{
+		CaseSensitiveKeys: true,
+		Metadata:          &metadata,
+		Result:            &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if len(metadata.Unused) != 0 {
+		t.Errorf("expected 0 unused keys, got %d.", len(metadata.Unused))
+	}
+}
+
+func TestDecoder_CaseSensitiveKeys_WithTagsNoMatches(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"Extra": "hello",
+		"Value": "there",
+	}
+
+	var result Tagged
+	var metadata Metadata
+	config := &DecoderConfig{
+		CaseSensitiveKeys: true,
+		Metadata:          &metadata,
+		Result:            &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if len(metadata.Unused) != 2 {
+		t.Errorf("expected 2 unused keys, got %d.", len(metadata.Unused))
+	}
+}
+
+func TestDecoder_CaseSensitiveKeys_WithTagsAllMatches(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"bar": "hello",
+		"foo": "there",
+	}
+
+	var result Tagged
+	var metadata Metadata
+	config := &DecoderConfig{
+		CaseSensitiveKeys: true,
+		Metadata:          &metadata,
+		Result:            &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if len(metadata.Unused) != 0 {
+		t.Errorf("expected 0 unused keys, got %d.", len(metadata.Unused))
+	}
+}
+
 func TestDecoder_ErrorUnused(t *testing.T) {
 	t.Parallel()
 
