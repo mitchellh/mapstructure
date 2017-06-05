@@ -297,7 +297,18 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 		elemKind := dataType.Elem().Kind()
 		switch {
 		case elemKind == reflect.Uint8:
-			val.SetString(string(dataVal.Interface().([]uint8)))
+			var strs string
+			uint8s := dataVal.Interface().([]uint8)
+			if uint8s != nil && len(uint8s) > 0 {
+				for index := 0; index < len(uint8s); index++ {
+					if uint8s[index] <= 9 {
+						strs = fmt.Sprintf("%s%d", strs, uint8s[index])
+					} else {
+						strs = fmt.Sprintf("%s%c", strs, uint8s[index])
+					}
+				}
+			}
+			val.SetString(strs)
 		default:
 			converted = false
 		}
@@ -411,15 +422,18 @@ func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) e
 	case dataKind == reflect.Uint && d.config.WeaklyTypedInput:
 		val.SetBool(dataVal.Uint() != 0)
 	case dataKind == reflect.Float32 && d.config.WeaklyTypedInput:
-		val.SetBool(dataVal.Float() != 0)
+		const EPSINON float64 = 0.00001
+		val.SetBool(true)
+		if dataVal.Float() >= -EPSINON && dataVal.Float() <= EPSINON {
+			val.SetBool(false)
+		}
 	case dataKind == reflect.String && d.config.WeaklyTypedInput:
-		b, err := strconv.ParseBool(dataVal.String())
-		if err == nil {
-			val.SetBool(b)
-		} else if dataVal.String() == "" {
+		strs := strings.ToLower(dataVal.String())
+		if len(strs) <= 0 {
 			val.SetBool(false)
 		} else {
-			return fmt.Errorf("cannot parse '%s' as bool: %s", name, err)
+			b, _ := strconv.ParseBool(strs)
+			val.SetBool(b)
 		}
 	default:
 		return fmt.Errorf(
