@@ -2,6 +2,7 @@ package mapstructure
 
 import (
 	"errors"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -49,6 +50,36 @@ func TestComposeDecodeHookFunc_err(t *testing.T) {
 		f, reflect.TypeOf(""), reflect.TypeOf([]byte("")), 42)
 	if err.Error() != "foo" {
 		t.Fatalf("bad: %s", err)
+	}
+}
+
+func TestComposeDecodeHookFunc_typedNils(t *testing.T) {
+	f1 := func(
+		f reflect.Kind,
+		t reflect.Kind,
+		data interface{}) (interface{}, error) {
+		if data == nil || data.(string) == "" {
+			return (os.Signal)(nil), nil
+		}
+		return os.Kill, nil
+	}
+
+	f2 := func(
+		f reflect.Kind,
+		t reflect.Kind,
+		data interface{}) (interface{}, error) {
+		return data, nil
+	}
+
+	f := ComposeDecodeHookFunc(f1, f2)
+
+	result, err := DecodeHookExec(
+		f, reflect.TypeOf(""), reflect.TypeOf(os.Kill), "")
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+	if _, ok := result.(os.Signal); !ok {
+		t.Fatalf("bad: %#v", result)
 	}
 }
 
