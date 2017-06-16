@@ -602,7 +602,8 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 						val.Set(reflect.MakeSlice(sliceType, 0, 0))
 						return nil
 					}
-
+				case dataValKind == reflect.String && valElemType.Kind() == reflect.Uint8:
+					return d.decodeSlice(name, []byte(dataVal.String()), val)
 				// All other types we try to convert to the slice type
 				// and "lift" it into it. i.e. a string becomes a string slice.
 				default:
@@ -610,7 +611,6 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 					return d.decodeSlice(name, []interface{}{data}, val)
 				}
 			}
-
 			return fmt.Errorf(
 				"'%s': source data must be an array or slice, got %s", name, dataValKind)
 
