@@ -192,6 +192,9 @@ func (d *Decoder) Decode(raw interface{}) error {
 func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error {
 	if data == nil {
 		// If the data is nil, then we don't set anything.
+		if d.config.ZeroFields {
+			val.Set(reflect.Zero(val.Type()))
+		}
 		return nil
 	}
 
