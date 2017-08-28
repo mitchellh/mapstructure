@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"sort"
 	"strconv"
@@ -343,10 +344,20 @@ func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) er
 		jn := data.(json.Number)
 		i, err := jn.Int64()
 		if err != nil {
-			return fmt.Errorf(
-				"error decoding json.Number into %s: %s", name, err)
+			f, err := jn.Float64()
+			if err != nil {
+				return fmt.Errorf(
+					"error decoding json.Number into %s: %s", name, err)
+			}
+			if f == float64(int64(f)) && int64(f) <= math.MaxInt64 {
+				val.SetInt(int64(f))
+			} else {
+				return fmt.Errorf(
+					"error decoding json.Number into %s: %s", name, err)
+			}
+		} else {
+			val.SetInt(i)
 		}
-		val.SetInt(i)
 	default:
 		return fmt.Errorf(
 			"'%s' expected type '%s', got unconvertible type '%s'",
