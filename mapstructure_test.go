@@ -23,6 +23,10 @@ type Basic struct {
 	VjsonNumber json.Number
 }
 
+type BasicJSON struct {
+	VStringU string `json:"v_string_u"`
+}
+
 type BasicSquash struct {
 	Test Basic `mapstructure:",squash"`
 }
@@ -187,6 +191,25 @@ func TestBasicTypes(t *testing.T) {
 
 	if !reflect.DeepEqual(result.VjsonNumber, json.Number("1234.5")) {
 		t.Errorf("vjsonnumber value should be '1234.5': %T, %#v", result.VjsonNumber, result.VjsonNumber)
+	}
+}
+
+func TestBasicJSON(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"v_string_u": "foo",
+	}
+
+	var result BasicJSON
+	err := Decode(input, &result)
+	if err != nil {
+		t.Errorf("got an err: %s", err.Error())
+		t.FailNow()
+	}
+
+	if result.VStringU != "foo" {
+		t.Errorf("v_string_u value should be 'foo': %#v", result.VStringU)
 	}
 }
 

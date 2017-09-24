@@ -742,6 +742,10 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 					// Not a string key
 					continue
 				}
+				//convert the json field name to CamelCase to fix bug when using tags containing underscore
+				if strings.Contains(mK, "_") {
+					mK = strings.Replace(strings.Title(strings.Replace(strings.ToLower(mK), "_", " ", -1)), " ", "", -1)
+				}
 
 				if strings.EqualFold(mK, fieldName) {
 					rawMapKey = dataValKey
