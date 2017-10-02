@@ -722,17 +722,39 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		}
 	}
 
+	var lostfoundKey reflect.Value
+
 	for fieldType, field := range fields {
 		fieldName := fieldType.Name
 
 		tagValue := fieldType.Tag.Get(d.config.TagName)
-		tagValue = strings.SplitN(tagValue, ",", 2)[0]
+		tagSplit := strings.SplitN(tagValue, ",", 2)
+		tagValue = tagSplit[0]
 		if tagValue != "" {
 			fieldName = tagValue
 		}
 
 		rawMapKey := reflect.ValueOf(fieldName)
 		rawMapVal := dataVal.MapIndex(rawMapKey)
+
+		// Split up the second half of the tag and check for the "unused" option.
+		if len(tagSplit) > 1 {
+			var in bool
+			for _, tag := range strings.Split(tagSplit[1], ",") {
+				if tag == "lostfound" {
+					lostfoundKey = rawMapKey
+					in = true
+					break
+				}
+			}
+
+			// Skip the rest of the checks on this field, as those will be
+			// handled separately.
+			if in {
+				continue
+			}
+		}
+
 		if !rawMapVal.IsValid() {
 			// Do a slower search by iterating over each key and
 			// doing case-insensitive search.
@@ -795,6 +817,33 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 
 	if len(errors) > 0 {
 		return &Error{errors}
+	}
+
+	// Only populate lost+found map if ErrorUnused isn't enabled.
+	if len(dataValKeysUnused) > 0 && lostfoundKey.IsValid() {
+		// Obtain the field from the struct, and initialize it.
+		field := val.FieldByName(lostfoundKey.Interface().(string))
+
+		// Make sure we only use the key if it is exported.
+		if field.CanSet() {
+			if field.Type() != reflect.TypeOf(map[string]interface{}{}) {
+				return fmt.Errorf("field '%s': invalid lost+found type: %s", lostfoundKey.String(), field.Type().String())
+			}
+
+			field.Set(reflect.MakeMap(field.Type()))
+
+			// Loop through, and set all of the unused key->value pairs into
+			// the lost+found tagged struct field.
+			var key reflect.Value
+			for rawKey := range dataValKeysUnused {
+				key = reflect.ValueOf(rawKey.(string))
+				field.SetMapIndex(key, dataVal.MapIndex(key))
+			}
+
+			// Delete the lost+found key we're using from the unused map so we
+			// stop tracking it.
+			delete(dataValKeysUnused, lostfoundKey.Interface())
+		}
 	}
 
 	// Add the unused keys to the list of unused keys if we're tracking metadata

@@ -201,3 +201,33 @@ func ExampleDecode_embeddedStruct() {
 	// Output:
 	// Mitchell Hashimoto, San Francisco
 }
+
+func ExampleDecode_lostFound() {
+	// Catching unknown (unused) fields is supported through the lostfound
+	// tag. As shon below, even if we don't support the "person_location"
+	// field, we can still obtain it by dumping all unknown fields into the
+	// "Extra" field. This works recursively, and is helpful when decoding
+	// from a remote API which has a set of standard fields, and a set of
+	// fields which are not known beforehand.
+	type Person struct {
+		Name  string                 `mapstructure:"person_name"`
+		Age   int                    `mapstructure:"person_age"`
+		Extra map[string]interface{} `mapstructure:",lostfound"`
+	}
+
+	input := map[string]interface{}{
+		"person_name":     "Mitchell",
+		"person_age":      91,
+		"person_location": "San Francisco",
+	}
+
+	var result Person
+	err := Decode(input, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%s, age %d, %s", result.Name, result.Age, result.Extra["person_location"])
+	// Output:
+	// Mitchell, age 91, San Francisco
+}

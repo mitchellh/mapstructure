@@ -49,6 +49,19 @@ type EmbeddedSlice struct {
 	Vunique    string
 }
 
+type SliceLostFound struct {
+	AnonSliceStruct []struct {
+		Foo   string
+		Extra map[string]interface{} `mapstructure:",lostfound"`
+	}
+	AnonStruct struct {
+		Foo   string
+		Extra map[string]interface{} `mapstructure:",lostfound"`
+	}
+	Single string
+	Extra  map[string]interface{} `mapstructure:",lostfound"`
+}
+
 type SquashOnNonStructType struct {
 	InvalidSquashType int `mapstructure:",squash"`
 }
@@ -1189,5 +1202,63 @@ func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice)
 				"Vbar[%d] should be '%#v', got '%#v'",
 				i, expected.Vbar[i], v)
 		}
+	}
+}
+
+func TestLostFound(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"anonslicestruct": []map[string]interface{}{
+			map[string]interface{}{"foo": "1"},
+			map[string]interface{}{"bar": "2"},
+		},
+		"anonstruct": map[string]interface{}{
+			"foo": "3",
+			"bar": "4",
+		},
+		"single": "5",
+		"bar":    "6",
+	}
+
+	var md Metadata
+	var result SliceLostFound
+	config := &DecoderConfig{
+		Metadata: &md,
+		Result:   &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err.Error())
+	}
+
+	if result.Single != "5" {
+		t.Errorf("value should be '5', got: %#v", result.Single)
+	}
+
+	if result.Extra["bar"] != "6" {
+		t.Errorf("value should be '6', got: %#v", result.Extra["bar"])
+	}
+
+	if result.AnonSliceStruct[0].Foo != "1" {
+		t.Errorf("value should be '1', got: %#v", result.AnonSliceStruct[0].Foo)
+	}
+
+	if result.AnonSliceStruct[1].Extra["bar"] != "2" {
+		t.Errorf("value should be '2', got: %#v", result.AnonSliceStruct[1].Extra["bar"])
+	}
+
+	if result.AnonStruct.Foo != "3" {
+		t.Errorf("value should be '3', got: %#v", result.AnonStruct.Foo)
+	}
+
+	if result.AnonStruct.Extra["bar"] != "4" {
+		t.Errorf("value should be '4', got: %#v", result.AnonStruct.Extra["bar"])
 	}
 }
