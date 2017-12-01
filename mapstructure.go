@@ -590,32 +590,32 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 	valElemType := valType.Elem()
 	sliceType := reflect.SliceOf(valElemType)
 
-	valSlice := val
-	if valSlice.IsNil() || d.config.ZeroFields {
-		// Check input type
-		if dataValKind != reflect.Array && dataValKind != reflect.Slice {
-			if d.config.WeaklyTypedInput {
-				switch {
-				// Empty maps turn into empty slices
-				case dataValKind == reflect.Map:
-					if dataVal.Len() == 0 {
-						val.Set(reflect.MakeSlice(sliceType, 0, 0))
-						return nil
-					}
-
-				// All other types we try to convert to the slice type
-				// and "lift" it into it. i.e. a string becomes a string slice.
-				default:
-					// Just re-try this function with data as a slice.
-					return d.decodeSlice(name, []interface{}{data}, val)
+	// Check input type
+	if dataValKind != reflect.Array && dataValKind != reflect.Slice {
+		if d.config.WeaklyTypedInput {
+			switch {
+			// Empty maps turn into empty slices
+			case dataValKind == reflect.Map:
+				if dataVal.Len() == 0 {
+					val.Set(reflect.MakeSlice(sliceType, 0, 0))
+					return nil
 				}
+
+			// All other types we try to convert to the slice type
+			// and "lift" it into it. i.e. a string becomes a string slice.
+			default:
+				// Just re-try this function with data as a slice.
+				return d.decodeSlice(name, []interface{}{data}, val)
 			}
-
-			return fmt.Errorf(
-				"'%s': source data must be an array or slice, got %s", name, dataValKind)
-
 		}
 
+		return fmt.Errorf(
+			"'%s': source data must be an array or slice, got %s", name, dataValKind)
+
+	}
+
+	valSlice := val
+	if valSlice.IsNil() || d.config.ZeroFields {
 		// Make a new slice to hold our result, same size as the original data.
 		valSlice = reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
 	}
