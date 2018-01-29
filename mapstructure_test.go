@@ -110,6 +110,11 @@ type Tagged struct {
 	Value string `mapstructure:"foo"`
 }
 
+type TaggedOverride struct {
+	Extra string `override:"bar,what,what"`
+	Value string `mapstructure:"foo"`
+}
+
 type TypeConversionResult struct {
 	IntToFloat         float32
 	IntToUint          uint
@@ -1284,6 +1289,40 @@ func TestTagged(t *testing.T) {
 
 	if result.Extra != "value" {
 		t.Errorf("extra should be 'value', got: %#v", result.Extra)
+	}
+}
+
+func TestTaggedOverride(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "bar",
+		"bar": "value",
+	}
+
+	// Ensure that the new tagname takes effect, and is capable of handling
+	// both the overridden and the default tag names to support non-breaking
+	// transition from the default tag name to a custom tag name.
+	var resultOverride TaggedOverride
+	decoder, err := NewDecoder(&DecoderConfig{
+		TagName: "override",
+		Result:  &resultOverride,
+	})
+	if err != nil {
+		t.Fatalf("error constructing decoder: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if resultOverride.Value != "bar" {
+		t.Errorf("value should be 'bar', got: %#v", resultOverride.Value)
+	}
+
+	if resultOverride.Extra != "value" {
+		t.Errorf("extra should be 'value', got: %#v", resultOverride.Extra)
 	}
 }
 

@@ -17,6 +17,8 @@ import (
 	"strings"
 )
 
+const tagNameDefault = "mapstructure"
+
 // DecodeHookFunc is the callback function that can be used for
 // data transformations. See "DecodeHook" in the DecoderConfig
 // struct.
@@ -169,10 +171,6 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 		if config.Metadata.Unused == nil {
 			config.Metadata.Unused = make([]string, 0)
 		}
-	}
-
-	if config.TagName == "" {
-		config.TagName = "mapstructure"
 	}
 
 	result := &Decoder{
@@ -782,7 +780,7 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 
 			// If "squash" is specified in the tag, we squash the field down.
 			squash := false
-			tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
+			tagParts := strings.Split(getStructTag(fieldType.Tag, d.config.TagName), ",")
 			for _, tag := range tagParts[1:] {
 				if tag == "squash" {
 					squash = true
@@ -810,7 +808,7 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 		field, fieldValue := f.field, f.val
 		fieldName := field.Name
 
-		tagValue := field.Tag.Get(d.config.TagName)
+		tagValue := getStructTag(field.Tag, d.config.TagName)
 		tagValue = strings.SplitN(tagValue, ",", 2)[0]
 		if tagValue != "" {
 			fieldName = tagValue
@@ -910,4 +908,20 @@ func getKind(val reflect.Value) reflect.Kind {
 	default:
 		return kind
 	}
+}
+
+// getStructTag attempts to get the value for the tag first by the custom
+// TagName, if set, then by the tagNameDefault if nothing is found.
+func getStructTag(tag reflect.StructTag, tagName string) string {
+	// If no custom tag name is set, just use the default.
+	if tagName == "" {
+		return tag.Get(tagNameDefault)
+	}
+
+	tagValue := tag.Get(tagName)
+	if tagValue == "" {
+		// We didn't get anything with the custom tag. Try our default.
+		tagValue = tag.Get(tagNameDefault)
+	}
+	return tagValue
 }
