@@ -114,12 +114,12 @@ type Metadata struct {
 	Unused []string
 }
 
-// Decode takes a map and uses reflection to convert it into the
-// given Go native structure. val must be a pointer to a struct.
-func Decode(m interface{}, rawVal interface{}) error {
+// Decode takes an input structure and uses reflection to translate it to
+// the output structure. output must be a pointer to a map or struct.
+func Decode(input interface{}, output interface{}) error {
 	config := &DecoderConfig{
 		Metadata: nil,
-		Result:   rawVal,
+		Result:   output,
 	}
 
 	decoder, err := NewDecoder(config)
@@ -127,7 +127,7 @@ func Decode(m interface{}, rawVal interface{}) error {
 		return err
 	}
 
-	return decoder.Decode(m)
+	return decoder.Decode(input)
 }
 
 // WeakDecode is the same as Decode but is shorthand to enable
@@ -184,70 +184,70 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 
 // Decode decodes the given raw interface to the target pointer specified
 // by the configuration.
-func (d *Decoder) Decode(raw interface{}) error {
-	return d.decode("", raw, reflect.ValueOf(d.config.Result).Elem())
+func (d *Decoder) Decode(input interface{}) error {
+	return d.decode("", input, reflect.ValueOf(d.config.Result).Elem())
 }
 
 // Decodes an unknown data type into a specific reflection value.
-func (d *Decoder) decode(name string, data interface{}, val reflect.Value) error {
-	if data == nil {
-		// If the data is nil, then we don't set anything.
+func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) error {
+	if input == nil {
+		// If the input is nil, then we don't set anything.
 		return nil
 	}
 
-	dataVal := reflect.ValueOf(data)
-	if !dataVal.IsValid() {
-		// If the data value is invalid, then we just set the value
+	inputVal := reflect.ValueOf(input)
+	if !inputVal.IsValid() {
+		// If the input value is invalid, then we just set the value
 		// to be the zero value.
-		val.Set(reflect.Zero(val.Type()))
+		outVal.Set(reflect.Zero(outVal.Type()))
 		return nil
 	}
 
 	if d.config.DecodeHook != nil {
-		// We have a DecodeHook, so let's pre-process the data.
+		// We have a DecodeHook, so let's pre-process the input.
 		var err error
-		data, err = DecodeHookExec(
+		input, err = DecodeHookExec(
 			d.config.DecodeHook,
-			dataVal.Type(), val.Type(), data)
+			inputVal.Type(), outVal.Type(), input)
 		if err != nil {
 			return fmt.Errorf("error decoding '%s': %s", name, err)
 		}
 	}
 
 	var err error
-	dataKind := getKind(val)
-	switch dataKind {
+	inputKind := getKind(outVal)
+	switch inputKind {
 	case reflect.Bool:
-		err = d.decodeBool(name, data, val)
+		err = d.decodeBool(name, input, outVal)
 	case reflect.Interface:
-		err = d.decodeBasic(name, data, val)
+		err = d.decodeBasic(name, input, outVal)
 	case reflect.String:
-		err = d.decodeString(name, data, val)
+		err = d.decodeString(name, input, outVal)
 	case reflect.Int:
-		err = d.decodeInt(name, data, val)
+		err = d.decodeInt(name, input, outVal)
 	case reflect.Uint:
-		err = d.decodeUint(name, data, val)
+		err = d.decodeUint(name, input, outVal)
 	case reflect.Float32:
-		err = d.decodeFloat(name, data, val)
+		err = d.decodeFloat(name, input, outVal)
 	case reflect.Struct:
-		err = d.decodeStruct(name, data, val)
+		err = d.decodeStruct(name, input, outVal)
 	case reflect.Map:
-		err = d.decodeMap(name, data, val)
+		err = d.decodeMap(name, input, outVal)
 	case reflect.Ptr:
-		err = d.decodePtr(name, data, val)
+		err = d.decodePtr(name, input, outVal)
 	case reflect.Slice:
-		err = d.decodeSlice(name, data, val)
+		err = d.decodeSlice(name, input, outVal)
 	case reflect.Array:
-		err = d.decodeArray(name, data, val)
+		err = d.decodeArray(name, input, outVal)
 	case reflect.Func:
-		err = d.decodeFunc(name, data, val)
+		err = d.decodeFunc(name, input, outVal)
 	default:
 		// If we reached this point then we weren't able to decode it
-		return fmt.Errorf("%s: unsupported type: %s", name, dataKind)
+		return fmt.Errorf("%s: unsupported type: %s", name, inputKind)
 	}
 
 	// If we reached here, then we successfully decoded SOMETHING, so
-	// mark the key as used if we're tracking metadata.
+	// mark the key as used if we're tracking metainput.
 	if d.config.Metadata != nil && name != "" {
 		d.config.Metadata.Keys = append(d.config.Metadata.Keys, name)
 	}
