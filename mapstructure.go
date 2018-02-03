@@ -502,34 +502,50 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 		valMap = reflect.MakeMap(mapType)
 	}
 
-	// Check input type
+	// Check input type and based on the input type jump to the proper func
 	dataVal := reflect.Indirect(reflect.ValueOf(data))
-	if dataVal.Kind() != reflect.Map {
-		// In weak mode, we accept a slice of maps as an input...
+	switch dataVal.Kind() {
+	case reflect.Map:
+		return d.decodeMapFromMap(name, dataVal, val, valMap)
+
+	case reflect.Struct:
+		return d.decodeMapFromStruct(name, dataVal, val, valMap)
+
+	case reflect.Array, reflect.Slice:
 		if d.config.WeaklyTypedInput {
-			switch dataVal.Kind() {
-			case reflect.Array, reflect.Slice:
-				// Special case for BC reasons (covered by tests)
-				if dataVal.Len() == 0 {
-					val.Set(valMap)
-					return nil
-				}
-
-				for i := 0; i < dataVal.Len(); i++ {
-					err := d.decode(
-						fmt.Sprintf("%s[%d]", name, i),
-						dataVal.Index(i).Interface(), val)
-					if err != nil {
-						return err
-					}
-				}
-
-				return nil
-			}
+			return d.decodeMapFromSlice(name, dataVal, val, valMap)
 		}
 
+		fallthrough
+
+	default:
 		return fmt.Errorf("'%s' expected a map, got '%s'", name, dataVal.Kind())
 	}
+}
+
+func (d *Decoder) decodeMapFromSlice(name string, dataVal reflect.Value, val reflect.Value, valMap reflect.Value) error {
+	// Special case for BC reasons (covered by tests)
+	if dataVal.Len() == 0 {
+		val.Set(valMap)
+		return nil
+	}
+
+	for i := 0; i < dataVal.Len(); i++ {
+		err := d.decode(
+			fmt.Sprintf("%s[%d]", name, i),
+			dataVal.Index(i).Interface(), val)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (d *Decoder) decodeMapFromMap(name string, dataVal reflect.Value, val reflect.Value, valMap reflect.Value) error {
+	valType := val.Type()
+	valKeyType := valType.Key()
+	valElemType := valType.Elem()
 
 	// Accumulate errors
 	errors := make([]string, 0)
@@ -561,6 +577,66 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 	// If we had errors, return those
 	if len(errors) > 0 {
 		return &Error{errors}
+	}
+
+	return nil
+}
+
+func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val reflect.Value, valMap reflect.Value) error {
+	typ := dataVal.Type()
+	for i := 0; i < typ.NumField(); i++ {
+		// Get the StructField first since this is a cheap operation. If the
+		// field is unexported, then ignore it.
+		f := typ.Field(i)
+		if f.PkgPath != "" {
+			continue
+		}
+
+		// Next get the actual value of this field and verify it is assignable
+		// to the map value.
+		v := dataVal.Field(i)
+		if !v.Type().AssignableTo(valMap.Type().Elem()) {
+			return fmt.Errorf("cannot assign type '%s' to map value field of type '%s'", v.Type(), valMap.Type().Elem())
+		}
+
+		// Determine the name of the key in the map
+		keyName := f.Name
+		tagValue := f.Tag.Get(d.config.TagName)
+		tagValue = strings.SplitN(tagValue, ",", 2)[0]
+		if tagValue != "" {
+			if tagValue == "-" {
+				continue
+			}
+
+			keyName = tagValue
+		}
+
+		switch v.Kind() {
+		// this is an embedded struct, so handle it differently
+		case reflect.Struct:
+			x := reflect.New(v.Type())
+			x.Elem().Set(v)
+
+			vType := valMap.Type()
+			vKeyType := vType.Key()
+			vElemType := vType.Elem()
+			mType := reflect.MapOf(vKeyType, vElemType)
+			vMap := reflect.MakeMap(mType)
+
+			err := d.decode(keyName, x.Interface(), vMap)
+			if err != nil {
+				return err
+			}
+
+			valMap.SetMapIndex(reflect.ValueOf(keyName), vMap)
+
+		default:
+			valMap.SetMapIndex(reflect.ValueOf(keyName), v)
+		}
+	}
+
+	if val.CanAddr() {
+		val.Set(valMap)
 	}
 
 	return nil
