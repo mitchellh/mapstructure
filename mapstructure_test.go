@@ -1445,3 +1445,192 @@ func testArrayInput(t *testing.T, input map[string]interface{}, expected *Array)
 		}
 	}
 }
+
+func TestMapOutputForStructuredInputs(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		in      interface{}
+		target  interface{}
+		out     interface{}
+		wantErr bool
+	}{
+		{
+			"basic struct input",
+			&Basic{
+				Vstring: "vstring",
+				Vint:    2,
+				Vuint:   3,
+				Vbool:   true,
+				Vfloat:  4.56,
+				Vextra:  "vextra",
+				vsilent: true,
+				Vdata:   []byte("data"),
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{
+				"Vstring":     "vstring",
+				"Vint":        2,
+				"Vuint":       uint(3),
+				"Vbool":       true,
+				"Vfloat":      4.56,
+				"Vextra":      "vextra",
+				"Vdata":       []byte("data"),
+				"VjsonInt":    0,
+				"VjsonFloat":  0.0,
+				"VjsonNumber": json.Number(""),
+			},
+			false,
+		},
+		{
+			"embedded struct input",
+			&Embedded{
+				Vunique: "vunique",
+				Basic: Basic{
+					Vstring: "vstring",
+					Vint:    2,
+					Vuint:   3,
+					Vbool:   true,
+					Vfloat:  4.56,
+					Vextra:  "vextra",
+					vsilent: true,
+					Vdata:   []byte("data"),
+				},
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{
+				"Vunique": "vunique",
+				"Basic": map[string]interface{}{
+					"Vstring":     "vstring",
+					"Vint":        2,
+					"Vuint":       uint(3),
+					"Vbool":       true,
+					"Vfloat":      4.56,
+					"Vextra":      "vextra",
+					"Vdata":       []byte("data"),
+					"VjsonInt":    0,
+					"VjsonFloat":  0.0,
+					"VjsonNumber": json.Number(""),
+				},
+			},
+			false,
+		},
+		{
+			"slice input - should error",
+			[]string{"foo", "bar"},
+			&map[string]interface{}{},
+			&map[string]interface{}{},
+			true,
+		},
+		{
+			"struct with slice property",
+			&Slice{
+				Vfoo: "vfoo",
+				Vbar: []string{"foo", "bar"},
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{
+				"Vfoo": "vfoo",
+				"Vbar": []string{"foo", "bar"},
+			},
+			false,
+		},
+		{
+			"struct with slice of struct property",
+			&SliceOfStruct{
+				Value: []Basic{
+					Basic{
+						Vstring: "vstring",
+						Vint:    2,
+						Vuint:   3,
+						Vbool:   true,
+						Vfloat:  4.56,
+						Vextra:  "vextra",
+						vsilent: true,
+						Vdata:   []byte("data"),
+					},
+				},
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{
+				"Value": []Basic{
+					Basic{
+						Vstring: "vstring",
+						Vint:    2,
+						Vuint:   3,
+						Vbool:   true,
+						Vfloat:  4.56,
+						Vextra:  "vextra",
+						vsilent: true,
+						Vdata:   []byte("data"),
+					},
+				},
+			},
+			false,
+		},
+		{
+			"struct with map property",
+			&Map{
+				Vfoo:   "vfoo",
+				Vother: map[string]string{"vother": "vother"},
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{
+				"Vfoo": "vfoo",
+				"Vother": map[string]string{
+					"vother": "vother",
+				}},
+			false,
+		},
+		{
+			"tagged struct",
+			&Tagged{
+				Extra: "extra",
+				Value: "value",
+			},
+			&map[string]string{},
+			&map[string]string{
+				"bar": "extra",
+				"foo": "value",
+			},
+			false,
+		},
+		{
+			"omit tag struct",
+			&struct {
+				Value string `mapstructure:"value"`
+				Omit  string `mapstructure:"-"`
+			}{
+				Value: "value",
+				Omit:  "omit",
+			},
+			&map[string]string{},
+			&map[string]string{
+				"value": "value",
+			},
+			false,
+		},
+		{
+			"decode to wrong map type",
+			&struct {
+				Value string
+			}{
+				Value: "string",
+			},
+			&map[string]int{},
+			&map[string]int{},
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		if err := Decode(tt.in, tt.target); (err != nil) != tt.wantErr {
+			t.Fatalf("%q: TestMapOutputForStructuredInputs() unexpected error: %s", tt.name, err)
+		}
+
+		if !reflect.DeepEqual(tt.out, tt.target) {
+			t.Fatalf("%q: TestMapOutputForStructuredInputs() expected: %#v, got: %#v", tt.name, tt.out, tt.target)
+		}
+	}
+}

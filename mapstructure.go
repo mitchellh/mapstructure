@@ -504,7 +504,60 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 
 	// Check input type
 	dataVal := reflect.Indirect(reflect.ValueOf(data))
-	if dataVal.Kind() != reflect.Map {
+	if dataVal.Kind() == reflect.Struct {
+		typ := dataVal.Type()
+		for i := 0; i < typ.NumField(); i++ {
+			v := dataVal.Field(i)
+			if !v.Type().AssignableTo(valMap.Type().Elem()) {
+				return fmt.Errorf("cannot assign type '%s' to map value field of type '%s'", v.Type(), valMap.Type().Elem())
+			}
+
+			f := typ.Field(i)
+
+			keyName := f.Name
+
+			tagValue := f.Tag.Get(d.config.TagName)
+			tagValue = strings.SplitN(tagValue, ",", 2)[0]
+			if tagValue != "" {
+				if tagValue == "-" {
+					continue
+				}
+
+				keyName = tagValue
+			}
+
+			switch v.Kind() {
+			// this is an embedded struct, so handle it differently
+			case reflect.Struct:
+				x := reflect.New(v.Type())
+				x.Elem().Set(v)
+
+				vType := valMap.Type()
+				vKeyType := vType.Key()
+				vElemType := vType.Elem()
+				mType := reflect.MapOf(vKeyType, vElemType)
+				vMap := reflect.MakeMap(mType)
+
+				err := d.decode(keyName, x.Interface(), vMap)
+				if err != nil {
+					return err
+				}
+
+				valMap.SetMapIndex(reflect.ValueOf(keyName), vMap)
+
+			default:
+				if v.CanSet() {
+					valMap.SetMapIndex(reflect.ValueOf(keyName), v)
+				}
+			}
+		}
+
+		if valMap.CanAddr() {
+			val.Set(valMap)
+		}
+
+		return nil
+	} else if dataVal.Kind() != reflect.Map {
 		// In weak mode, we accept a slice of maps as an input...
 		if d.config.WeaklyTypedInput {
 			switch dataVal.Kind() {
