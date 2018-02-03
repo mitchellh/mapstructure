@@ -248,6 +248,32 @@ func TestBasic_Merge(t *testing.T) {
 	}
 }
 
+// Test for issue #46.
+func TestBasic_Struct(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vdata": map[string]interface{}{
+			"vstring": "foo",
+		},
+	}
+
+	var result, inner Basic
+	result.Vdata = &inner
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+	expected := Basic{
+		Vdata: &Basic{
+			Vstring: "foo",
+		},
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Fatalf("bad: %#v", result)
+	}
+}
+
 func TestDecode_BasicSquash(t *testing.T) {
 	t.Parallel()
 
@@ -923,6 +949,56 @@ func TestNestedTypePointer(t *testing.T) {
 
 	if result.Vbar.Vextra != "" {
 		t.Errorf("vextra value should be empty: %#v", result.Vbar.Vextra)
+	}
+}
+
+// Test for issue #46.
+func TestNestedTypeInterface(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vfoo": "foo",
+		"vbar": &map[string]interface{}{
+			"vstring": "foo",
+			"vint":    42,
+			"vbool":   true,
+
+			"vdata": map[string]interface{}{
+				"vstring": "bar",
+			},
+		},
+	}
+
+	var result NestedPointer
+	result.Vbar = new(Basic)
+	result.Vbar.Vdata = new(Basic)
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Vfoo != "foo" {
+		t.Errorf("vfoo value should be 'foo': %#v", result.Vfoo)
+	}
+
+	if result.Vbar.Vstring != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Vbar.Vstring)
+	}
+
+	if result.Vbar.Vint != 42 {
+		t.Errorf("vint value should be 42: %#v", result.Vbar.Vint)
+	}
+
+	if result.Vbar.Vbool != true {
+		t.Errorf("vbool value should be true: %#v", result.Vbar.Vbool)
+	}
+
+	if result.Vbar.Vextra != "" {
+		t.Errorf("vextra value should be empty: %#v", result.Vbar.Vextra)
+	}
+
+	if result.Vbar.Vdata.(*Basic).Vstring != "bar" {
+		t.Errorf("vstring value should be 'bar': %#v", result.Vbar.Vdata.(*Basic).Vstring)
 	}
 }
 
