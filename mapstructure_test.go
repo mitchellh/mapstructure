@@ -128,6 +128,7 @@ type TypeConversionResult struct {
 	FloatToBool        bool
 	FloatToString      string
 	SliceUint8ToString string
+	StringToSliceUint8 []byte
 	ArrayUint8ToString string
 	StringToInt        int
 	StringToUint       uint
@@ -652,6 +653,7 @@ func TestDecode_TypeConversion(t *testing.T) {
 		"FloatToBool":        42.42,
 		"FloatToString":      42.42,
 		"SliceUint8ToString": []uint8("foo"),
+		"StringToSliceUint8": "foo",
 		"ArrayUint8ToString": [3]uint8{'f', 'o', 'o'},
 		"StringToInt":        "42",
 		"StringToUint":       "42",
@@ -697,6 +699,7 @@ func TestDecode_TypeConversion(t *testing.T) {
 		FloatToBool:        true,
 		FloatToString:      "42.42",
 		SliceUint8ToString: "foo",
+		StringToSliceUint8: []byte("foo"),
 		ArrayUint8ToString: "foo",
 		StringToInt:        42,
 		StringToUint:       42,
