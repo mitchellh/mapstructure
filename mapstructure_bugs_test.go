@@ -4,13 +4,28 @@ import "testing"
 
 // GH-1
 func TestDecode_NilValue(t *testing.T) {
+	decode := func(m interface{}, rawVal interface{}) error {
+		config := &DecoderConfig{
+			Metadata:   nil,
+			Result:     rawVal,
+			ZeroFields: true,
+		}
+
+		decoder, err := NewDecoder(config)
+		if err != nil {
+			return err
+		}
+
+		return decoder.Decode(m)
+	}
+
 	input := map[string]interface{}{
 		"vfoo":   nil,
 		"vother": nil,
 	}
 
-	var result Map
-	err := Decode(input, &result)
+	result := Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}}
+	err := decode(input, &result)
 	if err != nil {
 		t.Fatalf("should not error: %s", err)
 	}
@@ -26,13 +41,28 @@ func TestDecode_NilValue(t *testing.T) {
 
 // GH-10
 func TestDecode_mapInterfaceInterface(t *testing.T) {
+	decode := func(m interface{}, rawVal interface{}) error {
+		config := &DecoderConfig{
+			Metadata:   nil,
+			Result:     rawVal,
+			ZeroFields: true,
+		}
+
+		decoder, err := NewDecoder(config)
+		if err != nil {
+			return err
+		}
+
+		return decoder.Decode(m)
+	}
+
 	input := map[interface{}]interface{}{
 		"vfoo":   nil,
 		"vother": nil,
 	}
 
-	var result Map
-	err := Decode(input, &result)
+	result := Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}}
+	err := decode(input, &result)
 	if err != nil {
 		t.Fatalf("should not error: %s", err)
 	}
