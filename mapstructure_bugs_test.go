@@ -10,10 +10,12 @@ func TestDecode_NilValue(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name   string
-		in     interface{}
-		target interface{}
-		out    interface{}
+		name       string
+		in         interface{}
+		target     interface{}
+		out        interface{}
+		metaKeys   []string
+		metaUnused []string
 	}{
 		{
 			"all nil",
@@ -23,6 +25,8 @@ func TestDecode_NilValue(t *testing.T) {
 			},
 			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
 			&Map{Vfoo: "", Vother: nil},
+			[]string{"Vfoo", "Vother"},
+			[]string{},
 		},
 		{
 			"partial nil",
@@ -32,6 +36,8 @@ func TestDecode_NilValue(t *testing.T) {
 			},
 			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
 			&Map{Vfoo: "baz", Vother: nil},
+			[]string{"Vfoo", "Vother"},
+			[]string{},
 		},
 		{
 			"partial decode",
@@ -40,6 +46,20 @@ func TestDecode_NilValue(t *testing.T) {
 			},
 			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
 			&Map{Vfoo: "foo", Vother: nil},
+			[]string{"Vother"},
+			[]string{},
+		},
+		{
+			"unused values",
+			&map[string]interface{}{
+				"vbar":   "bar",
+				"vfoo":   nil,
+				"vother": nil,
+			},
+			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
+			&Map{Vfoo: "", Vother: nil},
+			[]string{"Vfoo", "Vother"},
+			[]string{"vbar"},
 		},
 		{
 			"map interface all nil",
@@ -49,6 +69,8 @@ func TestDecode_NilValue(t *testing.T) {
 			},
 			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
 			&Map{Vfoo: "", Vother: nil},
+			[]string{"Vfoo", "Vother"},
+			[]string{},
 		},
 		{
 			"map interface partial nil",
@@ -58,6 +80,8 @@ func TestDecode_NilValue(t *testing.T) {
 			},
 			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
 			&Map{Vfoo: "baz", Vother: nil},
+			[]string{"Vfoo", "Vother"},
+			[]string{},
 		},
 		{
 			"map interface partial decode",
@@ -66,34 +90,51 @@ func TestDecode_NilValue(t *testing.T) {
 			},
 			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
 			&Map{Vfoo: "foo", Vother: nil},
+			[]string{"Vother"},
+			[]string{},
 		},
-	}
-
-	decode := func(m interface{}, rawVal interface{}) error {
-		config := &DecoderConfig{
-			Metadata:   nil,
-			Result:     rawVal,
-			ZeroFields: true,
-		}
-
-		decoder, err := NewDecoder(config)
-		if err != nil {
-			return err
-		}
-
-		return decoder.Decode(m)
+		{
+			"map interface unused values",
+			&map[interface{}]interface{}{
+				"vbar":   "bar",
+				"vfoo":   nil,
+				"vother": nil,
+			},
+			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
+			&Map{Vfoo: "", Vother: nil},
+			[]string{"Vfoo", "Vother"},
+			[]string{"vbar"},
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := decode(tc.in, tc.target)
+			config := &DecoderConfig{
+				Metadata:   new(Metadata),
+				Result:     tc.target,
+				ZeroFields: true,
+			}
 
+			decoder, err := NewDecoder(config)
+			if err != nil {
+				t.Fatalf("should not error: %s", err)
+			}
+
+			err = decoder.Decode(tc.in)
 			if err != nil {
 				t.Fatalf("should not error: %s", err)
 			}
 
 			if !reflect.DeepEqual(tc.out, tc.target) {
 				t.Fatalf("%q: TestDecode_NilValue() expected: %#v, got: %#v", tc.name, tc.out, tc.target)
+			}
+
+			if !reflect.DeepEqual(tc.metaKeys, config.Metadata.Keys) {
+				t.Fatalf("%q: Metadata.Keys mismatch expected: %#v, got: %#v", tc.name, tc.metaKeys, config.Metadata.Keys)
+			}
+
+			if !reflect.DeepEqual(tc.metaUnused, config.Metadata.Unused) {
+				t.Fatalf("%q: Metadata.Unused mismatch expected: %#v, got: %#v", tc.name, tc.metaUnused, config.Metadata.Unused)
 			}
 		})
 	}

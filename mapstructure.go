@@ -242,6 +242,9 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 		// If the input value is invalid, then we just set the value
 		// to be the zero value.
 		outVal.Set(reflect.Zero(outVal.Type()))
+		if d.config.Metadata != nil && name != "" {
+			d.config.Metadata.Keys = append(d.config.Metadata.Keys, name)
+		}
 		return nil
 	}
 
