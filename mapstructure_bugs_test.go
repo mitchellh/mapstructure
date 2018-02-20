@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// GH-1
+// GH-1, GH-10, GH-96
 func TestDecode_NilValue(t *testing.T) {
 	t.Parallel()
 
@@ -34,7 +34,33 @@ func TestDecode_NilValue(t *testing.T) {
 			&Map{Vfoo: "baz", Vother: nil},
 		},
 		{
-			"missing values",
+			"partial decode",
+			&map[string]interface{}{
+				"vother": nil,
+			},
+			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
+			&Map{Vfoo: "foo", Vother: nil},
+		},
+		{
+			"map interface all nil",
+			&map[interface{}]interface{}{
+				"vfoo":   nil,
+				"vother": nil,
+			},
+			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
+			&Map{Vfoo: "", Vother: nil},
+		},
+		{
+			"map interface partial nil",
+			&map[string]interface{}{
+				"vfoo":   "baz",
+				"vother": nil,
+			},
+			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
+			&Map{Vfoo: "baz", Vother: nil},
+		},
+		{
+			"map interface partial decode",
 			&map[string]interface{}{
 				"vother": nil,
 			},
@@ -70,43 +96,6 @@ func TestDecode_NilValue(t *testing.T) {
 				t.Fatalf("%q: TestDecode_NilValue() expected: %#v, got: %#v", tc.name, tc.out, tc.target)
 			}
 		})
-	}
-}
-
-// GH-10
-func TestDecode_mapInterfaceInterface(t *testing.T) {
-	decode := func(m interface{}, rawVal interface{}) error {
-		config := &DecoderConfig{
-			Metadata:   nil,
-			Result:     rawVal,
-			ZeroFields: true,
-		}
-
-		decoder, err := NewDecoder(config)
-		if err != nil {
-			return err
-		}
-
-		return decoder.Decode(m)
-	}
-
-	input := map[interface{}]interface{}{
-		"vfoo":   nil,
-		"vother": nil,
-	}
-
-	result := Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}}
-	err := decode(input, &result)
-	if err != nil {
-		t.Fatalf("should not error: %s", err)
-	}
-
-	if result.Vfoo != "" {
-		t.Fatalf("value should be default: %s", result.Vfoo)
-	}
-
-	if result.Vother != nil {
-		t.Fatalf("Vother should be nil: %s", result.Vother)
 	}
 }
 
