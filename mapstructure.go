@@ -225,9 +225,14 @@ func (d *Decoder) Decode(input interface{}) error {
 // Decodes an unknown data type into a specific reflection value.
 func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) error {
 	if input == nil {
-		// If the data is nil, then we don't set anything.
+		// If the data is nil, then we don't set anything, unless ZeroFields is set
+		// to true.
 		if d.config.ZeroFields {
 			outVal.Set(reflect.Zero(outVal.Type()))
+
+			if d.config.Metadata != nil && name != "" {
+				d.config.Metadata.Keys = append(d.config.Metadata.Keys, name)
+			}
 		}
 		return nil
 	}

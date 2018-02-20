@@ -1,9 +1,48 @@
 package mapstructure
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 // GH-1
 func TestDecode_NilValue(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		in     interface{}
+		target interface{}
+		out    interface{}
+	}{
+		{
+			"all nil",
+			&map[string]interface{}{
+				"vfoo":   nil,
+				"vother": nil,
+			},
+			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
+			&Map{Vfoo: "", Vother: nil},
+		},
+		{
+			"partial nil",
+			&map[string]interface{}{
+				"vfoo":   "baz",
+				"vother": nil,
+			},
+			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
+			&Map{Vfoo: "baz", Vother: nil},
+		},
+		{
+			"missing values",
+			&map[string]interface{}{
+				"vother": nil,
+			},
+			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
+			&Map{Vfoo: "foo", Vother: nil},
+		},
+	}
+
 	decode := func(m interface{}, rawVal interface{}) error {
 		config := &DecoderConfig{
 			Metadata:   nil,
@@ -19,23 +58,18 @@ func TestDecode_NilValue(t *testing.T) {
 		return decoder.Decode(m)
 	}
 
-	input := map[string]interface{}{
-		"vfoo":   nil,
-		"vother": nil,
-	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := decode(tc.in, tc.target)
 
-	result := Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}}
-	err := decode(input, &result)
-	if err != nil {
-		t.Fatalf("should not error: %s", err)
-	}
+			if err != nil {
+				t.Fatalf("should not error: %s", err)
+			}
 
-	if result.Vfoo != "" {
-		t.Fatalf("value should be default: %s", result.Vfoo)
-	}
-
-	if result.Vother != nil {
-		t.Fatalf("Vother should be nil: %s", result.Vother)
+			if !reflect.DeepEqual(tc.out, tc.target) {
+				t.Fatalf("%q: TestDecode_NilValue() expected: %#v, got: %#v", tc.name, tc.out, tc.target)
+			}
+		})
 	}
 }
 
