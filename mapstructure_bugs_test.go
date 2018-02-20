@@ -52,7 +52,7 @@ func TestDecode_NilValue(t *testing.T) {
 		},
 		{
 			"map interface partial nil",
-			&map[string]interface{}{
+			&map[interface{}]interface{}{
 				"vfoo":   "baz",
 				"vother": nil,
 			},
@@ -61,7 +61,7 @@ func TestDecode_NilValue(t *testing.T) {
 		},
 		{
 			"map interface partial decode",
-			&map[string]interface{}{
+			&map[interface{}]interface{}{
 				"vother": nil,
 			},
 			&Map{Vfoo: "foo", Vother: map[string]string{"foo": "bar"}},
