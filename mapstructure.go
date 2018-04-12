@@ -130,6 +130,67 @@ func Decode(input interface{}, output interface{}) error {
 	return decoder.Decode(input)
 }
 
+func Encode(in interface{}, tag string) (interface{}, error) {
+	if in == nil {
+		return nil, fmt.Errorf("input is nil")
+	}
+
+	v := reflect.ValueOf(in)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	switch v.Kind() {
+	case reflect.Bool:
+		return v.Interface(), nil
+	case reflect.Map:
+		return v.Interface(), nil
+	case reflect.Ptr:
+		return Serialize(v.Interface(), tag)
+	case reflect.Slice:
+		slice := []interface{}{}
+		for i := 0; i < v.Len(); i++ {
+			field := v.Index(i)
+			e, err := Serialize(field.Interface(), tag)
+			if err != nil {
+				logging.Error("util.Serialize():", err)
+				e = nil
+			}
+			slice = append(slice, e)
+		}
+		return slice, nil
+	case reflect.String:
+		return v.Interface(), nil
+	case reflect.Struct:
+		out := make(map[string]interface{})
+		for i := 0; i < v.NumField(); i++ {
+			typ := v.Type()
+			fi := typ.Field(i)
+			tagv := fi.Tag.Get(tag)
+			var e interface{}
+			if tagv == "" {
+				continue
+			}
+			field := v.Field(i)
+			if field.Kind() == reflect.Ptr && field.IsNil() {
+				continue
+			}
+			e, err := Serialize(field.Interface(), tag)
+			if err != nil {
+				logging.Error("util.Serialize():", err)
+				e = nil
+			}
+			out[tagv] = e
+		}
+		return out, nil
+	default:
+		typ := v.Type()
+		kind := v.Kind()
+		logging.Warning("unknown data type, it could have misbehaved, if you see this warning please add support for", kind, typ)
+		return v.Interface(), nil
+	}
+}
+
 // WeakDecode is the same as Decode but is shorthand to enable
 // WeaklyTypedInput. See DecoderConfig for more info.
 func WeakDecode(input, output interface{}) error {
