@@ -14,10 +14,11 @@ func typedDecodeHook(h DecodeHookFunc) DecodeHookFunc {
 	// Create variables here so we can reference them with the reflect pkg
 	var f1 DecodeHookFuncType
 	var f2 DecodeHookFuncKind
+	var f3 DecodeHookFuncTypeContext
 
 	// Fill in the variables into this interface and the rest is done
 	// automatically using the reflect package.
-	potential := []interface{}{f1, f2}
+	potential := []interface{}{f1, f2, f3}
 
 	v := reflect.ValueOf(h)
 	vt := v.Type()
@@ -37,10 +38,12 @@ func typedDecodeHook(h DecodeHookFunc) DecodeHookFunc {
 func DecodeHookExec(
 	raw DecodeHookFunc,
 	from reflect.Type, to reflect.Type,
-	data interface{}) (interface{}, error) {
+	data interface{}, ctx *DecodeContext) (interface{}, error) {
 	switch f := typedDecodeHook(raw).(type) {
 	case DecodeHookFuncType:
 		return f(from, to, data)
+	case DecodeHookFuncTypeContext:
+		return f(from, to, data, ctx)
 	case DecodeHookFuncKind:
 		return f(from.Kind(), to.Kind(), data)
 	default:
@@ -57,10 +60,11 @@ func ComposeDecodeHookFunc(fs ...DecodeHookFunc) DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+		ctx *DecodeContext) (interface{}, error) {
 		var err error
 		for _, f1 := range fs {
-			data, err = DecodeHookExec(f1, f, t, data)
+			data, err = DecodeHookExec(f1, f, t, data, ctx)
 			if err != nil {
 				return nil, err
 			}
