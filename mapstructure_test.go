@@ -293,6 +293,36 @@ func TestDecode_BasicSquash(t *testing.T) {
 	}
 }
 
+func TestDecodeFrom_BasicSquash(t *testing.T) {
+	t.Parallel()
+
+	var v interface{}
+	var ok bool
+
+	input := BasicSquash{
+		Test: Basic{
+			Vstring: "foo",
+		},
+	}
+
+	var result map[string]interface{}
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if _, ok = result["Test"]; ok {
+		t.Error("test should not be present in map")
+	}
+
+	v, ok = result["Vstring"]
+	if !ok {
+		t.Error("vstring should be present in map")
+	} else if !reflect.DeepEqual(v, "foo") {
+		t.Errorf("vstring value should be 'foo': %#v", v)
+	}
+}
+
 func TestDecode_Embedded(t *testing.T) {
 	t.Parallel()
 
@@ -413,6 +443,44 @@ func TestDecode_EmbeddedSquash(t *testing.T) {
 
 	if result.Vunique != "bar" {
 		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecodeFrom_EmbeddedSquash(t *testing.T) {
+	t.Parallel()
+
+	var v interface{}
+	var ok bool
+
+	input := EmbeddedSquash{
+		Basic: Basic{
+			Vstring: "foo",
+		},
+		Vunique: "bar",
+	}
+
+	var result map[string]interface{}
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if _, ok = result["Basic"]; ok {
+		t.Error("basic should not be present in map")
+	}
+
+	v, ok = result["Vstring"]
+	if !ok {
+		t.Error("vstring should be present in map")
+	} else if !reflect.DeepEqual(v, "foo") {
+		t.Errorf("vstring value should be 'foo': %#v", v)
+	}
+
+	v, ok = result["Vunique"]
+	if !ok {
+		t.Error("vunique should be present in map")
+	} else if !reflect.DeepEqual(v, "bar") {
+		t.Errorf("vunique value should be 'bar': %#v", v)
 	}
 }
 
@@ -1068,6 +1136,37 @@ func TestSliceOfStruct(t *testing.T) {
 
 	if result.Value[1].Vstring != "two" {
 		t.Errorf("second value should be 'two', got: %s", result.Value[1].Vstring)
+	}
+}
+
+func TestSliceCornerCases(t *testing.T) {
+	t.Parallel()
+
+	// Input with a map with zero values
+	input := map[string]interface{}{}
+	var resultWeak []Basic
+
+	err := WeakDecode(input, &resultWeak)
+	if err != nil {
+		t.Fatalf("got unexpected error: %s", err)
+	}
+
+	if len(resultWeak) != 0 {
+		t.Errorf("length should be 0")
+	}
+	// Input with more values
+	input = map[string]interface{}{
+		"Vstring": "foo",
+	}
+
+	resultWeak = nil
+	err = WeakDecode(input, &resultWeak)
+	if err != nil {
+		t.Fatalf("got unexpected error: %s", err)
+	}
+
+	if resultWeak[0].Vstring != "foo" {
+		t.Errorf("value does not match")
 	}
 }
 
