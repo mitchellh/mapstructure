@@ -446,6 +446,169 @@ func TestDecode_EmbeddedSquash(t *testing.T) {
 	}
 }
 
+func TestDecode_Embedded_SquashEmbedded(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+		"vunique": "bar",
+	}
+
+	var result Embedded
+	config := &DecoderConfig{
+		SquashEmbedded: true,
+		Result:         &result,
+	}
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Vstring != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Vstring)
+	}
+	if result.Vunique != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecode_Nested_SquashEmbedded(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vfoo": "foo",
+		"vbar": map[string]interface{}{
+			"vstring": "bar",
+		},
+	}
+
+	var result Nested
+	config := &DecoderConfig{
+		SquashEmbedded: true,
+		Result:         &result,
+	}
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Vfoo != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Vfoo)
+	}
+
+	if result.Vbar.Vstring != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result)
+	}
+}
+
+func TestDecodeFrom_Embedded_SquashEmbedded(t *testing.T) {
+	t.Parallel()
+
+	var v interface{}
+	var ok bool
+
+	input := Embedded{
+		Basic: Basic{
+			Vstring: "foo",
+		},
+		Vunique: "bar",
+	}
+
+	var result map[string]interface{}
+	config := &DecoderConfig{
+		SquashEmbedded: true,
+		Result:         &result,
+	}
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if _, ok = result["Basic"]; ok {
+		t.Error("basic should not be present in map")
+	}
+
+	v, ok = result["Vstring"]
+	if !ok {
+		t.Error("vstring should be present in map")
+	} else if !reflect.DeepEqual(v, "foo") {
+		t.Errorf("vstring value should be 'foo': %#v", v)
+	}
+
+	v, ok = result["Vunique"]
+	if !ok {
+		t.Error("vunique should be present in map")
+	} else if !reflect.DeepEqual(v, "bar") {
+		t.Errorf("vunique value should be 'bar': %#v", v)
+	}
+}
+
+func TestDecodeFrom_Nested_SquashEmbedded(t *testing.T) {
+	t.Parallel()
+
+	var v interface{}
+	var ok bool
+
+	input := Nested{
+		Vfoo: "foo",
+		Vbar: Basic{
+			Vstring: "bar",
+		},
+	}
+
+	var result map[string]interface{}
+	config := &DecoderConfig{
+		SquashEmbedded: true,
+		Result:         &result,
+	}
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	v, ok = result["Vfoo"]
+	if !ok {
+		t.Error("Vfoo should be present in map")
+	} else if !reflect.DeepEqual(v, "foo") {
+		t.Errorf("Vfoo value should be 'foo': %#v", v)
+	}
+
+	v, ok = result["Vbar"]
+	if !ok {
+		t.Error("Vbar should be present in map")
+	}
+	v_map, ok := v.(map[string]interface{})
+	if !ok {
+		t.Error("Vbar should be a map")
+	}
+
+	v, ok = v_map["Vstring"]
+	if !ok {
+		t.Error("Vstring should be present in Vbar map")
+	} else if !reflect.DeepEqual(v, "bar") {
+		t.Errorf("Vfoo value should be 'bar': %#v", v)
+	}
+}
+
 func TestDecodeFrom_EmbeddedSquash(t *testing.T) {
 	t.Parallel()
 
@@ -481,6 +644,49 @@ func TestDecodeFrom_EmbeddedSquash(t *testing.T) {
 		t.Error("vunique should be present in map")
 	} else if !reflect.DeepEqual(v, "bar") {
 		t.Errorf("vunique value should be 'bar': %#v", v)
+	}
+}
+
+func TestDecodeFrom_Nested(t *testing.T) {
+	t.Parallel()
+
+	var v interface{}
+	var ok bool
+
+	input := Nested{
+		Vfoo: "foo",
+		Vbar: Basic{
+			Vstring: "bar",
+		},
+	}
+
+	var result map[string]interface{}
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	v, ok = result["Vfoo"]
+	if !ok {
+		t.Error("Vfoo should be present in map")
+	} else if !reflect.DeepEqual(v, "foo") {
+		t.Errorf("Vfoo value should be 'foo': %#v", v)
+	}
+
+	v, ok = result["Vbar"]
+	if !ok {
+		t.Error("Vbar should be present in map")
+	}
+	v_map, ok := v.(map[string]interface{})
+	if !ok {
+		t.Error("Vbar should be a map")
+	}
+
+	v, ok = v_map["Vstring"]
+	if !ok {
+		t.Error("Vstring should be present in Vbar map")
+	} else if !reflect.DeepEqual(v, "bar") {
+		t.Errorf("Vfoo value should be 'bar': %#v", v)
 	}
 }
 

@@ -80,6 +80,10 @@ type DecoderConfig struct {
 	//
 	WeaklyTypedInput bool
 
+	// Squash all embedded structs, even without ",squash" tag.
+	// Nested structs will not be squashed
+	SquashEmbedded bool
+
 	// Metadata is the struct that will contain extra metadata about
 	// the decoding. If this is nil, then no metadata will be tracked.
 	Metadata *Metadata
@@ -657,15 +661,14 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 		}
 
 		// If "squash" is specified in the tag, we squash the field down.
-		squash := false
+		squash_requested := false
+		squash := d.config.SquashEmbedded && f.Anonymous
 		for _, tag := range tagParts[1:] {
 			if tag == "squash" {
+				squash_requested = true
 				squash = true
 				break
 			}
-		}
-		if squash && v.Kind() != reflect.Struct {
-			return fmt.Errorf("cannot squash non-struct type '%s'", v.Type())
 		}
 
 		switch v.Kind() {
@@ -694,6 +697,9 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			}
 
 		default:
+			if squash_requested {
+				return fmt.Errorf("cannot squash non-struct type '%s'", v.Type())
+			}
 			valMap.SetMapIndex(reflect.ValueOf(keyName), v)
 		}
 	}
@@ -932,23 +938,28 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 			fieldKind := fieldType.Type.Kind()
 
 			// If "squash" is specified in the tag, we squash the field down.
-			squash := false
+			squash_requested := false
+			squash := d.config.SquashEmbedded && fieldType.Anonymous
 			tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
 			for _, tag := range tagParts[1:] {
 				if tag == "squash" {
+					squash_requested = true
 					squash = true
 					break
 				}
 			}
 
-			if squash {
-				if fieldKind != reflect.Struct {
+			switch fieldKind {
+			case reflect.Struct:
+				if squash {
+					structs = append(structs, structVal.FieldByName(fieldType.Name))
+					continue
+				}
+			default:
+				if squash_requested {
 					errors = appendErrors(errors,
 						fmt.Errorf("%s: unsupported type for squash: %s", fieldType.Name, fieldKind))
-				} else {
-					structs = append(structs, structVal.FieldByName(fieldType.Name))
 				}
-				continue
 			}
 
 			// Normal struct field, store it away
