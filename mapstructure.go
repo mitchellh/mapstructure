@@ -257,6 +257,18 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 		if err != nil {
 			return fmt.Errorf("error decoding '%s': %s", name, err)
 		}
+		if input == nil {
+			// If the data is nil, then we don't set anything, unless ZeroFields is set
+			// to true.
+			if d.config.ZeroFields {
+				outVal.Set(reflect.Zero(outVal.Type()))
+
+				if d.config.Metadata != nil && name != "" {
+					d.config.Metadata.Keys = append(d.config.Metadata.Keys, name)
+				}
+			}
+			return nil
+		}
 	}
 
 	var err error
