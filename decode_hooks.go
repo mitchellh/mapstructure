@@ -2,6 +2,7 @@ package mapstructure
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -131,6 +132,40 @@ func StringToTimeHookFunc(layout string) DecodeHookFunc {
 
 		// Convert it by parsing
 		return time.Parse(layout, data.(string))
+	}
+}
+
+// SliceToTimeHookFunc returns a DecodeHookFunc that converts
+// array (msgpack v2) to time.Time.
+// https://github.com/vmihailenco/msgpack/blob/v2/time.go#L27
+func SliceToTimeHookFunc() DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if f.Kind() != reflect.Slice && f.Kind() != reflect.Array {
+			return data, nil
+		}
+		if t != reflect.TypeOf(time.Time{}) {
+			return data, nil
+		}
+
+		dataVal := reflect.Indirect(reflect.ValueOf(data))
+		var parts [2]uint64
+
+		for i := 0; i < 2; i++ {
+			item := reflect.ValueOf(dataVal.Index(i).Interface())
+			itemVal := reflect.Indirect(item)
+			dataKind := getKind(itemVal)
+
+			if dataKind != reflect.Uint {
+				return nil, fmt.Errorf("expected int, got '%s'", itemVal.Type())
+			}
+
+			reflect.ValueOf(&parts[i]).Elem().SetUint(itemVal.Uint())
+		}
+
+		return time.Unix(int64(parts[0]), int64(parts[1])), nil
 	}
 }
 
