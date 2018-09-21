@@ -2,6 +2,7 @@ package mapstructure
 
 import (
 	"fmt"
+	"time"
 )
 
 func ExampleDecode() {
@@ -200,4 +201,36 @@ func ExampleDecode_embeddedStruct() {
 	fmt.Printf("%s %s, %s", result.FirstName, result.LastName, result.City)
 	// Output:
 	// Mitchell Hashimoto, San Francisco
+}
+
+func ExampleDecodeTime() {
+	expected := time.Date(2018, 9, 21, 8, 30, 12, 3456, time.UTC)
+
+	// import msgpack "gopkg.in/vmihailenco/msgpack.v2"
+	// buf, _ := msgpack.Marshal(expected)
+	// var b interface{}
+	// msgpack.Unmarshal(buf, &b)
+	// fmt.Errorf("unmarshalled{}: %#v", b)
+
+	var result time.Time
+	input := []interface{}{uint64(0x5ba4ac14), uint64(0xd80)}
+
+	config := &DecoderConfig{
+		DecodeHook: SliceToTimeHookFunc(),
+		Result:     &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		panic(err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%#v", result.Equal(expected))
+	// Output:
+	// true
 }
