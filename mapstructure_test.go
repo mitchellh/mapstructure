@@ -1290,8 +1290,11 @@ func TestArrayToMap(t *testing.T) {
 	}
 }
 
-func TestMapOutputForStructuredInputs(t *testing.T) {
+func TestDecodeTable(t *testing.T) {
 	t.Parallel()
+
+	type BasicCopy Basic
+	type NestedPointerCopy NestedPointer
 
 	tests := []struct {
 		name    string
@@ -1360,6 +1363,43 @@ func TestMapOutputForStructuredInputs(t *testing.T) {
 			},
 			false,
 		},
+		{
+			"struct => struct",
+			&Basic{
+				Vstring: "vstring",
+				Vint:    2,
+				Vuint:   3,
+				Vbool:   true,
+				Vfloat:  4.56,
+				Vextra:  "vextra",
+				Vdata:   []byte("data"),
+				vsilent: true,
+			},
+			&BasicCopy{},
+			&BasicCopy{
+				Vstring: "vstring",
+				Vint:    2,
+				Vuint:   3,
+				Vbool:   true,
+				Vfloat:  4.56,
+				Vextra:  "vextra",
+				Vdata:   []byte("data"),
+			},
+			false,
+		},
+		{
+			"struct => struct with pointers",
+			&NestedPointer{
+				Vfoo: "hello",
+				Vbar: nil,
+			},
+			&NestedPointerCopy{},
+			&NestedPointerCopy{
+				Vfoo: "hello",
+			},
+			false,
+		},
+
 		{
 			"slice input - should error",
 			[]string{"foo", "bar"},

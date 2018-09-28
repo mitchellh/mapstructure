@@ -224,6 +224,17 @@ func (d *Decoder) Decode(input interface{}) error {
 
 // Decodes an unknown data type into a specific reflection value.
 func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) error {
+	var inputVal reflect.Value
+	if input != nil {
+		inputVal = reflect.ValueOf(input)
+
+		// We need to check here if input is a typed nil. Typed nils won't
+		// match the "input == nil" below so we check that here.
+		if inputVal.Kind() == reflect.Ptr && inputVal.IsNil() {
+			input = nil
+		}
+	}
+
 	if input == nil {
 		// If the data is nil, then we don't set anything, unless ZeroFields is set
 		// to true.
@@ -237,7 +248,6 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 		return nil
 	}
 
-	inputVal := reflect.ValueOf(input)
 	if !inputVal.IsValid() {
 		// If the input value is invalid, then we just set the value
 		// to be the zero value.
@@ -888,10 +898,28 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 	}
 
 	dataValKind := dataVal.Kind()
-	if dataValKind != reflect.Map {
-		return fmt.Errorf("'%s' expected a map, got '%s'", name, dataValKind)
-	}
+	switch dataValKind {
+	case reflect.Map:
+		return d.decodeStructFromMap(name, dataVal, val)
 
+	case reflect.Struct:
+		// Not the most efficient way to do this but we can optimize later if
+		// we want to. To convert from struct to struct we go to map first
+		// as an intermediary.
+		m := make(map[string]interface{})
+		mval := reflect.Indirect(reflect.ValueOf(&m))
+		if err := d.decodeMapFromStruct(name, dataVal, mval, mval); err != nil {
+			return err
+		}
+
+		return d.decodeStructFromMap(name, mval, val)
+
+	default:
+		return fmt.Errorf("'%s' expected a map, got '%s'", name, dataVal.Kind())
+	}
+}
+
+func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) error {
 	dataValType := dataVal.Type()
 	if kind := dataValType.Key().Kind(); kind != reflect.String && kind != reflect.Interface {
 		return fmt.Errorf(
