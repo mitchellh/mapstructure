@@ -23,6 +23,20 @@ type Basic struct {
 	VjsonNumber json.Number
 }
 
+type BasicPointer struct {
+	Vstring     *string
+	Vint        *int
+	Vuint       *uint
+	Vbool       *bool
+	Vfloat      *float64
+	Vextra      *string
+	vsilent     *bool
+	Vdata       *interface{}
+	VjsonInt    *int
+	VjsonFloat  *float64
+	VjsonNumber *json.Number
+}
+
 type BasicSquash struct {
 	Test Basic `mapstructure:",squash"`
 }
@@ -1399,6 +1413,27 @@ func TestDecodeTable(t *testing.T) {
 			},
 			false,
 		},
+		{
+			"basic pointer to non-pointer",
+			&BasicPointer{
+				Vstring: stringPtr("vstring"),
+				Vint:    intPtr(2),
+				Vuint:   uintPtr(3),
+				Vbool:   boolPtr(true),
+				Vfloat:  floatPtr(4.56),
+				Vdata:   interfacePtr([]byte("data")),
+			},
+			&Basic{},
+			&Basic{
+				Vstring: "vstring",
+				Vint:    2,
+				Vuint:   3,
+				Vbool:   true,
+				Vfloat:  4.56,
+				Vdata:   []byte("data"),
+			},
+			false,
+		},
 
 		{
 			"slice input - should error",
@@ -1845,3 +1880,10 @@ func testArrayInput(t *testing.T, input map[string]interface{}, expected *Array)
 		}
 	}
 }
+
+func stringPtr(v string) *string              { return &v }
+func intPtr(v int) *int                       { return &v }
+func uintPtr(v uint) *uint                    { return &v }
+func boolPtr(v bool) *bool                    { return &v }
+func floatPtr(v float64) *float64             { return &v }
+func interfacePtr(v interface{}) *interface{} { return &v }

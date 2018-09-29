@@ -316,7 +316,7 @@ func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) 
 	if val.IsValid() && val.Elem().IsValid() {
 		return d.decode(name, data, val.Elem())
 	}
-	dataVal := reflect.ValueOf(data)
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	if !dataVal.IsValid() {
 		dataVal = reflect.Zero(val.Type())
 	}
@@ -333,7 +333,7 @@ func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) 
 }
 
 func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value) error {
-	dataVal := reflect.ValueOf(data)
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	dataKind := getKind(dataVal)
 
 	converted := true
@@ -385,7 +385,7 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 }
 
 func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) error {
-	dataVal := reflect.ValueOf(data)
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	dataKind := getKind(dataVal)
 	dataType := dataVal.Type()
 
@@ -427,7 +427,7 @@ func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) er
 }
 
 func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) error {
-	dataVal := reflect.ValueOf(data)
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	dataKind := getKind(dataVal)
 
 	switch {
@@ -470,7 +470,7 @@ func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) e
 }
 
 func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) error {
-	dataVal := reflect.ValueOf(data)
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	dataKind := getKind(dataVal)
 
 	switch {
@@ -501,7 +501,7 @@ func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) e
 }
 
 func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) error {
-	dataVal := reflect.ValueOf(data)
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	dataKind := getKind(dataVal)
 	dataType := dataVal.Type()
 
