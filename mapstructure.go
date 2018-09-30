@@ -605,6 +605,20 @@ func (d *Decoder) decodeMapFromMap(name string, dataVal reflect.Value, val refle
 	// Accumulate errors
 	errors := make([]string, 0)
 
+	// If the input data is empty, then we just match what the input data is.
+	if dataVal.Len() == 0 {
+		if dataVal.IsNil() {
+			if !val.IsNil() {
+				val.Set(dataVal)
+			}
+		} else {
+			// Set to empty allocated value
+			val.Set(valMap)
+		}
+
+		return nil
+	}
+
 	for _, k := range dataVal.MapKeys() {
 		fieldName := fmt.Sprintf("%s[%s]", name, k)
 

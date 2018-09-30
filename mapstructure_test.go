@@ -1316,8 +1316,11 @@ func TestArrayToMap(t *testing.T) {
 func TestDecodeTable(t *testing.T) {
 	t.Parallel()
 
+	// We need to make new types so that we don't get the short-circuit
+	// copy functionality. We want to test the deep copying functionality.
 	type BasicCopy Basic
 	type NestedPointerCopy NestedPointer
+	type MapCopy Map
 
 	tests := []struct {
 		name    string
@@ -1464,6 +1467,20 @@ func TestDecodeTable(t *testing.T) {
 			&Slice{},
 			&SliceOfAlias{},
 			&SliceOfAlias{},
+			false,
+		},
+		{
+			"nil map to map",
+			&Map{},
+			&MapCopy{},
+			&MapCopy{},
+			false,
+		},
+		{
+			"nil map to non-empty map",
+			&Map{},
+			&MapCopy{Vother: map[string]string{"foo": "bar"}},
+			&MapCopy{},
 			false,
 		},
 
