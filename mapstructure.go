@@ -270,8 +270,8 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	}
 
 	var err error
-	inputKind := getKind(outVal)
-	switch inputKind {
+	outputKind := getKind(outVal)
+	switch outputKind {
 	case reflect.Bool:
 		err = d.decodeBool(name, input, outVal)
 	case reflect.Interface:
@@ -298,7 +298,7 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 		err = d.decodeFunc(name, input, outVal)
 	default:
 		// If we reached this point then we weren't able to decode it
-		return fmt.Errorf("%s: unsupported type: %s", name, inputKind)
+		return fmt.Errorf("%s: unsupported type: %s", name, outputKind)
 	}
 
 	// If we reached here, then we successfully decoded SOMETHING, so
@@ -716,11 +716,21 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 }
 
 func (d *Decoder) decodePtr(name string, data interface{}, val reflect.Value) error {
+	// If the input data is nil, then we want to just set the output
+	// pointer to be nil as well.
+	if data == nil || reflect.Indirect(reflect.ValueOf(data)).IsNil() {
+		if !val.IsNil() && val.CanSet() {
+			nilValue := reflect.New(val.Type()).Elem()
+			val.Set(nilValue)
+		}
+
+		return nil
+	}
+
 	// Create an element of the concrete (non pointer) type and decode
 	// into that. Then set the value of the pointer to this type.
 	valType := val.Type()
 	valElemType := valType.Elem()
-
 	if val.CanSet() {
 		realVal := val
 		if realVal.IsNil() || d.config.ZeroFields {
@@ -762,28 +772,34 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 
 	valSlice := val
 	if valSlice.IsNil() || d.config.ZeroFields {
+		if d.config.WeaklyTypedInput {
+			switch {
+			// Slice and array we use the normal logic
+			case dataValKind == reflect.Slice, dataValKind == reflect.Array:
+				break
+
+			// Empty maps turn into empty slices
+			case dataValKind == reflect.Map:
+				if dataVal.Len() == 0 {
+					val.Set(reflect.MakeSlice(sliceType, 0, 0))
+					return nil
+				}
+				// Create slice of maps of other sizes
+				return d.decodeSlice(name, []interface{}{data}, val)
+
+			case dataValKind == reflect.String && valElemType.Kind() == reflect.Uint8:
+				return d.decodeSlice(name, []byte(dataVal.String()), val)
+
+			// All other types we try to convert to the slice type
+			// and "lift" it into it. i.e. a string becomes a string slice.
+			default:
+				// Just re-try this function with data as a slice.
+				return d.decodeSlice(name, []interface{}{data}, val)
+			}
+		}
+
 		// Check input type
 		if dataValKind != reflect.Array && dataValKind != reflect.Slice {
-			if d.config.WeaklyTypedInput {
-				switch {
-				// Empty maps turn into empty slices
-				case dataValKind == reflect.Map:
-					if dataVal.Len() == 0 {
-						val.Set(reflect.MakeSlice(sliceType, 0, 0))
-						return nil
-					}
-					// Create slice of maps of other sizes
-					return d.decodeSlice(name, []interface{}{data}, val)
-
-				case dataValKind == reflect.String && valElemType.Kind() == reflect.Uint8:
-					return d.decodeSlice(name, []byte(dataVal.String()), val)
-				// All other types we try to convert to the slice type
-				// and "lift" it into it. i.e. a string becomes a string slice.
-				default:
-					// Just re-try this function with data as a slice.
-					return d.decodeSlice(name, []interface{}{data}, val)
-				}
-			}
 			return fmt.Errorf(
 				"'%s': source data must be an array or slice, got %s", name, dataValKind)
 
@@ -912,7 +928,8 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 			return err
 		}
 
-		return d.decodeStructFromMap(name, mval, val)
+		result := d.decodeStructFromMap(name, mval, val)
+		return result
 
 	default:
 		return fmt.Errorf("'%s' expected a map, got '%s'", name, dataVal.Kind())

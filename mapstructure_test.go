@@ -106,6 +106,10 @@ type SliceOfStruct struct {
 	Value []Basic
 }
 
+type SlicePointer struct {
+	Vbar *[]string
+}
+
 type Array struct {
 	Vfoo string
 	Vbar [2]string
@@ -1432,6 +1436,22 @@ func TestDecodeTable(t *testing.T) {
 				Vfloat:  4.56,
 				Vdata:   []byte("data"),
 			},
+			false,
+		},
+		{
+			"slice non-pointer to pointer",
+			&Slice{},
+			&SlicePointer{},
+			&SlicePointer{},
+			false,
+		},
+		{
+			"slice non-pointer to pointer, zero field",
+			&Slice{},
+			&SlicePointer{
+				Vbar: &[]string{"yo"},
+			},
+			&SlicePointer{},
 			false,
 		},
 
