@@ -805,6 +805,11 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 
 		}
 
+		// If the input value is empty, then don't allocate since non-nil != nil
+		if dataVal.Len() == 0 {
+			return nil
+		}
+
 		// Make a new slice to hold our result, same size as the original data.
 		valSlice = reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
 	}

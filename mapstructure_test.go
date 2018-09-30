@@ -102,6 +102,11 @@ type Slice struct {
 	Vbar []string
 }
 
+type SliceOfAlias struct {
+	Vfoo string
+	Vbar SliceAlias
+}
+
 type SliceOfStruct struct {
 	Value []Basic
 }
@@ -1452,6 +1457,13 @@ func TestDecodeTable(t *testing.T) {
 				Vbar: &[]string{"yo"},
 			},
 			&SlicePointer{},
+			false,
+		},
+		{
+			"slice to slice alias",
+			&Slice{},
+			&SliceOfAlias{},
+			&SliceOfAlias{},
 			false,
 		},
 
