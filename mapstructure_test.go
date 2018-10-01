@@ -97,6 +97,10 @@ type NilInterface struct {
 	W io.Writer
 }
 
+type NilPointer struct {
+	Value *string
+}
+
 type Slice struct {
 	Vfoo string
 	Vbar []string
@@ -647,6 +651,43 @@ func TestDecode_NilInterfaceHook(t *testing.T) {
 
 	if result.W != nil {
 		t.Errorf("W should be nil: %#v", result.W)
+	}
+}
+
+func TestDecode_NilPointerHook(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"value": "",
+	}
+
+	decodeHook := func(f, t reflect.Type, v interface{}) (interface{}, error) {
+		if typed, ok := v.(string); ok {
+			if typed == "" {
+				return nil, nil
+			}
+		}
+		return v, nil
+	}
+
+	var result NilPointer
+	config := &DecoderConfig{
+		DecodeHook: decodeHook,
+		Result:     &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if result.Value != nil {
+		t.Errorf("W should be nil: %#v", result.Value)
 	}
 }
 
