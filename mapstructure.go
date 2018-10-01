@@ -732,7 +732,19 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 func (d *Decoder) decodePtr(name string, data interface{}, val reflect.Value) error {
 	// If the input data is nil, then we want to just set the output
 	// pointer to be nil as well.
-	if data == nil || reflect.Indirect(reflect.ValueOf(data)).IsNil() {
+	isNil := data == nil
+	if !isNil {
+		switch v := reflect.Indirect(reflect.ValueOf(data)); v.Kind() {
+		case reflect.Chan,
+			reflect.Func,
+			reflect.Interface,
+			reflect.Map,
+			reflect.Ptr,
+			reflect.Slice:
+			isNil = v.IsNil()
+		}
+	}
+	if isNil {
 		if !val.IsNil() && val.CanSet() {
 			nilValue := reflect.New(val.Type()).Elem()
 			val.Set(nilValue)
