@@ -1,3 +1,7 @@
+## 1.1.1
+
+* Fix panic that can happen in `decodePtr`
+
 ## 1.1.0 (September 30, 2018)
 
 * Added `StringToIPHookFunc` to convert `string` to `net.IP` and `net.IPNet` [GH-133]
