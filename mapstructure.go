@@ -318,10 +318,14 @@ func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) 
 	}
 
 	dataVal := reflect.ValueOf(data)
-	// Only dereference to `interface{}` not programmer defined interfaces
-	if val.Type() == reflect.TypeOf((*interface{})(nil)).Elem() {
+
+	// If the input data is a pointer, and the assigned type is the dereference
+	// of that exact pointer, then indirect it so that we can assign it.
+	// Example: *string to string
+	if dataVal.Kind() == reflect.Ptr && dataVal.Type().Elem() == val.Type() {
 		dataVal = reflect.Indirect(dataVal)
 	}
+
 	if !dataVal.IsValid() {
 		dataVal = reflect.Zero(val.Type())
 	}
