@@ -316,23 +316,25 @@ func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) 
 	if val.IsValid() && val.Elem().IsValid() {
 		return d.decode(name, data, val.Elem())
 	}
-	dataVal := reflect.Indirect(reflect.ValueOf(data))
+
+	dataVal := reflect.ValueOf(data)
+	// Only dereference to `interface{}` not programmer defined interfaces
+	if val.Type() == reflect.TypeOf((*interface{})(nil)).Elem() {
+		dataVal = reflect.Indirect(dataVal)
+	}
 	if !dataVal.IsValid() {
 		dataVal = reflect.Zero(val.Type())
 	}
 
 	dataValType := dataVal.Type()
-	if dataValType.AssignableTo(val.Type()) {
-		val.Set(dataVal)
-		return nil
-	} else if reflect.TypeOf(data).AssignableTo(val.Type()) {
-		val.Set(reflect.ValueOf(data))
-		return nil
-	} else {
+	if !dataValType.AssignableTo(val.Type()) {
 		return fmt.Errorf(
 			"'%s' expected type '%s', got '%s'",
 			name, val.Type(), dataValType)
 	}
+
+	val.Set(dataVal)
+	return nil
 }
 
 func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value) error {
