@@ -322,14 +322,17 @@ func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) 
 	}
 
 	dataValType := dataVal.Type()
-	if !dataValType.AssignableTo(val.Type()) {
+	if dataValType.AssignableTo(val.Type()) {
+		val.Set(dataVal)
+		return nil
+	} else if reflect.TypeOf(data).AssignableTo(val.Type()) {
+		val.Set(reflect.ValueOf(data))
+		return nil
+	} else {
 		return fmt.Errorf(
 			"'%s' expected type '%s', got '%s'",
 			name, val.Type(), dataValType)
 	}
-
-	val.Set(dataVal)
-	return nil
 }
 
 func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value) error {
