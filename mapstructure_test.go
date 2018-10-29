@@ -137,6 +137,21 @@ type Tagged struct {
 	Value string `mapstructure:"foo"`
 }
 
+type StructWithOmitEmpty struct {
+	VisibleStringField string                 `mapstructure:"visible-string"`
+	OmitStringField    string                 `mapstructure:"omittable-string,omitempty"`
+	VisibleIntField    int                    `mapstructure:"visible-int"`
+	OmitIntField       int                    `mapstructure:"omittable-int,omitempty"`
+	VisibleFloatField  float64                `mapstructure:"visible-float"`
+	OmitFloatField     float64                `mapstructure:"omittable-float,omitempty"`
+	VisibleSliceField  []interface{}          `mapstructure:"visible-slice"`
+	OmitSliceField     []interface{}          `mapstructure:"omittable-slice,omitempty"`
+	VisibleMapField    map[string]interface{} `mapstructure:"visible-map"`
+	OmitMapField       map[string]interface{} `mapstructure:"omittable-map,omitempty"`
+	NestedField        *Nested                `mapstructure:"visible-nested"`
+	OmitNestedField    *Nested                `mapstructure:"omittable-nested,omitempty"`
+}
+
 type TypeConversionResult struct {
 	IntToFloat         float32
 	IntToUint          uint
@@ -1631,6 +1646,32 @@ func TestDecodeTable(t *testing.T) {
 			&map[string]int{},
 			true,
 		},
+		{
+			"struct with omitempty tag return non-empty values",
+			&struct {
+				VisibleField interface{} `mapstructure:"visible"`
+				OmitField    interface{} `mapstructure:"omittable,omitempty"`
+			}{
+				VisibleField: nil,
+				OmitField:    "string",
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{"visible": nil, "omittable": "string"},
+			false,
+		},
+		{
+			"struct with omitempty tag ignore empty values",
+			&struct {
+				VisibleField interface{} `mapstructure:"visible"`
+				OmitField    interface{} `mapstructure:"omittable,omitempty"`
+			}{
+				VisibleField: nil,
+				OmitField:    nil,
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{"visible": nil},
+			false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -1912,6 +1953,75 @@ func TestWeakDecodeMetadata(t *testing.T) {
 	expectedUnused := []string{"unused"}
 	if !reflect.DeepEqual(md.Unused, expectedUnused) {
 		t.Fatalf("bad unused: %#v", md.Unused)
+	}
+}
+
+func TestDecode_StructTaggedWithOmitempty_OmitEmptyValues(t *testing.T) {
+	t.Parallel()
+
+	input := &StructWithOmitEmpty{}
+
+	var emptySlice []interface{}
+	var emptyMap map[string]interface{}
+	var emptyNested *Nested
+	expected := &map[string]interface{}{
+		"visible-string": "",
+		"visible-int":    0,
+		"visible-float":  0.0,
+		"visible-slice":  emptySlice,
+		"visible-map":    emptyMap,
+		"visible-nested": emptyNested,
+	}
+
+	actual := &map[string]interface{}{}
+	Decode(input, actual)
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("Decode() expected: %#v, got: %#v", expected, actual)
+	}
+}
+
+func TestDecode_StructTaggedWithOmitempty_KeepNonEmptyValues(t *testing.T) {
+	t.Parallel()
+
+	input := &StructWithOmitEmpty{
+		VisibleStringField: "",
+		OmitStringField:    "string",
+		VisibleIntField:    0,
+		OmitIntField:       1,
+		VisibleFloatField:  0.0,
+		OmitFloatField:     1.0,
+		VisibleSliceField:  nil,
+		OmitSliceField:     []interface{}{1},
+		VisibleMapField:    nil,
+		OmitMapField:       map[string]interface{}{"k": "v"},
+		NestedField:        nil,
+		OmitNestedField:    &Nested{},
+	}
+
+	var emptySlice []interface{}
+	var emptyMap map[string]interface{}
+	var emptyNested *Nested
+	expected := &map[string]interface{}{
+		"visible-string":   "",
+		"omittable-string": "string",
+		"visible-int":      0,
+		"omittable-int":    1,
+		"visible-float":    0.0,
+		"omittable-float":  1.0,
+		"visible-slice":    emptySlice,
+		"omittable-slice":  []interface{}{1},
+		"visible-map":      emptyMap,
+		"omittable-map":    map[string]interface{}{"k": "v"},
+		"visible-nested":   emptyNested,
+		"omittable-nested": &Nested{},
+	}
+
+	actual := &map[string]interface{}{}
+	Decode(input, actual)
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("Decode() expected: %#v, got: %#v", expected, actual)
 	}
 }
 
