@@ -1019,6 +1019,31 @@ func TestDecoder_ErrorUnused(t *testing.T) {
 	}
 }
 
+func TestDecoder_ErrorUnused_NotSetable(t *testing.T) {
+	t.Parallel()
+
+	// lowercase vsilent is unexported and cannot be set
+	input := map[string]interface{}{
+		"vsilent": "false",
+	}
+
+	var result Basic
+	config := &DecoderConfig{
+		ErrorUnused: true,
+		Result:      &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
 func TestMap(t *testing.T) {
 	t.Parallel()
 
@@ -1884,6 +1909,7 @@ func TestDecodeMetadata(t *testing.T) {
 		"vbar": map[string]interface{}{
 			"vstring": "foo",
 			"Vuint":   42,
+			"vsilent": "false",
 			"foo":     "bar",
 		},
 		"bar": "nil",
@@ -1903,7 +1929,7 @@ func TestDecodeMetadata(t *testing.T) {
 		t.Fatalf("bad keys: %#v", md.Keys)
 	}
 
-	expectedUnused := []string{"Vbar.foo", "bar"}
+	expectedUnused := []string{"Vbar.vsilent", "Vbar.foo", "bar"}
 	if !reflect.DeepEqual(md.Unused, expectedUnused) {
 		t.Fatalf("bad unused: %#v", md.Unused)
 	}
@@ -1917,6 +1943,7 @@ func TestMetadata(t *testing.T) {
 		"vbar": map[string]interface{}{
 			"vstring": "foo",
 			"Vuint":   42,
+			"vsilent": "false",
 			"foo":     "bar",
 		},
 		"bar": "nil",
@@ -1945,7 +1972,7 @@ func TestMetadata(t *testing.T) {
 		t.Fatalf("bad keys: %#v", md.Keys)
 	}
 
-	expectedUnused := []string{"Vbar.foo", "bar"}
+	expectedUnused := []string{"Vbar.vsilent", "Vbar.foo", "bar"}
 	if !reflect.DeepEqual(md.Unused, expectedUnused) {
 		t.Fatalf("bad unused: %#v", md.Unused)
 	}
@@ -2053,15 +2080,17 @@ func TestWeakDecodeMetadata(t *testing.T) {
 	t.Parallel()
 
 	input := map[string]interface{}{
-		"foo":    "4",
-		"bar":    "value",
-		"unused": "value",
+		"foo":        "4",
+		"bar":        "value",
+		"unused":     "value",
+		"unexported": "value",
 	}
 
 	var md Metadata
 	var result struct {
-		Foo int
-		Bar string
+		Foo        int
+		Bar        string
+		unexported string
 	}
 
 	if err := WeakDecodeMetadata(input, &result, &md); err != nil {
@@ -2080,7 +2109,7 @@ func TestWeakDecodeMetadata(t *testing.T) {
 		t.Fatalf("bad keys: %#v", md.Keys)
 	}
 
-	expectedUnused := []string{"unused"}
+	expectedUnused := []string{"unused", "unexported"}
 	if !reflect.DeepEqual(md.Unused, expectedUnused) {
 		t.Fatalf("bad unused: %#v", md.Unused)
 	}
