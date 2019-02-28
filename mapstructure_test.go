@@ -317,6 +317,35 @@ func TestNullPointers_WeakDecode(t *testing.T) {
 	}
 }
 
+func TestNullPointers_DecodeIntoPointers(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring":     nil,
+		"vint":        nil,
+		"Vuint":       nil,
+		"vbool":       nil,
+		"Vfloat":      nil,
+		"vsilent":     nil,
+		"vdata":       nil,
+		"vjsonInt":    nil,
+		"vjsonFloat":  nil,
+		"vjsonNumber": nil,
+	}
+
+	var result BasicPointer
+	err := Decode(input, &result)
+
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	expected := BasicPointer{}
+	if result != expected {
+		t.Errorf("result is not a zero structure: %#v", result)
+	}
+}
+
 func TestBasic_IntWithFloat(t *testing.T) {
 	t.Parallel()
 
