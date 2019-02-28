@@ -110,9 +110,10 @@ func TestDecode_NilValue(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			config := &DecoderConfig{
-				Metadata:   new(Metadata),
-				Result:     tc.target,
-				ZeroFields: true,
+				Metadata:         new(Metadata),
+				Result:           tc.target,
+				ZeroFields:       true,
+				WeaklyTypedInput: true,
 			}
 
 			decoder, err := NewDecoder(config)

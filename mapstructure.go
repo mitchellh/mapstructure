@@ -77,6 +77,7 @@ type DecoderConfig struct {
 	//   - single values are converted to slices if required. Each
 	//     element is weakly decoded. For example: "4" can become []int{4}
 	//     if the target type is an int slice.
+	//   - nils are accepted as zero values of any type
 	//
 	WeaklyTypedInput bool
 
@@ -236,6 +237,11 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	}
 
 	if input == nil {
+		// We convert nils into zero values only if WeaklyTypedInput is set to true
+		if !d.config.WeaklyTypedInput && outVal.Kind() != reflect.Ptr && outVal.Kind() != reflect.Struct {
+			return fmt.Errorf("'%s' should not be null (expected type: %s)", name, outVal.Kind())
+		}
+
 		// If the data is nil, then we don't set anything, unless ZeroFields is set
 		// to true.
 		if d.config.ZeroFields {

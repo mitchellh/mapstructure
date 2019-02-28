@@ -239,6 +239,84 @@ func TestBasicTypes(t *testing.T) {
 	}
 }
 
+func TestNullPointers(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring":     nil,
+		"vint":        nil,
+		"Vuint":       nil,
+		"vbool":       nil,
+		"Vfloat":      nil,
+		"vsilent":     nil,
+		"vdata":       nil,
+		"vjsonInt":    nil,
+		"vjsonFloat":  nil,
+		"vjsonNumber": nil,
+	}
+
+	var result Basic
+	err := Decode(input, &result)
+
+	if err == nil {
+		t.Errorf("should be an error")
+		t.FailNow()
+	}
+	if !strings.Contains(err.Error(), "'Vstring' should not be null (expected type: string)") {
+		t.Errorf("no error for 'Vstring' in %#v", err)
+	}
+	if !strings.Contains(err.Error(), "'Vint' should not be null (expected type: int)") {
+		t.Errorf("no error for 'Vint' in %#v", err)
+	}
+	if !strings.Contains(err.Error(), "'Vbool' should not be null (expected type: bool)") {
+		t.Errorf("no error for 'Vbool' in %#v", err)
+	}
+	if !strings.Contains(err.Error(), "'Vfloat' should not be null (expected type: float64)") {
+		t.Errorf("no error for 'Vfloat' in %#v", err)
+	}
+	if !strings.Contains(err.Error(), "'Vdata' should not be null (expected type: interface)") {
+		t.Errorf("no error for 'Vdata' in %#v", err)
+	}
+	if !strings.Contains(err.Error(), "'VjsonInt' should not be null (expected type: int)") {
+		t.Errorf("no error for 'VjsonInt' in %#v", err)
+	}
+	if !strings.Contains(err.Error(), "'VjsonFloat' should not be null (expected type: float64)") {
+		t.Errorf("no error for 'VjsonFloat' in %#v", err)
+	}
+	if !strings.Contains(err.Error(), "'VjsonNumber' should not be null (expected type: string)") {
+		t.Errorf("no error for 'VjsonNumber' in %#v", err)
+	}
+}
+
+func TestNullPointers_WeakDecode(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring":     nil,
+		"vint":        nil,
+		"Vuint":       nil,
+		"vbool":       nil,
+		"Vfloat":      nil,
+		"vsilent":     nil,
+		"vdata":       nil,
+		"vjsonInt":    nil,
+		"vjsonFloat":  nil,
+		"vjsonNumber": nil,
+	}
+
+	var result Basic
+	err := WeakDecode(input, &result)
+
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	expected := Basic{}
+	if result != expected {
+		t.Errorf("result is not a zero structure: %#v", result)
+	}
+}
+
 func TestBasic_IntWithFloat(t *testing.T) {
 	t.Parallel()
 
@@ -1469,21 +1547,29 @@ func TestDecodeTable(t *testing.T) {
 		{
 			"basic pointer to non-pointer",
 			&BasicPointer{
-				Vstring: stringPtr("vstring"),
-				Vint:    intPtr(2),
-				Vuint:   uintPtr(3),
-				Vbool:   boolPtr(true),
-				Vfloat:  floatPtr(4.56),
-				Vdata:   interfacePtr([]byte("data")),
+				Vstring:     stringPtr("vstring"),
+				Vint:        intPtr(2),
+				Vuint:       uintPtr(3),
+				Vbool:       boolPtr(true),
+				Vfloat:      floatPtr(4.56),
+				Vdata:       interfacePtr([]byte("data")),
+				Vextra:      stringPtr("extra"),
+				VjsonFloat:  floatPtr(1.1),
+				VjsonInt:    intPtr(5),
+				VjsonNumber: func() *json.Number { n := json.Number(123); return &n }(),
 			},
 			&Basic{},
 			&Basic{
-				Vstring: "vstring",
-				Vint:    2,
-				Vuint:   3,
-				Vbool:   true,
-				Vfloat:  4.56,
-				Vdata:   []byte("data"),
+				Vstring:     "vstring",
+				Vint:        2,
+				Vuint:       3,
+				Vbool:       true,
+				Vfloat:      4.56,
+				Vdata:       []byte("data"),
+				Vextra:      "extra",
+				VjsonFloat:  1.1,
+				VjsonInt:    5,
+				VjsonNumber: json.Number(123),
 			},
 			false,
 		},
