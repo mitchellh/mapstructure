@@ -238,7 +238,7 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 
 	if input == nil {
 		// We convert nils into zero values only if WeaklyTypedInput is set to true
-		if !d.config.WeaklyTypedInput && outVal.Kind() != reflect.Ptr && outVal.Kind() != reflect.Struct {
+		if !d.config.WeaklyTypedInput && outVal.Kind() != reflect.Ptr && outVal.Kind() != reflect.Interface {
 			return fmt.Errorf("'%s' should not be null (expected type: %s)", name, outVal.Kind())
 		}
 

@@ -274,8 +274,8 @@ func TestNullPointers(t *testing.T) {
 	if !strings.Contains(err.Error(), "'Vfloat' should not be null (expected type: float64)") {
 		t.Errorf("no error for 'Vfloat' in %#v", err)
 	}
-	if !strings.Contains(err.Error(), "'Vdata' should not be null (expected type: interface)") {
-		t.Errorf("no error for 'Vdata' in %#v", err)
+	if strings.Contains(err.Error(), "Vdata") {
+		t.Errorf("got error for 'Vdata' in %#v", err)
 	}
 	if !strings.Contains(err.Error(), "'VjsonInt' should not be null (expected type: int)") {
 		t.Errorf("no error for 'VjsonInt' in %#v", err)
@@ -716,6 +716,24 @@ func TestDecode_Nil(t *testing.T) {
 	}
 
 	err := Decode(input, &result)
+	if err == nil {
+		t.Fatalf("should be an error")
+	}
+
+	if !strings.Contains(err.Error(), "'' should not be null (expected type: struct)") {
+		t.Fatalf("unexpected error message: %s", err)
+	}
+}
+
+func TestDecode_Nil_Weak(t *testing.T) {
+	t.Parallel()
+
+	var input interface{}
+	result := Basic{
+		Vstring: "foo",
+	}
+
+	err := WeakDecode(input, &result)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
