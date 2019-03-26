@@ -275,7 +275,23 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	case reflect.Bool:
 		err = d.decodeBool(name, input, outVal)
 	case reflect.Interface:
-		err = d.decodeBasic(name, input, outVal)
+		inputKind := getKind(inputVal)
+		if inputKind == reflect.Struct || inputKind == reflect.Map || inputKind == reflect.Slice || inputKind == reflect.Array {
+			tempVal := reflect.New(inputVal.Type()).Elem()
+			switch inputKind {
+			case reflect.Struct:
+				err = d.decodeStruct(name, input, tempVal)
+			case reflect.Map:
+				err = d.decodeMap(name, input, tempVal)
+			case reflect.Slice:
+				err = d.decodeSlice(name, input, tempVal)
+			case reflect.Array:
+				err = d.decodeArray(name, input, tempVal)
+			}
+			outVal.Set(tempVal)
+		} else {
+			err = d.decodeBasic(name, input, outVal)
+		}
 	case reflect.String:
 		err = d.decodeString(name, input, outVal)
 	case reflect.Int:
