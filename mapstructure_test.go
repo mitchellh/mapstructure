@@ -173,6 +173,11 @@ type StructWithOmitEmpty struct {
 	OmitNestedField    *Nested                `mapstructure:"omittable-nested,omitempty"`
 }
 
+type Required struct {
+	RequiredBar string `mapstructure:"bar,required"`
+	Value       string `mapstructure:"foo"`
+}
+
 type TypeConversionResult struct {
 	IntToFloat         float32
 	IntToUint          uint
@@ -2428,6 +2433,20 @@ func TestDecode_mapToStruct(t *testing.T) {
 
 	if !reflect.DeepEqual(target, expected) {
 		t.Fatalf("bad: %#v", target)
+	}
+}
+
+func TestRequired(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"foo": "bar",
+	}
+
+	var result Required
+	err := Decode(input, &result)
+	if err == nil {
+		t.Fatal("unexpected success decoding required field was missing")
 	}
 }
 
