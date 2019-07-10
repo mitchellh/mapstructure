@@ -80,6 +80,14 @@ type DecoderConfig struct {
 	//
 	WeaklyTypedInput bool
 
+	// Squash will squash embedded structs.  A squash tag may also be
+	// added to an individual struct field using a tag.  For example:
+	//
+	//  type Parent struct {
+	//      Child `mapstructure:",squash"`
+	//  }
+	Squash bool
+
 	// Metadata is the struct that will contain extra metadata about
 	// the decoding. If this is nil, then no metadata will be tracked.
 	Metadata *Metadata
@@ -689,16 +697,19 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			keyName = tagParts[0]
 		}
 
+		// If Squash is set in the config, we squash the field down.
+		squash := d.config.Squash && v.Kind() == reflect.Struct
 		// If "squash" is specified in the tag, we squash the field down.
-		squash := false
-		for _, tag := range tagParts[1:] {
-			if tag == "squash" {
-				squash = true
-				break
+		if !squash {
+			for _, tag := range tagParts[1:] {
+				if tag == "squash" {
+					squash = true
+					break
+				}
 			}
-		}
-		if squash && v.Kind() != reflect.Struct {
-			return fmt.Errorf("cannot squash non-struct type '%s'", v.Type())
+			if squash && v.Kind() != reflect.Struct {
+				return fmt.Errorf("cannot squash non-struct type '%s'", v.Type())
+			}
 		}
 
 		switch v.Kind() {
@@ -1017,12 +1028,14 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 			fieldKind := fieldType.Type.Kind()
 
 			// If "squash" is specified in the tag, we squash the field down.
-			squash := false
-			tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
-			for _, tag := range tagParts[1:] {
-				if tag == "squash" {
-					squash = true
-					break
+			squash := d.config.Squash && fieldKind == reflect.Struct
+			if !squash {
+				tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
+				for _, tag := range tagParts[1:] {
+					if tag == "squash" {
+						squash = true
+						break
+					}
 				}
 			}
 
