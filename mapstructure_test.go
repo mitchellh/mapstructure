@@ -5,6 +5,7 @@ import (
 	"io"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -1912,6 +1913,50 @@ func TestWeakDecodeMetadata(t *testing.T) {
 	expectedUnused := []string{"unused"}
 	if !reflect.DeepEqual(md.Unused, expectedUnused) {
 		t.Fatalf("bad unused: %#v", md.Unused)
+	}
+}
+
+func TestDecodeStructToMap_DecodeHook(t *testing.T) {
+	t.Parallel()
+
+	input := struct {
+		Vstring string
+		Vint    int
+	}{
+		"foo",
+		42,
+	}
+
+	decodeHook := func(f, t reflect.Type, v interface{}) (interface{}, error) {
+		if f.Kind() != reflect.Int {
+			return v, nil
+		}
+		val := strconv.FormatInt(int64(v.(int)), 10)
+		return val, nil
+	}
+
+	var result map[string]interface{}
+	config := &DecoderConfig{
+		DecodeHook: decodeHook,
+		Result:     &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	expected := map[string]interface{}{
+		"Vstring": "foo",
+		"Vint":    "42",
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Decode call result should be %#v, got %#v", expected, result)
 	}
 }
 
