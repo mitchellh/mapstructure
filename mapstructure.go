@@ -918,9 +918,6 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 		// Next get the actual value of this field and verify it is assignable
 		// to the map value.
 		v := dataVal.Field(i)
-		if !v.Type().AssignableTo(valMap.Type().Elem()) {
-			return fmt.Errorf("cannot assign type '%s' to map value field of type '%s'", v.Type(), valMap.Type().Elem())
-		}
 
 		tagValue := f.Tag.Get(d.config.TagName)
 		keyName := f.Name
@@ -1004,7 +1001,13 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			}
 
 		default:
-			valMap.SetMapIndex(reflect.ValueOf(keyName), v)
+			currentVal := reflect.Indirect(reflect.New(valMap.Type().Elem()))
+			err := d.decode(keyName, v.Interface(), currentVal)
+			if err != nil {
+				return err
+			}
+
+			valMap.SetMapIndex(reflect.ValueOf(keyName), currentVal)
 		}
 	}
 
