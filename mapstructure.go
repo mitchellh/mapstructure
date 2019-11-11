@@ -91,6 +91,12 @@ type DecoderConfig struct {
 	// The tag name that mapstructure reads for field names. This
 	// defaults to "mapstructure"
 	TagName string
+
+	// Extra transformation methods to match field name from map to struct.
+	// Options:
+	// - snake (snake_case: all characters in lower case and concatenating words by '_')
+	// - kebab (kebab-case: all characters in lower case and concatenating words by '-' )
+	FieldNameTransFormMethod string
 }
 
 // A Decoder takes a raw interface value and turns it into structured
@@ -1064,7 +1070,16 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 					continue
 				}
 
-				if strings.EqualFold(mK, fieldName) {
+				matched := strings.EqualFold(mK, fieldName)
+
+				switch d.config.FieldNameTransFormMethod {
+				case "snake":
+					matched = matched || strings.EqualFold(strings.ReplaceAll(mK, "_", ""), fieldName)
+				case "kabab":
+					matched = matched || strings.EqualFold(strings.ReplaceAll(mK, "-", ""), fieldName)
+				}
+
+				if matched {
 					rawMapKey = dataValKey
 					rawMapVal = dataVal.MapIndex(dataValKey)
 					break

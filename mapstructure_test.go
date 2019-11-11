@@ -906,6 +906,34 @@ func TestDecoder_ErrorUnused(t *testing.T) {
 	}
 }
 
+func TestDecode_FieldNameTransForm(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"v_string": "WHAT",
+	}
+
+	var result Basic
+	config := &DecoderConfig{
+		Result:                   &result,
+		FieldNameTransFormMethod: "snake",
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if result.Vstring != "WHAT" {
+		t.Errorf("vstring should be WHAT: %#v", result.Vstring)
+	}
+}
+
 func TestMap(t *testing.T) {
 	t.Parallel()
 
