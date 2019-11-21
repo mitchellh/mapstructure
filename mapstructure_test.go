@@ -1546,6 +1546,17 @@ func TestDecodeTable(t *testing.T) {
 			false,
 		},
 		{
+			"struct with empty slice",
+			&map[string]interface{}{
+				"Vbar": []string{},
+			},
+			&Slice{},
+			&Slice{
+				Vbar: []string{},
+			},
+			false,
+		},
+		{
 			"struct with slice of struct property",
 			&SliceOfStruct{
 				Value: []Basic{

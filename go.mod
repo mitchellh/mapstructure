@@ -1,1 +1,3 @@
-module github.com/mitchellh/mapstructure
+module github.com/algorithmia/mapstructure
+
+go 1.13
