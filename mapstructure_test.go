@@ -12,6 +12,10 @@ import (
 type Basic struct {
 	Vstring     string
 	Vint        int
+	Vint8       int8
+	Vint16      int16
+	Vint32      int32
+	Vint64      int64
 	Vuint       uint
 	Vbool       bool
 	Vfloat      float64
@@ -177,6 +181,10 @@ func TestBasicTypes(t *testing.T) {
 	input := map[string]interface{}{
 		"vstring":     "foo",
 		"vint":        42,
+		"vint8":       42,
+		"vint16":      42,
+		"vint32":      42,
+		"vint64":      42,
 		"Vuint":       42,
 		"vbool":       true,
 		"Vfloat":      42.42,
@@ -200,6 +208,18 @@ func TestBasicTypes(t *testing.T) {
 
 	if result.Vint != 42 {
 		t.Errorf("vint value should be 42: %#v", result.Vint)
+	}
+	if result.Vint8 != 42 {
+		t.Errorf("vint8 value should be 42: %#v", result.Vint)
+	}
+	if result.Vint16 != 42 {
+		t.Errorf("vint16 value should be 42: %#v", result.Vint)
+	}
+	if result.Vint32 != 42 {
+		t.Errorf("vint32 value should be 42: %#v", result.Vint)
+	}
+	if result.Vint64 != 42 {
+		t.Errorf("vint64 value should be 42: %#v", result.Vint)
 	}
 
 	if result.Vuint != 42 {
@@ -1457,6 +1477,10 @@ func TestDecodeTable(t *testing.T) {
 			&Basic{
 				Vstring: "vstring",
 				Vint:    2,
+				Vint8:   2,
+				Vint16:  2,
+				Vint32:  2,
+				Vint64:  2,
 				Vuint:   3,
 				Vbool:   true,
 				Vfloat:  4.56,
@@ -1468,6 +1492,10 @@ func TestDecodeTable(t *testing.T) {
 			&map[string]interface{}{
 				"Vstring":     "vstring",
 				"Vint":        2,
+				"Vint8":       int8(2),
+				"Vint16":      int16(2),
+				"Vint32":      int32(2),
+				"Vint64":      int64(2),
 				"Vuint":       uint(3),
 				"Vbool":       true,
 				"Vfloat":      4.56,
@@ -1486,6 +1514,10 @@ func TestDecodeTable(t *testing.T) {
 				Basic: Basic{
 					Vstring: "vstring",
 					Vint:    2,
+					Vint8:   2,
+					Vint16:  2,
+					Vint32:  2,
+					Vint64:  2,
 					Vuint:   3,
 					Vbool:   true,
 					Vfloat:  4.56,
@@ -1500,6 +1532,10 @@ func TestDecodeTable(t *testing.T) {
 				"Basic": map[string]interface{}{
 					"Vstring":     "vstring",
 					"Vint":        2,
+					"Vint8":       int8(2),
+					"Vint16":      int16(2),
+					"Vint32":      int32(2),
+					"Vint64":      int64(2),
 					"Vuint":       uint(3),
 					"Vbool":       true,
 					"Vfloat":      4.56,
