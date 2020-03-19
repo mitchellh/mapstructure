@@ -1,3 +1,7 @@
+## 1.2.1
+
+* Go modules checksum mismatch fix
+
 ## 1.2.0
 
 * Added support to capture unused values in a field using the `",remain"` value
