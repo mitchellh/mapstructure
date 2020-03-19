@@ -928,8 +928,8 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 	valElemType := valType.Elem()
 	sliceType := reflect.SliceOf(valElemType)
 
-	valSlice := val
-	if valSlice.IsNil() || d.config.ZeroFields {
+	// If we have a non array/slice type then we first attempt to convert.
+	if dataValKind != reflect.Array && dataValKind != reflect.Slice {
 		if d.config.WeaklyTypedInput {
 			switch {
 			// Slice and array we use the normal logic
@@ -956,18 +956,17 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 			}
 		}
 
-		// Check input type
-		if dataValKind != reflect.Array && dataValKind != reflect.Slice {
-			return fmt.Errorf(
-				"'%s': source data must be an array or slice, got %s", name, dataValKind)
+		return fmt.Errorf(
+			"'%s': source data must be an array or slice, got %s", name, dataValKind)
+	}
 
-		}
+	// If the input value is nil, then don't allocate since empty != nil
+	if dataVal.IsNil() {
+		return nil
+	}
 
-		// If the input value is nil, then don't allocate since empty != nil
-		if dataVal.IsNil() {
-			return nil
-		}
-
+	valSlice := val
+	if valSlice.IsNil() || d.config.ZeroFields {
 		// Make a new slice to hold our result, same size as the original data.
 		valSlice = reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
 	}

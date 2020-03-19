@@ -458,3 +458,20 @@ func TestDecode_DecodeHookInterface(t *testing.T) {
 		}
 	}
 }
+
+// #103 Check for data type before trying to access its composants prevent a panic error
+// in decodeSlice
+func TestDecodeBadDataTypeInSlice(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"Toto": "titi",
+	}
+	result := []struct {
+		Toto string
+	}{}
+
+	if err := Decode(input, &result); err == nil {
+		t.Error("An error was expected, got nil")
+	}
+}
