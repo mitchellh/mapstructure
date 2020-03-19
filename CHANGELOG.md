@@ -5,6 +5,8 @@
 * Added `DecoderConfig` option to always squash embedded structs
 * `json.Number` can decode into `uint` types
 * Empty slices are preserved and not replaced with nil slices
+* Fix panic that can occur in when decoding a map into a nil slice of structs
+* Improved package documentation for godoc
 
 ## 1.1.2
 
