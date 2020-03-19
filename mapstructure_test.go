@@ -141,6 +141,11 @@ type Tagged struct {
 	Value string `mapstructure:"foo"`
 }
 
+type Remainder struct {
+	A     string
+	Extra map[string]interface{} `mapstructure:",remain"`
+}
+
 type TypeConversionResult struct {
 	IntToFloat         float32
 	IntToUint          uint
@@ -1759,6 +1764,35 @@ func TestDecodeTable(t *testing.T) {
 			&map[string]int{},
 			&map[string]int{},
 			true,
+		},
+		{
+			"remainder",
+			map[string]interface{}{
+				"A": "hello",
+				"B": "goodbye",
+				"C": "yo",
+			},
+			&Remainder{},
+			&Remainder{
+				A: "hello",
+				Extra: map[string]interface{}{
+					"B": "goodbye",
+					"C": "yo",
+				},
+			},
+			false,
+		},
+		{
+			"remainder with no extra",
+			map[string]interface{}{
+				"A": "hello",
+			},
+			&Remainder{},
+			&Remainder{
+				A:     "hello",
+				Extra: nil,
+			},
+			false,
 		},
 	}
 
