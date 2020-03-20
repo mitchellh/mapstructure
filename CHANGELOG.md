@@ -1,3 +1,8 @@
+## 1.2.2
+
+* Do not add unsettable (unexported) values to the unused metadata key
+  or "remain" value. [GH-150]
+
 ## 1.2.1
 
 * Go modules checksum mismatch fix
