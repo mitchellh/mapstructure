@@ -1219,9 +1219,6 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 			}
 		}
 
-		// Delete the key we're using from the unused map so we stop tracking
-		delete(dataValKeysUnused, rawMapKey.Interface())
-
 		if !fieldValue.IsValid() {
 			// This should never happen
 			panic("field is not valid")
@@ -1232,6 +1229,9 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 		if !fieldValue.CanSet() {
 			continue
 		}
+
+		// Delete the key we're using from the unused map so we stop tracking
+		delete(dataValKeysUnused, rawMapKey.Interface())
 
 		// If the name is empty string, then we're at the root, and we
 		// don't dot-join the fields.
