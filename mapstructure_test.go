@@ -1929,7 +1929,8 @@ func TestDecodeMetadata(t *testing.T) {
 		t.Fatalf("bad keys: %#v", md.Keys)
 	}
 
-	expectedUnused := []string{"Vbar.vsilent", "Vbar.foo", "bar"}
+	expectedUnused := []string{"Vbar.foo", "Vbar.vsilent", "bar"}
+	sort.Strings(md.Unused)
 	if !reflect.DeepEqual(md.Unused, expectedUnused) {
 		t.Fatalf("bad unused: %#v", md.Unused)
 	}
@@ -2110,7 +2111,8 @@ func TestWeakDecodeMetadata(t *testing.T) {
 		t.Fatalf("bad keys: %#v", md.Keys)
 	}
 
-	expectedUnused := []string{"unused", "unexported"}
+	expectedUnused := []string{"unexported", "unused"}
+	sort.Strings(md.Unused)
 	if !reflect.DeepEqual(md.Unused, expectedUnused) {
 		t.Fatalf("bad unused: %#v", md.Unused)
 	}
