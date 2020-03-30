@@ -100,6 +100,32 @@
 //         "address": "123 Maple St.",
 //     }
 //
+// Unexported fields
+//
+// Since unexported (private) struct fields cannot be set outside the package
+// where they are defined, the decoder will simply skip them.
+//
+// For this output type definition:
+//
+//     type Exported struct {
+//         private string // this unexported field will be skipped
+//         Public string
+//     }
+//
+// Using this map as input:
+//
+//     map[string]interface{}{
+//         "private": "I will be ignored",
+//         "Public":  "I made it through!",
+//     }
+//
+// The following struct will be decoded:
+//
+//     type Exported struct {
+//         private: "" // field is left with an empty string (zero value)
+//         Public: "I made it through!"
+//     }
+//
 // Other Configuration
 //
 // mapstructure is highly configurable. See the DecoderConfig struct
