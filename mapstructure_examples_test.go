@@ -201,3 +201,29 @@ func ExampleDecode_embeddedStruct() {
 	// Output:
 	// Mitchell Hashimoto, San Francisco
 }
+
+func ExampleDecode_remainingData() {
+	// Note that the mapstructure tags defined in the struct type
+	// can indicate which fields the values are mapped to.
+	type Person struct {
+		Name  string
+		Age   int
+		Other map[string]interface{} `mapstructure:",remain"`
+	}
+
+	input := map[string]interface{}{
+		"name":  "Mitchell",
+		"age":   91,
+		"email": "mitchell@example.com",
+	}
+
+	var result Person
+	err := Decode(input, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%#v", result)
+	// Output:
+	// mapstructure.Person{Name:"Mitchell", Age:91, Other:map[string]interface {}{"email":"mitchell@example.com"}}
+}
