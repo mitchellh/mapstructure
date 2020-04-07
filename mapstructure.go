@@ -1075,7 +1075,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 				switch d.config.FieldNameTransFormMethod {
 				case "snake":
 					matched = matched || strings.EqualFold(strings.ReplaceAll(mK, "_", ""), fieldName)
-				case "kabab":
+				case "kebab":
 					matched = matched || strings.EqualFold(strings.ReplaceAll(mK, "-", ""), fieldName)
 				}
 
