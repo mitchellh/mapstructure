@@ -1939,6 +1939,11 @@ func TestDecodeMetadata(t *testing.T) {
 func TestMetadata(t *testing.T) {
 	t.Parallel()
 
+	type testResult struct {
+		Vfoo string
+		Vbar BasicPointer
+	}
+
 	input := map[string]interface{}{
 		"vfoo": "foo",
 		"vbar": map[string]interface{}{
@@ -1951,7 +1956,7 @@ func TestMetadata(t *testing.T) {
 	}
 
 	var md Metadata
-	var result Nested
+	var result testResult
 	config := &DecoderConfig{
 		Metadata: &md,
 		Result:   &result,
