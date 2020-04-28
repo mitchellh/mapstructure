@@ -139,6 +139,7 @@
 //     type Exported struct {
 //         private: "" // field is left with an empty string (zero value)
 //         Public: "I made it through!"
+//     }
 //
 // Other Configuration
 //
