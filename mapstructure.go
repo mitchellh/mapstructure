@@ -100,6 +100,21 @@
 //         "address": "123 Maple St.",
 //     }
 //
+// Omit Empty Values
+//
+// When decoding from a struct to any other value, you may use the
+// ",omitempty" suffix on your tag to omit that value if it equates to
+// the zero value. The zero value of all types is specified in the Go
+// specification.
+//
+// For example, the zero type of a numeric type is zero ("0"). If the struct
+// field value is zero and a numeric type, the field is empty, and it won't
+// be encoded into the destination type.
+//
+//     type Source {
+//         Age int `mapstructure:",omitempty"`
+//     }
+//
 // Other Configuration
 //
 // mapstructure is highly configurable. See the DecoderConfig struct
