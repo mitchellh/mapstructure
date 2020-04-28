@@ -227,3 +227,30 @@ func ExampleDecode_remainingData() {
 	// Output:
 	// mapstructure.Person{Name:"Mitchell", Age:91, Other:map[string]interface {}{"email":"mitchell@example.com"}}
 }
+
+func ExampleDecode_omitempty() {
+	// Add omitempty annotation to avoid map keys for empty values
+	type Family struct {
+		LastName string
+	}
+	type Location struct {
+		City string
+	}
+	type Person struct {
+		*Family   `mapstructure:",omitempty"`
+		*Location `mapstructure:",omitempty"`
+		Age       int
+		FirstName string
+	}
+
+	result := &map[string]interface{}{}
+	input := Person{FirstName: "Somebody"}
+	err := Decode(input, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%+v", result)
+	// Output:
+	// &map[Age:0 FirstName:Somebody]
+}
