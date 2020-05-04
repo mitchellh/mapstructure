@@ -196,6 +196,12 @@ type TypeConversionResult struct {
 	MapToArray         [1]interface{}
 }
 
+type OnlyAnonymousSquash struct {
+	Basic
+
+	NonAnonymous Basic `mapstructure:"non_anonymous"`
+}
+
 func TestBasicTypes(t *testing.T) {
 	t.Parallel()
 
@@ -2230,6 +2236,69 @@ func TestDecode_StructTaggedWithOmitempty_KeepNonEmptyValues(t *testing.T) {
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Decode() expected: %#v, got: %#v", expected, actual)
+	}
+}
+
+func TestSquashOnlyAnonymous(t *testing.T) {
+	input := map[string]interface{}{
+		"vstring": "foo",
+		"non_anonymous": map[string]interface{}{
+			"vstring": "bar",
+		},
+	}
+	actual := OnlyAnonymousSquash{}
+	expected := OnlyAnonymousSquash{
+		Basic: Basic{
+			Vstring: "foo",
+		},
+		NonAnonymous: Basic{
+			Vstring: "bar",
+		},
+	}
+
+	decoder, err := NewDecoder(&DecoderConfig{
+		Result:              &actual,
+		Squash:              true,
+		SquashOnlyAnonymous: true,
+	})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("bad: %#v", actual)
+	}
+
+	actual = OnlyAnonymousSquash{}
+	expected = OnlyAnonymousSquash{
+		Basic: Basic{
+			Vstring: "foo",
+		},
+		NonAnonymous: Basic{
+			Vstring: "foo",
+		},
+	}
+	decoder, err = NewDecoder(&DecoderConfig{
+		Result:              &actual,
+		Squash:              true,
+		SquashOnlyAnonymous: false,
+	})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("bad: %#v", actual)
 	}
 }
 

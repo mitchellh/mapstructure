@@ -228,6 +228,10 @@ type DecoderConfig struct {
 	//  }
 	Squash bool
 
+        // If SquashOnlyAnonymous is true, squash will only works when
+        // the struct field is anonymous field or set the squash in the tag.
+        SquashOnlyAnonymous bool
+
 	// Metadata is the struct that will contain extra metadata about
 	// the decoding. If this is nil, then no metadata will be tracked.
 	Metadata *Metadata
@@ -844,6 +848,9 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 
 		// If Squash is set in the config, we squash the field down.
 		squash := d.config.Squash && v.Kind() == reflect.Struct
+		if squash && d.config.SquashOnlyAnonymous {
+			squash = f.Anonymous
+		}
 		// Determine the name of the key in the map
 		if index := strings.Index(tagValue, ","); index != -1 {
 			if tagValue[:index] == "-" {
@@ -1188,6 +1195,9 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 
 			// If "squash" is specified in the tag, we squash the field down.
 			squash := d.config.Squash && fieldKind == reflect.Struct
+			if squash && d.config.SquashOnlyAnonymous {
+				squash = fieldType.Anonymous
+			}
 			remain := false
 
 			// We always parse the tags cause we're looking for other tags too
