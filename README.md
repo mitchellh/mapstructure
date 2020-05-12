@@ -21,6 +21,12 @@ $ go get github.com/mitchellh/mapstructure
 
 For usage and examples see the [Godoc](http://godoc.org/github.com/mitchellh/mapstructure).
 
+you can use the following snippets in which by using `sed`, `mapstructure` tag will be added to all struct fields in a go file which already have a `json` tag.
+
+```bash
+sed -i.bak -e '/mapstructure/!{s/^\(.*`\)\(.*\)\(json:\)\(\".*\"\).*\(`\)$/\1\2\3\4 mapstructure:\4\5/p};' target.go
+```
+
 The `Decode` function has examples associated with it there.
 
 ## But Why?!
