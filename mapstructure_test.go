@@ -61,6 +61,12 @@ type EmbeddedSquash struct {
 	Vunique string
 }
 
+type EmbeddedAndNamed struct {
+	Basic
+	Named   Basic
+	Vunique string
+}
+
 type SliceAlias []string
 
 type EmbeddedSlice struct {
@@ -612,9 +618,12 @@ func TestDecode_EmbeddedSquashConfig(t *testing.T) {
 	input := map[string]interface{}{
 		"vstring": "foo",
 		"vunique": "bar",
+		"Named": map[string]interface{}{
+			"vstring": "baz",
+		},
 	}
 
-	var result Embedded
+	var result EmbeddedAndNamed
 	config := &DecoderConfig{
 		Squash: true,
 		Result: &result,
@@ -636,6 +645,66 @@ func TestDecode_EmbeddedSquashConfig(t *testing.T) {
 
 	if result.Vunique != "bar" {
 		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+
+	if result.Named.Vstring != "baz" {
+		t.Errorf("Named.vstring value should be 'baz': %#v", result.Named.Vstring)
+	}
+}
+
+func TestDecodeFrom_EmbeddedSquashConfig(t *testing.T) {
+	t.Parallel()
+
+	input := EmbeddedAndNamed{
+		Basic:   Basic{Vstring: "foo"},
+		Named:   Basic{Vstring: "baz"},
+		Vunique: "bar",
+	}
+
+	result := map[string]interface{}{}
+	config := &DecoderConfig{
+		Squash: true,
+		Result: &result,
+	}
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if _, ok := result["Basic"]; ok {
+		t.Error("basic should not be present in map")
+	}
+
+	v, ok := result["Vstring"]
+	if !ok {
+		t.Error("vstring should be present in map")
+	} else if !reflect.DeepEqual(v, "foo") {
+		t.Errorf("vstring value should be 'foo': %#v", v)
+	}
+
+	v, ok = result["Vunique"]
+	if !ok {
+		t.Error("vunique should be present in map")
+	} else if !reflect.DeepEqual(v, "bar") {
+		t.Errorf("vunique value should be 'bar': %#v", v)
+	}
+
+	v, ok = result["Named"]
+	if !ok {
+		t.Error("Named should be present in map")
+	} else {
+		named := v.(map[string]interface{})
+		v, ok := named["Vstring"]
+		if !ok {
+			t.Error("Named: vstring should be present in map")
+		} else if !reflect.DeepEqual(v, "baz") {
+			t.Errorf("Named: vstring should be 'baz': %#v", v)
+		}
 	}
 }
 

@@ -843,7 +843,7 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 		keyName := f.Name
 
 		// If Squash is set in the config, we squash the field down.
-		squash := d.config.Squash && v.Kind() == reflect.Struct
+		squash := d.config.Squash && v.Kind() == reflect.Struct && f.Anonymous
 		// Determine the name of the key in the map
 		if index := strings.Index(tagValue, ","); index != -1 {
 			if tagValue[:index] == "-" {
@@ -1187,7 +1187,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 			fieldKind := fieldType.Type.Kind()
 
 			// If "squash" is specified in the tag, we squash the field down.
-			squash := d.config.Squash && fieldKind == reflect.Struct
+			squash := d.config.Squash && fieldKind == reflect.Struct && fieldType.Anonymous
 			remain := false
 
 			// We always parse the tags cause we're looking for other tags too
