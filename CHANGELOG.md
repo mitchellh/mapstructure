@@ -1,3 +1,7 @@
+## 1.3.1
+
+* Squash should only squash embedded structs. [GH-194]
+
 ## 1.3.0
 
 * Added `",omitempty"` support. This will ignore zero values in the source
