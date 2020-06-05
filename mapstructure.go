@@ -906,7 +906,8 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			mType := reflect.MapOf(vKeyType, vElemType)
 			vMap := reflect.MakeMap(mType)
 
-			err := d.decode(keyName, x.Interface(), vMap)
+			fieldName := fmt.Sprintf("%s.%s", name, keyName)
+			err := d.decode(fieldName, x.Interface(), vMap)
 			if err != nil {
 				return err
 			}
