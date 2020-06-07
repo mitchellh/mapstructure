@@ -847,21 +847,21 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 		// Determine the name of the key in the map
 		if index := strings.Index(tagValue, ","); index != -1 {
 			if tagValue[:index] == "-" {
-				continue;
+				continue
 			}
 			// If "omitempty" is specified in the tag, it ignores empty values.
-			if strings.Index(tagValue[index + 1:], "omitempty") != -1 && isEmptyValue(v) {
+			if strings.Index(tagValue[index+1:], "omitempty") != -1 && isEmptyValue(v) {
 				continue
 			}
 
 			// If "squash" is specified in the tag, we squash the field down.
-			squash = !squash && strings.Index(tagValue[index + 1:], "squash") != -1
+			squash = !squash && strings.Index(tagValue[index+1:], "squash") != -1
 			if squash && v.Kind() != reflect.Struct {
 				return fmt.Errorf("cannot squash non-struct type '%s'", v.Type())
 			}
 			keyName = tagValue[:index]
 		} else if len(tagValue) > 0 {
-			if  tagValue == "-" {
+			if tagValue == "-" {
 				continue
 			}
 			keyName = tagValue
