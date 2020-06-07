@@ -375,6 +375,28 @@ func TestBasic_interfaceStruct(t *testing.T) {
 	}
 }
 
+// Issue 187
+func TestBasic_interfaceStructNonPtr(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+	}
+
+	var iface interface{} = Basic{}
+	err := Decode(input, &iface)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	expected := Basic{
+		Vstring: "foo",
+	}
+	if !reflect.DeepEqual(iface, expected) {
+		t.Fatalf("bad: %#v", iface)
+	}
+}
+
 func TestDecode_BasicSquash(t *testing.T) {
 	t.Parallel()
 
