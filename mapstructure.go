@@ -463,7 +463,34 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 // value to "data" of that type.
 func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) error {
 	if val.IsValid() && val.Elem().IsValid() {
-		return d.decode(name, data, val.Elem())
+		elem := val.Elem()
+
+		// If we can't address this element, then its not writable. Instead,
+		// we make a copy of the value (which is a pointer and therefore
+		// writable), decode into that, and replace the whole value.
+		copied := false
+		if !elem.CanAddr() {
+			copied = true
+
+			// Make *T
+			copy := reflect.New(elem.Type())
+
+			// *T = elem
+			copy.Elem().Set(elem)
+
+			// Set elem so we decode into it
+			elem = copy
+		}
+
+		// Decode. If we have an error then return. We also return right
+		// away if we're not a copy because that means we decoded directly.
+		if err := d.decode(name, data, elem); err != nil || !copied {
+			return err
+		}
+
+		// If we're a copy, we need to set te final result
+		val.Set(elem.Elem())
+		return nil
 	}
 
 	dataVal := reflect.ValueOf(data)
