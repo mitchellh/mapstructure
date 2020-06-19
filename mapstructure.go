@@ -894,6 +894,11 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			keyName = tagValue
 		}
 
+		// This is an embedded struct pointer, handle it as a embedded struct below
+		if v.Kind() == reflect.Ptr && reflect.Indirect(v).Kind() == reflect.Struct {
+			v = reflect.Indirect(v)
+		}
+
 		switch v.Kind() {
 		// this is an embedded struct, so handle it differently
 		case reflect.Struct:
