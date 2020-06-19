@@ -2322,6 +2322,11 @@ func TestDecode_StructTaggedWithOmitempty_KeepNonEmptyValues(t *testing.T) {
 	var emptySlice []interface{}
 	var emptyMap map[string]interface{}
 	var emptyNested *Nested
+	nestedMap := map[string]interface{}{}
+	err := Decode(input.OmitNestedField, &nestedMap)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
 	expected := &map[string]interface{}{
 		"visible-string":   "",
 		"omittable-string": "string",
@@ -2334,7 +2339,7 @@ func TestDecode_StructTaggedWithOmitempty_KeepNonEmptyValues(t *testing.T) {
 		"visible-map":      emptyMap,
 		"omittable-map":    map[string]interface{}{"k": "v"},
 		"visible-nested":   emptyNested,
-		"omittable-nested": &Nested{},
+		"omittable-nested": nestedMap,
 	}
 
 	actual := &map[string]interface{}{}
