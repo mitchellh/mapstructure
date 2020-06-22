@@ -1352,6 +1352,41 @@ func TestNestedTypePointer(t *testing.T) {
 	}
 }
 
+func TestNestedTypeStructPointer(t *testing.T) {
+	t.Parallel()
+
+	nestedInput := Basic{
+		Vstring: "foo",
+		Vint:    42,
+		Vbool:   true,
+	}
+	input := NestedPointer{
+		Vfoo: "foo",
+		Vbar: &nestedInput,
+	}
+
+	// nestedResult is validated in TestBasicTypes
+	nestedResult := map[string]interface{}{}
+	err := Decode(nestedInput, &nestedResult)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	result := map[string]interface{}{}
+	err = Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	expected := map[string]interface{}{
+		"Vfoo": "foo",
+		"Vbar": nestedResult,
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("bad: %#v", result)
+	}
+}
+
 // Test for issue #46.
 func TestNestedTypeInterface(t *testing.T) {
 	t.Parallel()
@@ -2316,17 +2351,12 @@ func TestDecode_StructTaggedWithOmitempty_KeepNonEmptyValues(t *testing.T) {
 		VisibleMapField:    nil,
 		OmitMapField:       map[string]interface{}{"k": "v"},
 		NestedField:        nil,
-		OmitNestedField:    &Nested{},
+		OmitNestedField:    nil,
 	}
 
 	var emptySlice []interface{}
 	var emptyMap map[string]interface{}
 	var emptyNested *Nested
-	nestedMap := map[string]interface{}{}
-	err := Decode(input.OmitNestedField, &nestedMap)
-	if err != nil {
-		t.Fatalf("got an err: %s", err.Error())
-	}
 	expected := &map[string]interface{}{
 		"visible-string":   "",
 		"omittable-string": "string",
@@ -2339,7 +2369,6 @@ func TestDecode_StructTaggedWithOmitempty_KeepNonEmptyValues(t *testing.T) {
 		"visible-map":      emptyMap,
 		"omittable-map":    map[string]interface{}{"k": "v"},
 		"visible-nested":   emptyNested,
-		"omittable-nested": nestedMap,
 	}
 
 	actual := &map[string]interface{}{}
