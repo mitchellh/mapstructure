@@ -61,6 +61,11 @@ type EmbeddedSquash struct {
 	Vunique string
 }
 
+type EmbeddedPointerSquash struct {
+	*Basic  `mapstructure:",squash"`
+	Vunique string
+}
+
 type EmbeddedAndNamed struct {
 	Basic
 	Named   Basic
@@ -652,6 +657,56 @@ func TestDecodeFrom_EmbeddedSquash(t *testing.T) {
 		t.Error("vunique should be present in map")
 	} else if !reflect.DeepEqual(v, "bar") {
 		t.Errorf("vunique value should be 'bar': %#v", v)
+	}
+}
+
+func TestDecode_EmbeddedPointerSquash_FromStructToMap(t *testing.T) {
+	t.Parallel()
+
+	input := EmbeddedPointerSquash{
+		Basic: &Basic{
+			Vstring: "foo",
+		},
+		Vunique: "bar",
+	}
+
+	var result map[string]interface{}
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result["Vstring"] != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result["Vstring"])
+	}
+
+	if result["Vunique"] != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result["Vunique"])
+	}
+}
+
+func TestDecode_EmbeddedPointerSquash_FromMapToStruct(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"Vstring": "foo",
+		"Vunique": "bar",
+	}
+
+	result := EmbeddedPointerSquash{
+		Basic: &Basic{},
+	}
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Vstring != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Vstring)
+	}
+
+	if result.Vunique != "bar" {
+		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
 	}
 }
 
@@ -2334,7 +2389,26 @@ func TestDecode_StructTaggedWithOmitempty_KeepNonEmptyValues(t *testing.T) {
 		"visible-map":      emptyMap,
 		"omittable-map":    map[string]interface{}{"k": "v"},
 		"visible-nested":   emptyNested,
-		"omittable-nested": &Nested{},
+		"omittable-nested": map[string]interface{}{
+			"Vbar": map[string]interface{}{
+				"Vbool":       false,
+				"Vdata":       interface{}(nil),
+				"Vextra":      "",
+				"Vfloat":      float64(0),
+				"Vint":        0,
+				"Vint16":      int16(0),
+				"Vint32":      int32(0),
+				"Vint64":      int64(0),
+				"Vint8":       int8(0),
+				"VjsonFloat":  float64(0),
+				"VjsonInt":    0,
+				"VjsonNumber": json.Number(""),
+				"VjsonUint":   uint(0),
+				"Vstring":     "",
+				"Vuint":       uint(0),
+			},
+			"Vfoo": "",
+		},
 	}
 
 	actual := &map[string]interface{}{}
