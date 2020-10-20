@@ -14,7 +14,8 @@
 // When decoding to a struct, mapstructure will use the field name by
 // default to perform the mapping. For example, if a struct has a field
 // "Username" then mapstructure will look for a key in the source value
-// of "username" (case insensitive).
+// of "username". The case sensitivity is determined by the
+// DecoderConfig.CaseSensitive field .
 //
 //     type User struct {
 //         Username string
@@ -239,6 +240,10 @@ type DecoderConfig struct {
 	// The tag name that mapstructure reads for field names. This
 	// defaults to "mapstructure"
 	TagName string
+
+	// Whether to perform a case sensitive comparison between map keys and struct
+	// field names or not. Default false
+	CaseSensitive bool
 }
 
 // A Decoder takes a raw interface value and turns it into structured
@@ -1295,7 +1300,13 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 					continue
 				}
 
-				if strings.EqualFold(mK, fieldName) {
+				var matches bool
+				if d.config.CaseSensitive {
+					matches = mK == fieldName
+				} else {
+					matches = strings.EqualFold(mK, fieldName)
+				}
+				if matches {
 					rawMapKey = dataValKey
 					rawMapVal = dataVal.MapIndex(dataValKey)
 					break
