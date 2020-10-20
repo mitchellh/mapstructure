@@ -242,7 +242,8 @@ type DecoderConfig struct {
 	TagName string
 
 	// Whether to perform a case sensitive comparison between map keys and struct
-	// field names or not. Default false
+	// field names or not. Note that the first letter of field names is always compared case
+	// insensitively i.e fooBar matches FooBar but doesn't match foobar or Foobar . Default false
 	CaseSensitive bool
 }
 
@@ -1302,7 +1303,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 
 				var matches bool
 				if d.config.CaseSensitive {
-					matches = mK == fieldName
+					matches = mK == fieldName || strings.Title(mK) == fieldName
 				} else {
 					matches = strings.EqualFold(mK, fieldName)
 				}
