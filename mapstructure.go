@@ -785,7 +785,7 @@ func (d *Decoder) decodeMapFromSlice(name string, dataVal reflect.Value, val ref
 
 	for i := 0; i < dataVal.Len(); i++ {
 		err := d.decode(
-			name + "[" + strconv.Itoa(i) + "]",
+			name+"["+strconv.Itoa(i)+"]",
 			dataVal.Index(i).Interface(), val)
 		if err != nil {
 			return err
@@ -818,7 +818,7 @@ func (d *Decoder) decodeMapFromMap(name string, dataVal reflect.Value, val refle
 	}
 
 	for _, k := range dataVal.MapKeys() {
-		fieldName := name + "[" + k + "]"
+		fieldName := name + "[" + k.String() + "]"
 
 		// First decode the key into the proper type
 		currentKey := reflect.Indirect(reflect.New(valKeyType))
@@ -1062,7 +1062,7 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 		}
 		currentField := valSlice.Index(i)
 
-		fieldName := name + "[" + strconv.Itoa(num) + "]"
+		fieldName := name + "[" + strconv.Itoa(i) + "]"
 		if err := d.decode(fieldName, currentData, currentField); err != nil {
 			errors = appendErrors(errors, err)
 		}
