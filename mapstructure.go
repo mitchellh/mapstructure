@@ -785,7 +785,7 @@ func (d *Decoder) decodeMapFromSlice(name string, dataVal reflect.Value, val ref
 
 	for i := 0; i < dataVal.Len(); i++ {
 		err := d.decode(
-			fmt.Sprintf("%s[%d]", name, i),
+			name + "[" + strconv.Itoa(i) + "]",
 			dataVal.Index(i).Interface(), val)
 		if err != nil {
 			return err
@@ -818,7 +818,7 @@ func (d *Decoder) decodeMapFromMap(name string, dataVal reflect.Value, val refle
 	}
 
 	for _, k := range dataVal.MapKeys() {
-		fieldName := fmt.Sprintf("%s[%s]", name, k)
+		fieldName := name + "[" + k + "]"
 
 		// First decode the key into the proper type
 		currentKey := reflect.Indirect(reflect.New(valKeyType))
@@ -1062,7 +1062,7 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 		}
 		currentField := valSlice.Index(i)
 
-		fieldName := fmt.Sprintf("%s[%d]", name, i)
+		fieldName := name + "[" + strconv.Itoa(num) + "]"
 		if err := d.decode(fieldName, currentData, currentField); err != nil {
 			errors = appendErrors(errors, err)
 		}
@@ -1129,7 +1129,7 @@ func (d *Decoder) decodeArray(name string, data interface{}, val reflect.Value) 
 		currentData := dataVal.Index(i).Interface()
 		currentField := valArray.Index(i)
 
-		fieldName := fmt.Sprintf("%s[%d]", name, i)
+		fieldName := name + "[" + strconv.Itoa(i) + "]"
 		if err := d.decode(fieldName, currentData, currentField); err != nil {
 			errors = appendErrors(errors, err)
 		}
@@ -1326,7 +1326,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 		// If the name is empty string, then we're at the root, and we
 		// don't dot-join the fields.
 		if name != "" {
-			fieldName = fmt.Sprintf("%s.%s", name, fieldName)
+			fieldName = name + "." + fieldName
 		}
 
 		if err := d.decode(fieldName, rawMapVal.Interface(), fieldValue); err != nil {
@@ -1373,7 +1373,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 		for rawKey := range dataValKeysUnused {
 			key := rawKey.(string)
 			if name != "" {
-				key = fmt.Sprintf("%s.%s", name, key)
+				key = name + "." + key
 			}
 
 			d.config.Metadata.Unused = append(d.config.Metadata.Unused, key)
