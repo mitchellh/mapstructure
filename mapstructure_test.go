@@ -2420,6 +2420,36 @@ func TestDecode_StructTaggedWithOmitempty_KeepNonEmptyValues(t *testing.T) {
 	}
 }
 
+func TestDecode_mapToStruct(t *testing.T) {
+	type Target struct {
+		String    string
+		StringPtr *string
+	}
+
+	expected := Target{
+		String: "hello",
+	}
+
+	var target Target
+	err := Decode(map[string]interface{}{
+		"string":    "hello",
+		"StringPtr": "goodbye",
+	}, &target)
+	if err != nil {
+		t.Fatalf("got error: %s", err)
+	}
+
+	// Pointers fail reflect test so do those manually
+	if target.StringPtr == nil || *target.StringPtr != "goodbye" {
+		t.Fatalf("bad: %#v", target)
+	}
+	target.StringPtr = nil
+
+	if !reflect.DeepEqual(target, expected) {
+		t.Fatalf("bad: %#v", target)
+	}
+}
+
 func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice) {
 	var result Slice
 	err := Decode(input, &result)
