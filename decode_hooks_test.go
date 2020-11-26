@@ -26,7 +26,7 @@ func TestComposeDecodeHookFunc(t *testing.T) {
 	f := ComposeDecodeHookFunc(f1, f2)
 
 	result, err := DecodeHookExec(
-		f, reflect.TypeOf(""), reflect.TypeOf([]byte("")), "")
+		f, reflect.ValueOf(""), reflect.ValueOf([]byte("")))
 	if err != nil {
 		t.Fatalf("bad: %s", err)
 	}
@@ -47,7 +47,7 @@ func TestComposeDecodeHookFunc_err(t *testing.T) {
 	f := ComposeDecodeHookFunc(f1, f2)
 
 	_, err := DecodeHookExec(
-		f, reflect.TypeOf(""), reflect.TypeOf([]byte("")), 42)
+		f, reflect.ValueOf(""), reflect.ValueOf([]byte("")))
 	if err.Error() != "foo" {
 		t.Fatalf("bad: %s", err)
 	}
@@ -74,7 +74,7 @@ func TestComposeDecodeHookFunc_kinds(t *testing.T) {
 	f := ComposeDecodeHookFunc(f1, f2)
 
 	_, err := DecodeHookExec(
-		f, reflect.TypeOf(""), reflect.TypeOf([]byte("")), "")
+		f, reflect.ValueOf(""), reflect.ValueOf([]byte("")))
 	if err != nil {
 		t.Fatalf("bad: %s", err)
 	}
@@ -86,34 +86,31 @@ func TestComposeDecodeHookFunc_kinds(t *testing.T) {
 func TestStringToSliceHookFunc(t *testing.T) {
 	f := StringToSliceHookFunc(",")
 
-	strType := reflect.TypeOf("")
-	sliceType := reflect.TypeOf([]byte(""))
+	strValue := reflect.ValueOf("42")
+	sliceValue := reflect.ValueOf([]byte("42"))
 	cases := []struct {
-		f, t   reflect.Type
-		data   interface{}
+		f, t   reflect.Value
 		result interface{}
 		err    bool
 	}{
-		{sliceType, sliceType, 42, 42, false},
-		{strType, strType, 42, 42, false},
+		{sliceValue, sliceValue, []byte("42"), false},
+		{strValue, strValue, "42", false},
 		{
-			strType,
-			sliceType,
-			"foo,bar,baz",
+			reflect.ValueOf("foo,bar,baz"),
+			sliceValue,
 			[]string{"foo", "bar", "baz"},
 			false,
 		},
 		{
-			strType,
-			sliceType,
-			"",
+			reflect.ValueOf(""),
+			sliceValue,
 			[]string{},
 			false,
 		},
 	}
 
 	for i, tc := range cases {
-		actual, err := DecodeHookExec(f, tc.f, tc.t, tc.data)
+		actual, err := DecodeHookExec(f, tc.f, tc.t)
 		if tc.err != (err != nil) {
 			t.Fatalf("case %d: expected err %#v", i, tc.err)
 		}
@@ -128,21 +125,20 @@ func TestStringToSliceHookFunc(t *testing.T) {
 func TestStringToTimeDurationHookFunc(t *testing.T) {
 	f := StringToTimeDurationHookFunc()
 
-	strType := reflect.TypeOf("")
-	timeType := reflect.TypeOf(time.Duration(5))
+	timeValue := reflect.ValueOf(time.Duration(5))
+	strValue := reflect.ValueOf("")
 	cases := []struct {
-		f, t   reflect.Type
-		data   interface{}
+		f, t   reflect.Value
 		result interface{}
 		err    bool
 	}{
-		{strType, timeType, "5s", 5 * time.Second, false},
-		{strType, timeType, "5", time.Duration(0), true},
-		{strType, strType, "5", "5", false},
+		{reflect.ValueOf("5s"), timeValue, 5 * time.Second, false},
+		{reflect.ValueOf("5"), timeValue, time.Duration(0), true},
+		{reflect.ValueOf("5"), strValue, "5", false},
 	}
 
 	for i, tc := range cases {
-		actual, err := DecodeHookExec(f, tc.f, tc.t, tc.data)
+		actual, err := DecodeHookExec(f, tc.f, tc.t)
 		if tc.err != (err != nil) {
 			t.Fatalf("case %d: expected err %#v", i, tc.err)
 		}
@@ -155,24 +151,23 @@ func TestStringToTimeDurationHookFunc(t *testing.T) {
 }
 
 func TestStringToTimeHookFunc(t *testing.T) {
-	strType := reflect.TypeOf("")
-	timeType := reflect.TypeOf(time.Time{})
+	strValue := reflect.ValueOf("5")
+	timeValue := reflect.ValueOf(time.Time{})
 	cases := []struct {
-		f, t   reflect.Type
+		f, t   reflect.Value
 		layout string
-		data   interface{}
 		result interface{}
 		err    bool
 	}{
-		{strType, timeType, time.RFC3339, "2006-01-02T15:04:05Z",
+		{reflect.ValueOf("2006-01-02T15:04:05Z"), timeValue, time.RFC3339,
 			time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC), false},
-		{strType, timeType, time.RFC3339, "5", time.Time{}, true},
-		{strType, strType, time.RFC3339, "5", "5", false},
+		{strValue, timeValue, time.RFC3339, time.Time{}, true},
+		{strValue, strValue, time.RFC3339, "5", false},
 	}
 
 	for i, tc := range cases {
 		f := StringToTimeHookFunc(tc.layout)
-		actual, err := DecodeHookExec(f, tc.f, tc.t, tc.data)
+		actual, err := DecodeHookExec(f, tc.f, tc.t)
 		if tc.err != (err != nil) {
 			t.Fatalf("case %d: expected err %#v", i, tc.err)
 		}
@@ -185,23 +180,22 @@ func TestStringToTimeHookFunc(t *testing.T) {
 }
 
 func TestStringToIPHookFunc(t *testing.T) {
-	strType := reflect.TypeOf("")
-	ipType := reflect.TypeOf(net.IP{})
+	strValue := reflect.ValueOf("5")
+	ipValue := reflect.ValueOf(net.IP{})
 	cases := []struct {
-		f, t   reflect.Type
-		data   interface{}
+		f, t   reflect.Value
 		result interface{}
 		err    bool
 	}{
-		{strType, ipType, "1.2.3.4",
+		{reflect.ValueOf("1.2.3.4"), ipValue,
 			net.IPv4(0x01, 0x02, 0x03, 0x04), false},
-		{strType, ipType, "5", net.IP{}, true},
-		{strType, strType, "5", "5", false},
+		{strValue, ipValue, net.IP{}, true},
+		{strValue, strValue, "5", false},
 	}
 
 	for i, tc := range cases {
 		f := StringToIPHookFunc()
-		actual, err := DecodeHookExec(f, tc.f, tc.t, tc.data)
+		actual, err := DecodeHookExec(f, tc.f, tc.t)
 		if tc.err != (err != nil) {
 			t.Fatalf("case %d: expected err %#v", i, tc.err)
 		}
@@ -214,28 +208,27 @@ func TestStringToIPHookFunc(t *testing.T) {
 }
 
 func TestStringToIPNetHookFunc(t *testing.T) {
-	strType := reflect.TypeOf("")
-	ipNetType := reflect.TypeOf(net.IPNet{})
+	strValue := reflect.ValueOf("5")
+	ipNetValue := reflect.ValueOf(net.IPNet{})
 	var nilNet *net.IPNet = nil
 
 	cases := []struct {
-		f, t   reflect.Type
-		data   interface{}
+		f, t   reflect.Value
 		result interface{}
 		err    bool
 	}{
-		{strType, ipNetType, "1.2.3.4/24",
+		{reflect.ValueOf("1.2.3.4/24"), ipNetValue,
 			&net.IPNet{
 				IP:   net.IP{0x01, 0x02, 0x03, 0x00},
 				Mask: net.IPv4Mask(0xff, 0xff, 0xff, 0x00),
 			}, false},
-		{strType, ipNetType, "5", nilNet, true},
-		{strType, strType, "5", "5", false},
+		{strValue, ipNetValue, nilNet, true},
+		{strValue, strValue, "5", false},
 	}
 
 	for i, tc := range cases {
 		f := StringToIPNetHookFunc()
-		actual, err := DecodeHookExec(f, tc.f, tc.t, tc.data)
+		actual, err := DecodeHookExec(f, tc.f, tc.t)
 		if tc.err != (err != nil) {
 			t.Fatalf("case %d: expected err %#v", i, tc.err)
 		}
@@ -250,67 +243,58 @@ func TestStringToIPNetHookFunc(t *testing.T) {
 func TestWeaklyTypedHook(t *testing.T) {
 	var f DecodeHookFunc = WeaklyTypedHook
 
-	boolType := reflect.TypeOf(true)
-	strType := reflect.TypeOf("")
-	sliceType := reflect.TypeOf([]byte(""))
+	strValue := reflect.ValueOf("")
 	cases := []struct {
-		f, t   reflect.Type
-		data   interface{}
+		f, t   reflect.Value
 		result interface{}
 		err    bool
 	}{
 		// TO STRING
 		{
-			boolType,
-			strType,
-			false,
+			reflect.ValueOf(false),
+			strValue,
 			"0",
 			false,
 		},
 
 		{
-			boolType,
-			strType,
-			true,
+			reflect.ValueOf(true),
+			strValue,
 			"1",
 			false,
 		},
 
 		{
-			reflect.TypeOf(float32(1)),
-			strType,
-			float32(7),
+			reflect.ValueOf(float32(7)),
+			strValue,
 			"7",
 			false,
 		},
 
 		{
-			reflect.TypeOf(int(1)),
-			strType,
-			int(7),
+			reflect.ValueOf(int(7)),
+			strValue,
 			"7",
 			false,
 		},
 
 		{
-			sliceType,
-			strType,
-			[]uint8("foo"),
+			reflect.ValueOf([]uint8("foo")),
+			strValue,
 			"foo",
 			false,
 		},
 
 		{
-			reflect.TypeOf(uint(1)),
-			strType,
-			uint(7),
+			reflect.ValueOf(uint(7)),
+			strValue,
 			"7",
 			false,
 		},
 	}
 
 	for i, tc := range cases {
-		actual, err := DecodeHookExec(f, tc.f, tc.t, tc.data)
+		actual, err := DecodeHookExec(f, tc.f, tc.t)
 		if tc.err != (err != nil) {
 			t.Fatalf("case %d: expected err %#v", i, tc.err)
 		}
@@ -319,5 +303,119 @@ func TestWeaklyTypedHook(t *testing.T) {
 				"case %d: expected %#v, got %#v",
 				i, tc.result, actual)
 		}
+	}
+}
+
+func TestStructToMapHookFuncTabled(t *testing.T) {
+	var f DecodeHookFunc = RecursiveStructToMapHookFunc()
+
+	type b struct {
+		TestKey string
+	}
+
+	type a struct {
+		Sub b
+	}
+
+	testStruct := a{
+		Sub: b{
+			TestKey: "testval",
+		},
+	}
+
+	testMap := map[string]interface{}{
+		"Sub": map[string]interface{}{
+			"TestKey": "testval",
+		},
+	}
+
+	cases := []struct {
+		name     string
+		receiver interface{}
+		input    interface{}
+		expected interface{}
+		err      bool
+	}{
+		{
+			"map receiver",
+			func() interface{} {
+				var res map[string]interface{}
+				return &res
+			}(),
+			testStruct,
+			&testMap,
+			false,
+		},
+		{
+			"interface receiver",
+			func() interface{} {
+				var res interface{}
+				return &res
+			}(),
+			testStruct,
+			func() interface{} {
+				var exp interface{} = testMap
+				return &exp
+			}(),
+			false,
+		},
+		{
+			"slice receiver errors",
+			func() interface{} {
+				var res []string
+				return &res
+			}(),
+			testStruct,
+			new([]string),
+			true,
+		},
+		{
+			"slice to slice - no change",
+			func() interface{} {
+				var res []string
+				return &res
+			}(),
+			[]string{"a", "b"},
+			&[]string{"a", "b"},
+			false,
+		},
+		{
+			"string to string - no change",
+			func() interface{} {
+				var res string
+				return &res
+			}(),
+			"test",
+			func() *string {
+				s := "test"
+				return &s
+			}(),
+			false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := &DecoderConfig{
+				DecodeHook: f,
+				Result:     tc.receiver,
+			}
+
+			d, err := NewDecoder(cfg)
+			if err != nil {
+				t.Fatalf("unexpected err %#v", err)
+			}
+
+			err = d.Decode(tc.input)
+			if tc.err != (err != nil) {
+				t.Fatalf("expected err %#v", err)
+			}
+
+			if !reflect.DeepEqual(tc.expected, tc.receiver) {
+				t.Fatalf("expected %#v, got %#v",
+					tc.expected, tc.receiver)
+			}
+		})
+
 	}
 }
