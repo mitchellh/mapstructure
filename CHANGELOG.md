@@ -1,4 +1,4 @@
-## Untagged
+## 1.4.0
 
 * A new decode hook type `DecodeHookFuncValue` has been added that has
   access to the full values. [GH-183]
