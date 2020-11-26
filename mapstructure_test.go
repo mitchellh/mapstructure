@@ -2068,7 +2068,8 @@ func TestInvalidType(t *testing.T) {
 		t.Fatalf("error should be kind of Error, instead: %#v", err)
 	}
 
-	if derr.Errors[0] != "'Vstring' expected type 'string', got unconvertible type 'int'" {
+	if derr.Errors[0] !=
+		"'Vstring' expected type 'string', got unconvertible type 'int', value: '42'" {
 		t.Errorf("got unexpected error: %s", err)
 	}
 

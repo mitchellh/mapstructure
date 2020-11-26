@@ -562,8 +562,8 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 
 	if !converted {
 		return fmt.Errorf(
-			"'%s' expected type '%s', got unconvertible type '%s'",
-			name, val.Type(), dataVal.Type())
+			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
+			name, val.Type(), dataVal.Type(), data)
 	}
 
 	return nil
@@ -604,8 +604,8 @@ func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) er
 		val.SetInt(i)
 	default:
 		return fmt.Errorf(
-			"'%s' expected type '%s', got unconvertible type '%s'",
-			name, val.Type(), dataVal.Type())
+			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
+			name, val.Type(), dataVal.Type(), data)
 	}
 
 	return nil
@@ -660,8 +660,8 @@ func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) e
 		val.SetUint(uint64(i))
 	default:
 		return fmt.Errorf(
-			"'%s' expected type '%s', got unconvertible type '%s'",
-			name, val.Type(), dataVal.Type())
+			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
+			name, val.Type(), dataVal.Type(), data)
 	}
 
 	return nil
@@ -691,8 +691,8 @@ func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) e
 		}
 	default:
 		return fmt.Errorf(
-			"'%s' expected type '%s', got unconvertible type '%s'",
-			name, val.Type(), dataVal.Type())
+			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
+			name, val.Type(), dataVal.Type(), data)
 	}
 
 	return nil
@@ -733,8 +733,8 @@ func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) 
 		val.SetFloat(i)
 	default:
 		return fmt.Errorf(
-			"'%s' expected type '%s', got unconvertible type '%s'",
-			name, val.Type(), dataVal.Type())
+			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
+			name, val.Type(), dataVal.Type(), data)
 	}
 
 	return nil
@@ -999,8 +999,8 @@ func (d *Decoder) decodeFunc(name string, data interface{}, val reflect.Value) e
 	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	if val.Type() != dataVal.Type() {
 		return fmt.Errorf(
-			"'%s' expected type '%s', got unconvertible type '%s'",
-			name, val.Type(), dataVal.Type())
+			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
+			name, val.Type(), dataVal.Type(), data)
 	}
 	val.Set(dataVal)
 	return nil
