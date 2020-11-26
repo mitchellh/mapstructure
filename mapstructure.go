@@ -862,6 +862,10 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 		// Next get the actual value of this field and verify it is assignable
 		// to the map value.
 		v := dataVal.Field(i)
+		if v.Kind() == reflect.Ptr && v.Elem().Kind() == reflect.Struct {
+			// Handle embedded struct pointers as embedded structs.
+			v = v.Elem()
+		}
 		if !v.Type().AssignableTo(valMap.Type().Elem()) {
 			return fmt.Errorf("cannot assign type '%s' to map value field of type '%s'", v.Type(), valMap.Type().Elem())
 		}
@@ -1232,10 +1236,14 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 
 		for i := 0; i < structType.NumField(); i++ {
 			fieldType := structType.Field(i)
-			fieldKind := fieldType.Type.Kind()
+			fieldVal := structVal.Field(i)
+			if fieldVal.Kind() == reflect.Ptr && fieldVal.Elem().Kind() == reflect.Struct {
+				// Handle embedded struct pointers as embedded structs.
+				fieldVal = fieldVal.Elem()
+			}
 
 			// If "squash" is specified in the tag, we squash the field down.
-			squash := d.config.Squash && fieldKind == reflect.Struct && fieldType.Anonymous
+			squash := d.config.Squash && fieldVal.Kind() == reflect.Struct && fieldType.Anonymous
 			remain := false
 
 			// We always parse the tags cause we're looking for other tags too
@@ -1253,21 +1261,21 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 			}
 
 			if squash {
-				if fieldKind != reflect.Struct {
+				if fieldVal.Kind() != reflect.Struct {
 					errors = appendErrors(errors,
-						fmt.Errorf("%s: unsupported type for squash: %s", fieldType.Name, fieldKind))
+						fmt.Errorf("%s: unsupported type for squash: %s", fieldType.Name, fieldVal.Kind()))
 				} else {
-					structs = append(structs, structVal.FieldByName(fieldType.Name))
+					structs = append(structs, fieldVal)
 				}
 				continue
 			}
 
 			// Build our field
 			if remain {
-				remainField = &field{fieldType, structVal.Field(i)}
+				remainField = &field{fieldType, fieldVal}
 			} else {
 				// Normal struct field, store it away
-				fields = append(fields, field{fieldType, structVal.Field(i)})
+				fields = append(fields, field{fieldType, fieldVal})
 			}
 		}
 	}
