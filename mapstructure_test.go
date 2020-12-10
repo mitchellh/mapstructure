@@ -2450,6 +2450,94 @@ func TestDecode_mapToStruct(t *testing.T) {
 	}
 }
 
+func TestDecoder_CaseSensitive(t *testing.T) {
+	t.Parallel()
+
+	type Target struct {
+		NoMatch 	string
+		DoesMatch	string
+	}
+
+	input := map[string]interface{}{
+		"noMatch":	 "foo",
+		"DoesMatch": "bar",
+	}
+
+	var result Target
+	config := &DecoderConfig{
+		Result:      &result,
+		CaseSensitive: true,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if result.NoMatch != "" {
+		t.Errorf("NoMatch expected '', got '%s'", result.NoMatch)
+	}
+
+	if result.DoesMatch != input["DoesMatch"].(string) {
+		t.Errorf("DoesMatch expected '%s', got '%s'", input["DoesMatch"].(string), result.DoesMatch)
+	}
+}
+
+func TestDecoder_CaseSensitive_TitleCaseSensitive(t *testing.T) {
+	t.Parallel()
+
+	type Target struct {
+		FirstMatch 	string
+		SecondMatch	string
+		NoMatch		string
+	}
+
+	input := map[string]interface{}{
+		"firstMatch": 	"foo",
+		"SecondMatch": 	"bar",
+		"nomatch":		"baz",
+	}
+
+	var result Target
+	config := &DecoderConfig{
+		Result:      &result,
+		CaseSensitive: true,
+		TitleCaseInsensitive: true,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if result.NoMatch != "" {
+		t.Errorf("NoMatch expected '', got '%s'", result.NoMatch)
+	}
+
+	if result.FirstMatch != input["firstMatch"].(string) {
+		t.Errorf("FirstMatch expected '%s', got '%s'", input["FirstMatch"].(string), result.FirstMatch)
+	}
+
+	if result.SecondMatch != input["SecondMatch"].(string) {
+		t.Errorf("SecondMatch expected '%s', got '%s'", input["SecondMatch"].(string), result.SecondMatch)
+	}
+
+	if result.NoMatch != "" {
+		t.Errorf("NoMatch expected '', got '%s'", result.NoMatch)
+	}
+}
+
+
 func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice) {
 	var result Slice
 	err := Decode(input, &result)
