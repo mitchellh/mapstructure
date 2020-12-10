@@ -539,3 +539,31 @@ func TestDecodeIntermeidateMapsSettable(t *testing.T) {
 		t.Fatalf("expected: %#[1]v (%[1]T), got: %#[2]v (%[2]T)", expected, actual)
 	}
 }
+
+// GH-206: decodeInt throws an error for an empty string
+func TestDecode_weakEmptyStringToInt(t *testing.T) {
+	input := map[string]interface{}{
+		"StringToInt":   "",
+		"StringToUint":  "",
+		"StringToBool":  "",
+		"StringToFloat": "",
+	}
+
+	expectedResultWeak := TypeConversionResult{
+		StringToInt:   0,
+		StringToUint:  0,
+		StringToBool:  false,
+		StringToFloat: 0,
+	}
+
+	// Test weak type conversion
+	var resultWeak TypeConversionResult
+	err := WeakDecode(input, &resultWeak)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if !reflect.DeepEqual(resultWeak, expectedResultWeak) {
+		t.Errorf("expected \n%#v, got: \n%#v", expectedResultWeak, resultWeak)
+	}
+}
