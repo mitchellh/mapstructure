@@ -161,10 +161,11 @@ import (
 // data transformations. See "DecodeHook" in the DecoderConfig
 // struct.
 //
-// The type should be DecodeHookFuncType or DecodeHookFuncKind.
-// Either is accepted. Types are a superset of Kinds (Types can return
-// Kinds) and are generally a richer thing to use, but Kinds are simpler
-// if you only need those.
+// The type must be one of DecodeHookFuncType, DecodeHookFuncKind, or
+// DecodeHookFuncValue.
+// Values are a superset of Types (Values can return types), and Types are a
+// superset of Kinds (Types can return Kinds) and are generally a richer thing
+// to use, but Kinds are simpler if you only need those.
 //
 // The reason DecodeHookFunc is multi-typed is for backwards compatibility:
 // we started with Kinds and then realized Types were the better solution,
@@ -189,10 +190,13 @@ type DecodeHookFuncValue func(from reflect.Value, to reflect.Value) (interface{}
 type DecoderConfig struct {
 	// DecodeHook, if set, will be called before any decoding and any
 	// type conversion (if WeaklyTypedInput is on). This lets you modify
-	// the values before they're set down onto the resulting struct.
+	// the values before they're set down onto the resulting struct. The
+	// DecodeHook is called for every map and value in the input. This means
+	// that if a struct has embedded fields with squash tags the decode hook
+	// is called only once with all of the input data, not once for each
+	// embedded struct.
 	//
-	// If an error is returned, the entire decode will fail with that
-	// error.
+	// If an error is returned, the entire decode will fail with that error.
 	DecodeHook DecodeHookFunc
 
 	// If ErrorUnused is true, then it is an error for there to exist
