@@ -72,6 +72,17 @@
 //         "name": "alice",
 //     }
 //
+// When decoding from a struct to a map, the squash tag squashes the struct
+// fields into a single map. Using the example structs from above:
+//
+//     Friend{Person: Person{Name: "alice"}}
+//
+// Will be decoded into a map:
+//
+//     map[string]interface{}{
+//         "name": "alice",
+//     }
+//
 // DecoderConfig has a field that changes the behavior of mapstructure
 // to always squash embedded structs.
 //
