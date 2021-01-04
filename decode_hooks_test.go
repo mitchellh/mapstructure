@@ -2,6 +2,7 @@ package mapstructure
 
 import (
 	"errors"
+	"math/big"
 	"net"
 	"reflect"
 	"testing"
@@ -417,5 +418,30 @@ func TestStructToMapHookFuncTabled(t *testing.T) {
 			}
 		})
 
+	}
+}
+
+func TestTextUnmarshallerHookFunc(t *testing.T) {
+	cases := []struct {
+		f, t   reflect.Value
+		result interface{}
+		err    bool
+	}{
+		{reflect.ValueOf("42"), reflect.ValueOf(big.Int{}), big.NewInt(42), false},
+		{reflect.ValueOf("invalid"), reflect.ValueOf(big.Int{}), nil, true},
+		{reflect.ValueOf("5"), reflect.ValueOf("5"), "5", false},
+	}
+
+	for i, tc := range cases {
+		f := TextUnmarshallerHookFunc()
+		actual, err := DecodeHookExec(f, tc.f, tc.t)
+		if tc.err != (err != nil) {
+			t.Fatalf("case %d: expected err %#v", i, tc.err)
+		}
+		if !reflect.DeepEqual(actual, tc.result) {
+			t.Fatalf(
+				"case %d: expected %#v, got %#v",
+				i, tc.result, actual)
+		}
 	}
 }
