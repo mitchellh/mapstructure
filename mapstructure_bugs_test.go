@@ -567,3 +567,37 @@ func TestDecode_weakEmptyStringToInt(t *testing.T) {
 		t.Errorf("expected \n%#v, got: \n%#v", expectedResultWeak, resultWeak)
 	}
 }
+
+// GH-228: Squash cause *time.Time set to zero
+func TestMapSquash(t *testing.T) {
+	type AA struct {
+		T *time.Time
+	}
+	type A struct {
+		AA
+	}
+
+	v := time.Now()
+	in := &AA{
+		T: &v,
+	}
+	out := &A{}
+	d, err := NewDecoder(&DecoderConfig{
+		Squash: true,
+		Result: out,
+	})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if err := d.Decode(in); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// these failed
+	if !v.Equal(*out.T) {
+		t.Fatal("expected equal")
+	}
+	if out.T.IsZero() {
+		t.Fatal("expected false")
+	}
+}
