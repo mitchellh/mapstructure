@@ -894,10 +894,6 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 		// Next get the actual value of this field and verify it is assignable
 		// to the map value.
 		v := dataVal.Field(i)
-		if v.Kind() == reflect.Ptr && v.Elem().Kind() == reflect.Struct {
-			// Handle embedded struct pointers as embedded structs.
-			v = v.Elem()
-		}
 		if !v.Type().AssignableTo(valMap.Type().Elem()) {
 			return fmt.Errorf("cannot assign type '%s' to map value field of type '%s'", v.Type(), valMap.Type().Elem())
 		}
@@ -907,6 +903,7 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 
 		// If Squash is set in the config, we squash the field down.
 		squash := d.config.Squash && v.Kind() == reflect.Struct && f.Anonymous
+
 		// Determine the name of the key in the map
 		if index := strings.Index(tagValue, ","); index != -1 {
 			if tagValue[:index] == "-" {
@@ -919,8 +916,16 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 
 			// If "squash" is specified in the tag, we squash the field down.
 			squash = !squash && strings.Index(tagValue[index+1:], "squash") != -1
-			if squash && v.Kind() != reflect.Struct {
-				return fmt.Errorf("cannot squash non-struct type '%s'", v.Type())
+			if squash {
+				// When squashing, the embedded type can be a pointer to a struct.
+				if v.Kind() == reflect.Ptr && v.Elem().Kind() == reflect.Struct {
+					v = v.Elem()
+				}
+
+				// The final type must be a struct
+				if v.Kind() != reflect.Struct {
+					return fmt.Errorf("cannot squash non-struct type '%s'", v.Type())
+				}
 			}
 			keyName = tagValue[:index]
 		} else if len(tagValue) > 0 {

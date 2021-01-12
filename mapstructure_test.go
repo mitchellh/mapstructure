@@ -2390,26 +2390,7 @@ func TestDecode_StructTaggedWithOmitempty_KeepNonEmptyValues(t *testing.T) {
 		"visible-map":      emptyMap,
 		"omittable-map":    map[string]interface{}{"k": "v"},
 		"visible-nested":   emptyNested,
-		"omittable-nested": map[string]interface{}{
-			"Vbar": map[string]interface{}{
-				"Vbool":       false,
-				"Vdata":       interface{}(nil),
-				"Vextra":      "",
-				"Vfloat":      float64(0),
-				"Vint":        0,
-				"Vint16":      int16(0),
-				"Vint32":      int32(0),
-				"Vint64":      int64(0),
-				"Vint8":       int8(0),
-				"VjsonFloat":  float64(0),
-				"VjsonInt":    0,
-				"VjsonNumber": json.Number(""),
-				"VjsonUint":   uint(0),
-				"Vstring":     "",
-				"Vuint":       uint(0),
-			},
-			"Vfoo": "",
-		},
+		"omittable-nested": &Nested{},
 	}
 
 	actual := &map[string]interface{}{}
