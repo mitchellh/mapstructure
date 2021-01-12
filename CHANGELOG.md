@@ -1,4 +1,4 @@
-## unreleased
+## 1.4.1
 
 * Fix regression where `*time.Time` value would be set to empty and not be sent 
   to decode hooks properly [GH-232]
