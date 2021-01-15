@@ -199,6 +199,11 @@ type DecodeHookFuncValue func(from reflect.Value, to reflect.Value) (interface{}
 // DecoderConfig is the configuration that is used to create a new decoder
 // and allows customization of various aspects of decoding.
 type DecoderConfig struct {
+	// CaseSensitiveKeys, if set to true, will only compare keys by
+	// exact Unicode matches.  If false, keys will be compared by
+	// Unicode case-folding.
+	CaseSensitiveKeys bool
+
 	// DecodeHook, if set, will be called before any decoding and any
 	// type conversion (if WeaklyTypedInput is on). This lets you modify
 	// the values before they're set down onto the resulting struct. The
@@ -1331,6 +1336,11 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 		rawMapKey := reflect.ValueOf(fieldName)
 		rawMapVal := dataVal.MapIndex(rawMapKey)
 		if !rawMapVal.IsValid() {
+			// If we only allow case-sensitive keys, there's no matching key
+			// in the map.  Just ignore.
+			if d.config.CaseSensitiveKeys {
+				continue
+			}
 			// Do a slower search by iterating over each key and
 			// doing case-insensitive search.
 			for dataValKey := range dataValKeys {
