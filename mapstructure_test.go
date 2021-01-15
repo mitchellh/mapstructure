@@ -1225,6 +1225,30 @@ func TestDecoder_ErrorUnused_NotSetable(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+func TestDecoder_ErrorUnset(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "hello",
+		"foo":     "bar",
+	}
+
+	var result Basic
+	config := &DecoderConfig{
+		ErrorUnset: true,
+		Result:     &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
 
 func TestMap(t *testing.T) {
 	t.Parallel()
@@ -2191,6 +2215,14 @@ func TestMetadata(t *testing.T) {
 	sort.Strings(md.Unused)
 	if !reflect.DeepEqual(md.Unused, expectedUnused) {
 		t.Fatalf("bad unused: %#v", md.Unused)
+	}
+
+	expectedUnset := []string{
+		"Vbar.Vbool", "Vbar.Vdata", "Vbar.Vextra", "Vbar.Vfloat", "Vbar.Vint",
+		"Vbar.VjsonFloat", "Vbar.VjsonInt", "Vbar.VjsonNumber"}
+	sort.Strings(md.Unset)
+	if !reflect.DeepEqual(md.Unset, expectedUnset) {
+		t.Fatalf("bad unset: %#v", md.Unset)
 	}
 }
 

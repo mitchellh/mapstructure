@@ -215,6 +215,11 @@ type DecoderConfig struct {
 	// (extra keys).
 	ErrorUnused bool
 
+	// If ErrorUnset is true, then it is an error for there to exist
+	// fields in the result that were not set in the decoding process
+	// (extra fields).
+	ErrorUnset bool
+
 	// ZeroFields, if set to true, will zero fields before writing them.
 	// For example, a map will be emptied before decoded values are put in
 	// it. If this is false, a map will be merged.
@@ -279,6 +284,11 @@ type Metadata struct {
 	// Unused is a slice of keys that were found in the raw value but
 	// weren't decoded since there was no matching field in the result interface
 	Unused []string
+
+	// Unset is a slice of field names that were found in the result interface
+	// but weren't set in the decoding process since there was no matching value
+	// in the input
+	Unset []string
 }
 
 // Decode takes an input structure and uses reflection to translate it to
@@ -369,6 +379,10 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 
 		if config.Metadata.Unused == nil {
 			config.Metadata.Unused = make([]string, 0)
+		}
+
+		if config.Metadata.Unset == nil {
+			config.Metadata.Unset = make([]string, 0)
 		}
 	}
 
@@ -1245,6 +1259,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 		dataValKeysUnused[dataValKey.Interface()] = struct{}{}
 	}
 
+	targetValKeysUnused := make(map[interface{}]struct{})
 	errors := make([]string, 0)
 
 	// This slice will keep track of all the structs we'll be decoding.
@@ -1349,7 +1364,8 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 
 			if !rawMapVal.IsValid() {
 				// There was no matching key in the map for the value in
-				// the struct. Just ignore.
+				// the struct. Remember it for potential errors and metadata.
+				targetValKeysUnused[fieldName] = struct{}{}
 				continue
 			}
 		}
@@ -1409,6 +1425,17 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 		errors = appendErrors(errors, err)
 	}
 
+	if d.config.ErrorUnset && len(targetValKeysUnused) > 0 {
+		keys := make([]string, 0, len(targetValKeysUnused))
+		for rawKey := range targetValKeysUnused {
+			keys = append(keys, rawKey.(string))
+		}
+		sort.Strings(keys)
+
+		err := fmt.Errorf("'%s' has unset fields: %s", name, strings.Join(keys, ", "))
+		errors = appendErrors(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return &Error{errors}
 	}
@@ -1422,6 +1449,14 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 			}
 
 			d.config.Metadata.Unused = append(d.config.Metadata.Unused, key)
+		}
+		for rawKey := range targetValKeysUnused {
+			key := rawKey.(string)
+			if name != "" {
+				key = name + "." + key
+			}
+
+			d.config.Metadata.Unset = append(d.config.Metadata.Unset, key)
 		}
 	}
 
