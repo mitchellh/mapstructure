@@ -927,7 +927,9 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 					return fmt.Errorf("cannot squash non-struct type '%s'", v.Type())
 				}
 			}
-			keyName = tagValue[:index]
+			if keyNameTagValue := tagValue[:index]; keyNameTagValue != "" {
+				keyName = keyNameTagValue
+			}
 		} else if len(tagValue) > 0 {
 			if tagValue == "-" {
 				continue
