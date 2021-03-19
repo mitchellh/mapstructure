@@ -201,6 +201,10 @@ type TypeConversionResult struct {
 	StringToIntSlice   []int
 	StringToStrArray   [1]string
 	StringToIntArray   [1]int
+	SliceToString      string
+	SliceToInt64       int64
+	SliceToTrue        bool
+	SliceToFalse       bool
 	SliceToMap         map[string]interface{}
 	MapToSlice         []interface{}
 	ArrayToMap         map[string]interface{}
@@ -1090,6 +1094,10 @@ func TestDecode_TypeConversion(t *testing.T) {
 		"StringToIntSlice":   "42",
 		"StringToStrArray":   "A",
 		"StringToIntArray":   "42",
+		"SliceToString":      []string{"42"},
+		"SliceToInt64":       []string{"42"},
+		"SliceToTrue":        []string{"true"},
+		"SliceToFalse":       []string{""},
 		"SliceToMap":         []interface{}{},
 		"MapToSlice":         map[string]interface{}{},
 		"ArrayToMap":         []interface{}{},
@@ -1136,6 +1144,10 @@ func TestDecode_TypeConversion(t *testing.T) {
 		StringToIntSlice:   []int{42},
 		StringToStrArray:   [1]string{"A"},
 		StringToIntArray:   [1]int{42},
+		SliceToString:      "42",
+		SliceToInt64:       42,
+		SliceToTrue:        true,
+		SliceToFalse:       false,
 		SliceToMap:         map[string]interface{}{},
 		MapToSlice:         []interface{}{},
 		ArrayToMap:         map[string]interface{}{},
