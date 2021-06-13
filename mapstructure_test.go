@@ -2431,6 +2431,49 @@ func TestDecode_mapToStruct(t *testing.T) {
 	}
 }
 
+func TestDecoder_MatchName(t *testing.T) {
+	t.Parallel()
+
+	type Target struct {
+		FirstMatch  string `mapstructure:"first_match"`
+		SecondMatch string
+		NoMatch     string `mapstructure:"no_match"`
+	}
+
+	input := map[string]interface{}{
+		"first_match": "foo",
+		"SecondMatch": "bar",
+		"NO_MATCH":    "baz",
+	}
+
+	expected := Target{
+		FirstMatch:  "foo",
+		SecondMatch: "bar",
+	}
+
+	var actual Target
+	config := &DecoderConfig{
+		Result: &actual,
+		MatchName: func(mapKey, fieldName string) bool {
+			return mapKey == fieldName
+		},
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("Decode() expected: %#v, got: %#v", expected, actual)
+	}
+}
+
 func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice) {
 	var result Slice
 	err := Decode(input, &result)

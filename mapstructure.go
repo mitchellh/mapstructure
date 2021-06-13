@@ -258,6 +258,10 @@ type DecoderConfig struct {
 	// The tag name that mapstructure reads for field names. This
 	// defaults to "mapstructure"
 	TagName string
+
+	// MatchName is the function used to match the map key to the struct
+	// field name or tag. Defaults to `strings.EqualFold`.
+	MatchName func(mapKey, fieldName string) bool
 }
 
 // A Decoder takes a raw interface value and turns it into structured
@@ -1340,7 +1344,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 					continue
 				}
 
-				if strings.EqualFold(mK, fieldName) {
+				if d.matchName(mK, fieldName) {
 					rawMapKey = dataValKey
 					rawMapVal = dataVal.MapIndex(dataValKey)
 					break
@@ -1426,6 +1430,13 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 	}
 
 	return nil
+}
+
+func (d *Decoder) matchName(mapKey, fieldName string) bool {
+	if d.config.MatchName != nil {
+		return d.config.MatchName(mapKey, fieldName)
+	}
+	return strings.EqualFold(mapKey, fieldName)
 }
 
 func isEmptyValue(v reflect.Value) bool {
