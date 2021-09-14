@@ -84,6 +84,38 @@ func TestComposeDecodeHookFunc_kinds(t *testing.T) {
 	}
 }
 
+func TestComposeDecodeHookFunc_safe_nofuncs(t *testing.T) {
+	f := ComposeDecodeHookFunc()
+	type myStruct2 struct {
+		MyInt int
+	}
+
+	type myStruct1 struct {
+		Blah map[string]myStruct2
+	}
+
+	src := &myStruct1{Blah: map[string]myStruct2{
+		"test": {
+			MyInt: 1,
+		},
+	}}
+
+	dst := &myStruct1{}
+	dConf := &DecoderConfig{
+		Result:      dst,
+		ErrorUnused: true,
+		DecodeHook:  f,
+	}
+	d, err := NewDecoder(dConf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = d.Decode(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStringToSliceHookFunc(t *testing.T) {
 	f := StringToSliceHookFunc(",")
 
