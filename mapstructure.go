@@ -260,7 +260,8 @@ type DecoderConfig struct {
 	TagName string
 
 	// MatchName is the function used to match the map key to the struct
-	// field name or tag. Defaults to `strings.EqualFold`.
+	// field name or tag. Defaults to `strings.EqualFold`. This can be used
+	// to implement case-sensitive tag values, support snake casing, etc.
 	MatchName func(mapKey, fieldName string) bool
 }
 
@@ -1436,6 +1437,7 @@ func (d *Decoder) matchName(mapKey, fieldName string) bool {
 	if d.config.MatchName != nil {
 		return d.config.MatchName(mapKey, fieldName)
 	}
+
 	return strings.EqualFold(mapKey, fieldName)
 }
 
