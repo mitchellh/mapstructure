@@ -381,6 +381,10 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 		config.TagName = "mapstructure"
 	}
 
+	if config.MatchName == nil {
+		config.MatchName = strings.EqualFold
+	}
+
 	result := &Decoder{
 		config: config,
 	}
@@ -1345,7 +1349,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 					continue
 				}
 
-				if d.matchName(mK, fieldName) {
+				if d.config.MatchName(mK, fieldName) {
 					rawMapKey = dataValKey
 					rawMapVal = dataVal.MapIndex(dataValKey)
 					break
@@ -1431,14 +1435,6 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 	}
 
 	return nil
-}
-
-func (d *Decoder) matchName(mapKey, fieldName string) bool {
-	if d.config.MatchName != nil {
-		return d.config.MatchName(mapKey, fieldName)
-	}
-
-	return strings.EqualFold(mapKey, fieldName)
 }
 
 func isEmptyValue(v reflect.Value) bool {
