@@ -192,7 +192,7 @@ type DecodeHookFuncType func(reflect.Type, reflect.Type, interface{}) (interface
 // source and target types.
 type DecodeHookFuncKind func(reflect.Kind, reflect.Kind, interface{}) (interface{}, error)
 
-// DecodeHookFuncRaw is a DecodeHookFunc which has complete access to both the source and target
+// DecodeHookFuncValue is a DecodeHookFunc which has complete access to both the source and target
 // values.
 type DecodeHookFuncValue func(from reflect.Value, to reflect.Value) (interface{}, error)
 
