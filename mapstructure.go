@@ -580,7 +580,11 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 			}
 			val.SetString(string(uints))
 		default:
-			converted = false
+			if dataVal.Len() == 1 {
+				return d.decodeString(name, dataVal.Index(0).Interface(), val)
+			} else {
+				converted = false
+			}
 		}
 	default:
 		converted = false
@@ -633,6 +637,15 @@ func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) er
 				"error decoding json.Number into %s: %s", name, err)
 		}
 		val.SetInt(i)
+	case dataKind == reflect.Slice && d.config.WeaklyTypedInput,
+		dataKind == reflect.Array && d.config.WeaklyTypedInput:
+		if dataVal.Len() == 1 {
+			return d.decodeInt(name, dataVal.Index(0).Interface(), val)
+		} else {
+			return fmt.Errorf(
+				"'%s' expected type '%s', got unconvertible type '%s'",
+				name, val.Type(), dataVal.Type())
+		}
 	default:
 		return fmt.Errorf(
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
@@ -694,6 +707,15 @@ func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) e
 				name, i)
 		}
 		val.SetUint(uint64(i))
+	case dataKind == reflect.Slice && d.config.WeaklyTypedInput,
+		dataKind == reflect.Array && d.config.WeaklyTypedInput:
+		if dataVal.Len() == 1 {
+			return d.decodeUint(name, dataVal.Index(0).Interface(), val)
+		} else {
+			return fmt.Errorf(
+				"'%s' expected type '%s', got unconvertible type '%s'",
+				name, val.Type(), dataVal.Type())
+		}
 	default:
 		return fmt.Errorf(
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
@@ -724,6 +746,15 @@ func (d *Decoder) decodeBool(name string, data interface{}, val reflect.Value) e
 			val.SetBool(false)
 		} else {
 			return fmt.Errorf("cannot parse '%s' as bool: %s", name, err)
+		}
+	case dataKind == reflect.Slice && d.config.WeaklyTypedInput,
+		dataKind == reflect.Array && d.config.WeaklyTypedInput:
+		if dataVal.Len() == 1 {
+			return d.decodeBool(name, dataVal.Index(0).Interface(), val)
+		} else {
+			return fmt.Errorf(
+				"'%s' expected type '%s', got unconvertible type '%s'",
+				name, val.Type(), dataVal.Type())
 		}
 	default:
 		return fmt.Errorf(
@@ -772,6 +803,15 @@ func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) 
 				"error decoding json.Number into %s: %s", name, err)
 		}
 		val.SetFloat(i)
+	case dataKind == reflect.Slice && d.config.WeaklyTypedInput,
+		dataKind == reflect.Array && d.config.WeaklyTypedInput:
+		if dataVal.Len() == 1 {
+			return d.decodeFloat(name, dataVal.Index(0).Interface(), val)
+		} else {
+			return fmt.Errorf(
+				"'%s' expected type '%s', got unconvertible type '%s'",
+				name, val.Type(), dataVal.Type())
+		}
 	default:
 		return fmt.Errorf(
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
