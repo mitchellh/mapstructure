@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 )
 
 type Basic struct {
@@ -65,6 +66,20 @@ type EmbeddedSquash struct {
 type EmbeddedPointerSquash struct {
 	*Basic  `mapstructure:",squash"`
 	Vunique string
+}
+
+type BasicMapStructure struct {
+	Vunique string     `mapstructure:"vunique"`
+	Vtime   *time.Time `mapstructure:"time"`
+}
+
+type NestedPointerWithMapstructure struct {
+	Vbar *BasicMapStructure `mapstructure:"vbar"`
+}
+
+type EmbeddedPointerSquashWithNestedMapstructure struct {
+	*NestedPointerWithMapstructure `mapstructure:",squash"`
+	Vunique                        string
 }
 
 type EmbeddedAndNamed struct {
@@ -713,6 +728,74 @@ func TestDecode_EmbeddedPointerSquash_FromMapToStruct(t *testing.T) {
 
 	if result.Vunique != "bar" {
 		t.Errorf("vunique value should be 'bar': %#v", result.Vunique)
+	}
+}
+
+func TestDecode_EmbeddedPointerSquashWithNestedMapstructure_FromStructToMap(t *testing.T) {
+	t.Parallel()
+
+	vTime := time.Now()
+
+	input := EmbeddedPointerSquashWithNestedMapstructure{
+		NestedPointerWithMapstructure: &NestedPointerWithMapstructure{
+			Vbar: &BasicMapStructure{
+				Vunique: "bar",
+				Vtime:   &vTime,
+			},
+		},
+		Vunique: "foo",
+	}
+
+	var result map[string]interface{}
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+	expected := map[string]interface{}{
+		"vbar": map[string]interface{}{
+			"vunique": "bar",
+			"time":    &vTime,
+		},
+		"Vunique": "foo",
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("result should be %#v: got %#v", expected, result)
+	}
+}
+
+func TestDecode_EmbeddedPointerSquashWithNestedMapstructure_FromMapToStruct(t *testing.T) {
+	t.Parallel()
+
+	vTime := time.Now()
+
+	input := map[string]interface{}{
+		"vbar": map[string]interface{}{
+			"vunique": "bar",
+			"time":    &vTime,
+		},
+		"Vunique": "foo",
+	}
+
+	result := EmbeddedPointerSquashWithNestedMapstructure{
+		NestedPointerWithMapstructure: &NestedPointerWithMapstructure{},
+	}
+	err := Decode(input, &result)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+	expected := EmbeddedPointerSquashWithNestedMapstructure{
+		NestedPointerWithMapstructure: &NestedPointerWithMapstructure{
+			Vbar: &BasicMapStructure{
+				Vunique: "bar",
+				Vtime:   &vTime,
+			},
+		},
+		Vunique: "foo",
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("result should be %#v: got %#v", expected, result)
 	}
 }
 

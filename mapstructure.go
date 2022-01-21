@@ -909,6 +909,8 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 		// If Squash is set in the config, we squash the field down.
 		squash := d.config.Squash && v.Kind() == reflect.Struct && f.Anonymous
 
+		v = dereferencePtrToStructIfNeeded(v, d.config.TagName)
+
 		// Determine the name of the key in the map
 		if index := strings.Index(tagValue, ","); index != -1 {
 			if tagValue[:index] == "-" {
@@ -1464,4 +1466,29 @@ func getKind(val reflect.Value) reflect.Kind {
 	default:
 		return kind
 	}
+}
+
+func isStructTypeConvertibleToMap(typ reflect.Type, checkMapstructureTags bool, tagName string) bool {
+	for i := 0; i < typ.NumField(); i++ {
+		f := typ.Field(i)
+		if f.PkgPath == "" && !checkMapstructureTags { // check for unexported fields
+			return true
+		}
+		if checkMapstructureTags && f.Tag.Get(tagName) != "" { // check for mapstructure tags inside
+			return true
+		}
+	}
+	return false
+}
+
+func dereferencePtrToStructIfNeeded(v reflect.Value, tagName string) reflect.Value {
+	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+		return v
+	}
+	deref := v.Elem()
+	derefT := deref.Type()
+	if isStructTypeConvertibleToMap(derefT, true, tagName) {
+		return deref
+	}
+	return v
 }
