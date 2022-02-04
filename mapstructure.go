@@ -122,7 +122,7 @@
 // field value is zero and a numeric type, the field is empty, and it won't
 // be encoded into the destination type.
 //
-//     type Source {
+//     type Source struct {
 //         Age int `mapstructure:",omitempty"`
 //     }
 //
