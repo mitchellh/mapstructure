@@ -2,6 +2,7 @@ package mapstructure
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 )
@@ -28,6 +29,57 @@ func formatError(path FieldPath, format string, a ...interface{}) error {
 		path:  path,
 		error: fmt.Errorf(format, a...),
 	}
+}
+
+// SliceExpectedError implements the error interface. It provides access to
+// field path where that error occurred and specific for this type of errors parameters.
+type SliceExpectedError struct {
+	path FieldPath
+	Got  reflect.Kind
+}
+
+func (e SliceExpectedError) Path() FieldPath {
+	return e.path
+}
+
+func (e *SliceExpectedError) Error() string {
+	return fmt.Sprintf(
+		"'%s': source data must be an array or slice, got %s", e.path, e.Got)
+}
+
+// UnexpectedUnconvertibleTypeError implements the error interface. It provides access to
+// field path where that error occurred and specific for this type of errors parameters.
+type UnexpectedUnconvertibleTypeError struct {
+	path     FieldPath
+	Expected reflect.Type
+	Got      reflect.Type
+	Data     interface{}
+}
+
+func (e UnexpectedUnconvertibleTypeError) Path() FieldPath {
+	return e.path
+}
+
+func (e *UnexpectedUnconvertibleTypeError) Error() string {
+	return fmt.Sprintf(
+		"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
+		e.path, e.Expected, e.Got, e.Data)
+}
+
+// CanNotParseError implements the error interface. It provides access to
+// field path where that error occurred and specific for this type of errors parameters.
+type CanNotParseError struct {
+	path   FieldPath
+	Reason error
+	Type   string
+}
+
+func (e CanNotParseError) Path() FieldPath {
+	return e.path
+}
+
+func (e *CanNotParseError) Error() string {
+	return fmt.Sprintf("cannot parse '%s' as %s: %s", e.path, e.Type, e.Reason)
 }
 
 // Error implements the error interface and can represents multiple
