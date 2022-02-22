@@ -1,7 +1,6 @@
 package mapstructure
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -10,19 +9,32 @@ import (
 // Error implements the error interface and can represents multiple
 // errors that occur in the course of a single decode.
 type Error struct {
-	Errors []string
+	// Deprecated: left for backward compatibility.
+	Errors     []string
+	realErrors []error
+}
+
+func newMultiError(errors []error) *Error {
+	stringErrors := make([]string, len(errors))
+	for i, err := range errors {
+		stringErrors[i] = err.Error()
+	}
+	return &Error{
+		Errors:     stringErrors,
+		realErrors: errors,
+	}
 }
 
 func (e *Error) Error() string {
-	points := make([]string, len(e.Errors))
-	for i, err := range e.Errors {
-		points[i] = fmt.Sprintf("* %s", err)
+	points := make([]string, len(e.realErrors))
+	for i, err := range e.realErrors {
+		points[i] = fmt.Sprintf("* %s", err.Error())
 	}
 
 	sort.Strings(points)
 	return fmt.Sprintf(
 		"%d error(s) decoding:\n\n%s",
-		len(e.Errors), strings.Join(points, "\n"))
+		len(e.realErrors), strings.Join(points, "\n"))
 }
 
 // WrappedErrors implements the errwrap.Wrapper interface to make this
@@ -32,12 +44,7 @@ func (e *Error) WrappedErrors() []error {
 		return nil
 	}
 
-	result := make([]error, len(e.Errors))
-	for i, e := range e.Errors {
-		result[i] = errors.New(e)
-	}
-
-	return result
+	return e.realErrors
 }
 
 func appendErrors(errors []string, err error) []string {
