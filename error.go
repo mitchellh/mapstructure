@@ -6,6 +6,30 @@ import (
 	"strings"
 )
 
+// FieldError implements the error interface and provide access to
+// field path where that error occurred.
+type FieldError interface {
+	error
+	Path() FieldPath
+}
+
+// baseError default implementation of FieldError.
+type baseError struct {
+	error
+	path FieldPath
+}
+
+func (e baseError) Path() FieldPath {
+	return e.path
+}
+
+func formatError(path FieldPath, format string, a ...interface{}) error {
+	return &baseError{
+		path:  path,
+		error: fmt.Errorf(format, a...),
+	}
+}
+
 // Error implements the error interface and can represents multiple
 // errors that occur in the course of a single decode.
 type Error struct {
