@@ -123,11 +123,11 @@ func (e *Error) WrappedErrors() []error {
 	return e.realErrors
 }
 
-func appendErrors(errors []string, err error) []string {
+func appendErrors(errors []error, err error) []error {
 	switch e := err.(type) {
 	case *Error:
-		return append(errors, e.Errors...)
+		return append(errors, e.WrappedErrors()...)
 	default:
-		return append(errors, e.Error())
+		return append(errors, e)
 	}
 }
