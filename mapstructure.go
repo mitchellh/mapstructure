@@ -279,11 +279,20 @@ type Decoder struct {
 // is tedious or difficult to get otherwise.
 type Metadata struct {
 	// Keys are the keys of the structure which were successfully decoded
+	// Deprecated: left for backward compatibility.
 	Keys []string
+
+	// DecodedPaths are the field paths of the structure which were successfully decoded
+	DecodedPaths []FieldPath
 
 	// Unused is a slice of keys that were found in the raw value but
 	// weren't decoded since there was no matching field in the result interface
+	// Deprecated: left for backward compatibility.
 	Unused []string
+
+	// Unused is a slice of field paths that were found in the raw value but
+	// weren't decoded since there was no matching field in the result interface
+	UnusedPaths []FieldPath
 }
 
 // Decode takes an input structure and uses reflection to translate it to
@@ -372,8 +381,16 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 			config.Metadata.Keys = make([]string, 0)
 		}
 
+		if config.Metadata.DecodedPaths == nil {
+			config.Metadata.DecodedPaths = make([]FieldPath, 0)
+		}
+
 		if config.Metadata.Unused == nil {
 			config.Metadata.Unused = make([]string, 0)
+		}
+
+		if config.Metadata.UnusedPaths == nil {
+			config.Metadata.UnusedPaths = make([]FieldPath, 0)
 		}
 	}
 
