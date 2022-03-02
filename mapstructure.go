@@ -118,6 +118,7 @@
 // the zero value. The zero value of all types is specified in the Go
 // specification.
 //
+
 // For example, the zero type of a numeric type is zero ("0"). If the struct
 // field value is zero and a numeric type, the field is empty, and it won't
 // be encoded into the destination type.
@@ -125,6 +126,21 @@
 //     type Source {
 //         Age int `mapstructure:",omitempty"`
 //     }
+//
+//
+// you also can use the ",omitvalue" suffix on your tag to omit that value if it equates to
+// the value you gave. it only support string, any other types will be convent to string.
+//
+// For example, .
+//
+//     type Source {
+//         Age int `mapstructure:",omitvalue:-1"`
+//     }{
+//		   Age : -1
+//		}
+//
+// field Age won't be encoded into the destination type
+//
 //
 // Unexported fields
 //
@@ -916,6 +932,10 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			}
 			// If "omitempty" is specified in the tag, it ignores empty values.
 			if strings.Index(tagValue[index+1:], "omitempty") != -1 && isEmptyValue(v) {
+				continue
+			}
+			// If "omitvalue" is specified in the tag, it ignores the gave value, only support string, other types vill be convent to string.
+			if strings.Index(tagValue[index+1:], "omitvalue") != -1 && tagValue[index+11:] == fmt.Sprint(v) {
 				continue
 			}
 

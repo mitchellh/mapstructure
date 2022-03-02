@@ -2043,6 +2043,19 @@ func TestDecodeTable(t *testing.T) {
 			&map[string]interface{}{"visible": nil},
 			false,
 		},
+		{
+			"struct with omitvalue tag",
+			&struct {
+				VisibleField interface{} `mapstructure:"visible"`
+				OmitField    interface{} `mapstructure:"omittable,omitvalue:-1"`
+			}{
+				VisibleField: nil,
+				OmitField:    -1,
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{"visible": nil},
+			false,
+		},
 	}
 
 	for _, tt := range tests {
