@@ -1587,6 +1587,69 @@ func TestSliceToMap(t *testing.T) {
 	}
 }
 
+// better to use function option for config option. like: https://github.com/timestee/optiongen
+func weakDecodeZeroFields(input, output interface{}) error {
+	config := &DecoderConfig{
+		Metadata:         nil,
+		Result:           output,
+		WeaklyTypedInput: true,
+		ZeroFields:       true,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(input)
+}
+
+func TestSliceToMapShouldIgnoreZeroField(t *testing.T) {
+	t.Parallel()
+
+	input := []map[string]interface{}{
+		{
+			"foo": "bar",
+		},
+		{
+			"bar": "baz",
+		},
+	}
+	{
+		var result map[string]interface{}
+		err := weakDecodeZeroFields(input, &result)
+		if err != nil {
+			t.Fatalf("got an error: %s", err)
+		}
+
+		expected := map[string]interface{}{
+			"foo": "bar",
+			"bar": "baz",
+		}
+		if !reflect.DeepEqual(result, expected) {
+			t.Errorf("bad: %#v", result)
+		}
+	}
+
+	{
+		result := map[string]interface{}{
+			"should_be_deleted": "should_be_deleted",
+		}
+		err := weakDecodeZeroFields(input, &result)
+		if err != nil {
+			t.Fatalf("got an error: %s", err)
+		}
+
+		expected := map[string]interface{}{
+			"foo": "bar",
+			"bar": "baz",
+		}
+		if !reflect.DeepEqual(result, expected) {
+			t.Errorf("bad: %#v", result)
+		}
+	}
+}
+
 func TestArray(t *testing.T) {
 	t.Parallel()
 

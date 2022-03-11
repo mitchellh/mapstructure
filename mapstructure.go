@@ -395,11 +395,11 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 // Decode decodes the given raw interface to the target pointer specified
 // by the configuration.
 func (d *Decoder) Decode(input interface{}) error {
-	return d.decode("", input, reflect.ValueOf(d.config.Result).Elem())
+	return d.decode("", input, reflect.ValueOf(d.config.Result).Elem(), false)
 }
 
 // Decodes an unknown data type into a specific reflection value.
-func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) error {
+func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value, shouldIgnoreZeroFields ...bool) error {
 	var inputVal reflect.Value
 	if input != nil {
 		inputVal = reflect.ValueOf(input)
@@ -414,7 +414,11 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	if input == nil {
 		// If the data is nil, then we don't set anything, unless ZeroFields is set
 		// to true.
-		if d.config.ZeroFields {
+		ignoreZeroFields := false
+		if len(shouldIgnoreZeroFields) > 0 {
+			ignoreZeroFields = shouldIgnoreZeroFields[0]
+		}
+		if !ignoreZeroFields && d.config.ZeroFields {
 			outVal.Set(reflect.Zero(outVal.Type()))
 
 			if d.config.Metadata != nil && name != "" {
@@ -462,7 +466,7 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	case reflect.Struct:
 		err = d.decodeStruct(name, input, outVal)
 	case reflect.Map:
-		err = d.decodeMap(name, input, outVal)
+		err = d.decodeMap(name, input, outVal, shouldIgnoreZeroFields...)
 	case reflect.Ptr:
 		addMetaKey, err = d.decodePtr(name, input, outVal)
 	case reflect.Slice:
@@ -777,7 +781,7 @@ func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) 
 	return nil
 }
 
-func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) error {
+func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value, shouldIgnoreZeroFields ...bool) error {
 	valType := val.Type()
 	valKeyType := valType.Key()
 	valElemType := valType.Elem()
@@ -785,8 +789,13 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 	// By default we overwrite keys in the current map
 	valMap := val
 
+	ignoreZeroFields := false
+	if len(shouldIgnoreZeroFields) > 0 {
+		ignoreZeroFields = shouldIgnoreZeroFields[0]
+	}
+
 	// If the map is nil or we're purposely zeroing fields, make a new map
-	if valMap.IsNil() || d.config.ZeroFields {
+	if valMap.IsNil() || (!ignoreZeroFields && d.config.ZeroFields) {
 		// Make a new map to hold our result
 		mapType := reflect.MapOf(valKeyType, valElemType)
 		valMap = reflect.MakeMap(mapType)
@@ -803,7 +812,8 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 
 	case reflect.Array, reflect.Slice:
 		if d.config.WeaklyTypedInput {
-			return d.decodeMapFromSlice(name, dataVal, val, valMap)
+			ret := d.decodeMapFromSlice(name, dataVal, val, valMap)
+			return ret
 		}
 
 		fallthrough
@@ -821,9 +831,11 @@ func (d *Decoder) decodeMapFromSlice(name string, dataVal reflect.Value, val ref
 	}
 
 	for i := 0; i < dataVal.Len(); i++ {
+		// shoule not ignore config.ZeroFields when i == 0
+		shouldIgnoreZeroFields := i != 0
 		err := d.decode(
 			name+"["+strconv.Itoa(i)+"]",
-			dataVal.Index(i).Interface(), val)
+			dataVal.Index(i).Interface(), val, shouldIgnoreZeroFields)
 		if err != nil {
 			return err
 		}
@@ -959,7 +971,7 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			addrVal := reflect.New(vMap.Type())
 			reflect.Indirect(addrVal).Set(vMap)
 
-			err := d.decode(keyName, x.Interface(), reflect.Indirect(addrVal))
+			err := d.decode(keyName, x.Interface(), reflect.Indirect(addrVal), false)
 			if err != nil {
 				return err
 			}
