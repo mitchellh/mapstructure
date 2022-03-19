@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 )
 
 type Basic struct {
@@ -1689,6 +1690,8 @@ func TestDecodeTable(t *testing.T) {
 	type NestedPointerCopy NestedPointer
 	type MapCopy Map
 
+	testTime, _ := time.Parse("2006-01-02 15:04:05", "2022-03-21 12:03:03")
+
 	tests := []struct {
 		name    string
 		in      interface{}
@@ -2054,6 +2057,21 @@ func TestDecodeTable(t *testing.T) {
 			},
 			&map[string]interface{}{},
 			&map[string]interface{}{"visible": nil},
+			false,
+		},
+		{
+			"struct with time.Time to string",
+			&struct {
+				LogTime    time.Time `mapstructure:"logtime"`
+				CreateTime time.Time `mapstructure:"ctime,string"`
+				ModifyTime time.Time `mapstructure:"mtime,string,2006-01-02"`
+			}{
+				LogTime:    testTime,
+				CreateTime: testTime, // 2022-03-21 12:03:03
+				ModifyTime: testTime,
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{"logtime": testTime, "ctime": "2022-03-21 12:03:03", "mtime": "2022-03-21"},
 			false,
 		},
 	}

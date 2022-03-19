@@ -504,15 +504,16 @@ func TestDecodeIntermediateMapsSettable(t *testing.T) {
 		},
 	}
 
-	timePtrType := reflect.TypeOf((*time.Time)(nil))
-	mapStrInfType := reflect.TypeOf((map[string]interface{})(nil))
+	timePtrType := reflect.TypeOf((time.Time{}))
+	// mapStrInfType := reflect.TypeOf((map[string]interface{})(nil))
 
 	var actual TsWrapper
 	decoder, err := NewDecoder(&DecoderConfig{
 		Result: &actual,
 		DecodeHook: func(from, to reflect.Type, data interface{}) (interface{}, error) {
-			if from == timePtrType && to == mapStrInfType {
-				ts := data.(*time.Time)
+			// if from == timePtrType && to == mapStrInfType {
+			if from == timePtrType {
+				ts := data.(time.Time)
 				nanos := ts.UnixNano()
 
 				seconds := nanos / 1000000000

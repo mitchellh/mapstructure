@@ -182,6 +182,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // DecodeHookFunc is the callback function that can be used for
@@ -958,6 +959,20 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 				continue
 			}
 			keyName = tagValue
+		}
+
+		if v.Type() == reflect.TypeOf(time.Time{}) {
+			tagVals := strings.Split(tagValue, ",")
+			if len(tagVals) < 2 {
+				valMap.SetMapIndex(reflect.ValueOf(keyName), v)
+				continue
+			}
+			layout := "2006-01-02 15:04:05"
+			if len(tagVals) >= 3 {
+				layout = tagVals[2]
+			}
+			valMap.SetMapIndex(reflect.ValueOf(keyName), reflect.ValueOf(reflect.Indirect(v).Interface().(time.Time).Format(layout)))
+			continue
 		}
 
 		switch v.Kind() {
