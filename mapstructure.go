@@ -1483,6 +1483,10 @@ func isEmptyValue(v reflect.Value) bool {
 	case reflect.Interface, reflect.Ptr:
 		return v.IsNil()
 	}
+	// zero value for time
+	if reflect.Indirect(v).Type() == reflect.TypeOf(time.Time{}) {
+		return reflect.Indirect(v).Interface().(time.Time).IsZero()
+	}
 	return false
 }
 
