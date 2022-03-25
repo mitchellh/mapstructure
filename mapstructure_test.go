@@ -2482,6 +2482,46 @@ func TestDecoder_MatchName(t *testing.T) {
 	}
 }
 
+func TestDecoder_IgnoreUntaggedFields(t *testing.T) {
+	type Input struct {
+		UntaggedNumber int
+		TaggedNumber   int `mapstructure:"tagged_number"`
+		UntaggedString string
+		TaggedString   string `mapstructure:"tagged_string"`
+	}
+	input := &Input{
+		UntaggedNumber: 31,
+		TaggedNumber:   42,
+		UntaggedString: "hidden",
+		TaggedString:   "visible",
+	}
+
+	actual := make(map[string]interface{})
+	config := &DecoderConfig{
+		Result:               &actual,
+		IgnoreUntaggedFields: true,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	expected := map[string]interface{}{
+		"tagged_number": 42,
+		"tagged_string": "visible",
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("Decode() expected: %#v\ngot: %#v", expected, actual)
+	}
+}
+
 func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice) {
 	var result Slice
 	err := Decode(input, &result)

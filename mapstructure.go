@@ -259,6 +259,10 @@ type DecoderConfig struct {
 	// defaults to "mapstructure"
 	TagName string
 
+	// IgnoreUntaggedFields ignores all struct fields without explicit
+	// TagName, comparable to `mapstructure:"-"` as default behaviour.
+	IgnoreUntaggedFields bool
+
 	// MatchName is the function used to match the map key to the struct
 	// field name or tag. Defaults to `strings.EqualFold`. This can be used
 	// to implement case-sensitive tag values, support snake casing, etc.
@@ -905,6 +909,10 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 
 		tagValue := f.Tag.Get(d.config.TagName)
 		keyName := f.Name
+
+		if tagValue == "" && d.config.IgnoreUntaggedFields {
+			continue
+		}
 
 		// If Squash is set in the config, we squash the field down.
 		squash := d.config.Squash && v.Kind() == reflect.Struct && f.Anonymous
