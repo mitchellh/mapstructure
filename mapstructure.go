@@ -1056,7 +1056,7 @@ func (d *Decoder) decodePtr(name string, data interface{}, val reflect.Value) (b
 	// pointer to be nil as well.
 	isNil := data == nil
 	if !isNil {
-		switch v := reflect.Indirect(reflect.ValueOf(data)); v.Kind() {
+		switch v := reflect.ValueOf(data); v.Kind() {
 		case reflect.Chan,
 			reflect.Func,
 			reflect.Interface,
