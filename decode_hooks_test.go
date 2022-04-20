@@ -84,6 +84,94 @@ func TestComposeDecodeHookFunc_kinds(t *testing.T) {
 	}
 }
 
+func TestOrComposeDecodeHookFunc(t *testing.T) {
+	f1 := func(
+		f reflect.Kind,
+		t reflect.Kind,
+		data interface{}) (interface{}, error) {
+		return data.(string) + "foo", nil
+	}
+
+	f2 := func(
+		f reflect.Kind,
+		t reflect.Kind,
+		data interface{}) (interface{}, error) {
+		return data.(string) + "bar", nil
+	}
+
+	f := OrComposeDecodeHookFunc(f1, f2)
+
+	result, err := DecodeHookExec(
+		f, reflect.ValueOf(""), reflect.ValueOf([]byte("")))
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+	if result.(string) != "foo" {
+		t.Fatalf("bad: %#v", result)
+	}
+}
+
+func TestOrComposeDecodeHookFunc_correctValueIsLast(t *testing.T) {
+	f1 := func(
+		f reflect.Kind,
+		t reflect.Kind,
+		data interface{}) (interface{}, error) {
+		return nil, errors.New("f1 error")
+	}
+
+	f2 := func(
+		f reflect.Kind,
+		t reflect.Kind,
+		data interface{}) (interface{}, error) {
+		return nil, errors.New("f2 error")
+	}
+
+	f3 := func(
+		f reflect.Kind,
+		t reflect.Kind,
+		data interface{}) (interface{}, error) {
+		return data.(string) + "bar", nil
+	}
+
+	f := OrComposeDecodeHookFunc(f1, f2, f3)
+
+	result, err := DecodeHookExec(
+		f, reflect.ValueOf(""), reflect.ValueOf([]byte("")))
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+	if result.(string) != "bar" {
+		t.Fatalf("bad: %#v", result)
+	}
+}
+
+func TestOrComposeDecodeHookFunc_err(t *testing.T) {
+	f1 := func(
+		f reflect.Kind,
+		t reflect.Kind,
+		data interface{}) (interface{}, error) {
+		return nil, errors.New("f1 error")
+	}
+
+	f2 := func(
+		f reflect.Kind,
+		t reflect.Kind,
+		data interface{}) (interface{}, error) {
+		return nil, errors.New("f2 error")
+	}
+
+	f := OrComposeDecodeHookFunc(f1, f2)
+
+	_, err := DecodeHookExec(
+		f, reflect.ValueOf(""), reflect.ValueOf([]byte("")))
+	if err == nil {
+		t.Fatalf("bad: should return an error")
+	}
+	if err.Error() != "f1 error\nf2 error\n" {
+		t.Fatalf("bad: %s", err)
+	}
+}
+
 func TestComposeDecodeHookFunc_safe_nofuncs(t *testing.T) {
 	f := ComposeDecodeHookFunc()
 	type myStruct2 struct {
