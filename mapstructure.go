@@ -217,7 +217,8 @@ type DecoderConfig struct {
 
 	// If ErrorUnset is true, then it is an error for there to exist
 	// fields in the result that were not set in the decoding process
-	// (extra fields).
+	// (extra fields). This only applies to decoding to a struct. This
+	// will affect all nested structs as well.
 	ErrorUnset bool
 
 	// ZeroFields, if set to true, will zero fields before writing them.
