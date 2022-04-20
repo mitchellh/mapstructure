@@ -479,7 +479,7 @@ func TestDecodeBadDataTypeInSlice(t *testing.T) {
 
 // #202 Ensure that intermediate maps in the struct -> struct decode process are settable
 // and not just the elements within them.
-func TestDecodeIntermeidateMapsSettable(t *testing.T) {
+func TestDecodeIntermediateMapsSettable(t *testing.T) {
 	type Timestamp struct {
 		Seconds int64
 		Nanos   int32
