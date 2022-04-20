@@ -1,7 +1,6 @@
 package mapstructure
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -619,8 +618,10 @@ func TestMapOmitEmptyWithEmptyFieldnameInTag(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expect := "map[Username:Joe]"
-	if got := fmt.Sprintf("%+v", m); expect != got {
-		t.Fatalf("expect %q, got: %s", expect, got)
+	if len(m) != 1 {
+		t.Fatalf("fail: %#v", m)
+	}
+	if m["Username"] != "Joe" {
+		t.Fatalf("fail: %#v", m)
 	}
 }
