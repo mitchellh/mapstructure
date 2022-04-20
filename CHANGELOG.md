@@ -8,6 +8,8 @@
 * Decoding to slice from array no longer crashes [GH-265]
 * Decode nested struct pointers to map [GH-271]
 * Fix issue where `,squash` was ignored if `Squash` option was set. [GH-280]
+* Fix issue where fields with `,omitempty` would sometimes decode
+  into a map with an empty string key [GH-281]
 
 ## 1.4.3
 
