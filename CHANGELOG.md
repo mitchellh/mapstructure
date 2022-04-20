@@ -1,6 +1,7 @@
 ## 1.4.4
 
 * Decoding to slice from array no longer crashes [GH-265]
+* Decode nested struct pointers to map [GH-271]
 
 ## 1.4.3
 
