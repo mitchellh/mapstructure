@@ -1,5 +1,7 @@
 ## 1.4.4
 
+* New option `IgnoreUntaggedFields` to ignore decoding to any fields
+  without `mapstructure` (or the configured tag name) set [GH-277]
 * Decoding to slice from array no longer crashes [GH-265]
 * Decode nested struct pointers to map [GH-271]
 
