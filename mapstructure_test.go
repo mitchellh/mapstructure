@@ -910,6 +910,53 @@ func TestDecodeFrom_EmbeddedSquashConfig(t *testing.T) {
 	}
 }
 
+func TestDecodeFrom_EmbeddedSquashConfig_WithTags(t *testing.T) {
+	t.Parallel()
+
+	var v interface{}
+	var ok bool
+
+	input := EmbeddedSquash{
+		Basic: Basic{
+			Vstring: "foo",
+		},
+		Vunique: "bar",
+	}
+
+	result := map[string]interface{}{}
+	config := &DecoderConfig{
+		Squash: true,
+		Result: &result,
+	}
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if _, ok = result["Basic"]; ok {
+		t.Error("basic should not be present in map")
+	}
+
+	v, ok = result["Vstring"]
+	if !ok {
+		t.Error("vstring should be present in map")
+	} else if !reflect.DeepEqual(v, "foo") {
+		t.Errorf("vstring value should be 'foo': %#v", v)
+	}
+
+	v, ok = result["Vunique"]
+	if !ok {
+		t.Error("vunique should be present in map")
+	} else if !reflect.DeepEqual(v, "bar") {
+		t.Errorf("vunique value should be 'bar': %#v", v)
+	}
+}
+
 func TestDecode_SquashOnNonStructType(t *testing.T) {
 	t.Parallel()
 
