@@ -559,32 +559,15 @@ func TestDecode_EmbeddedArray(t *testing.T) {
 func TestDecode_decodeSliceWithArray(t *testing.T) {
 	t.Parallel()
 
-	data := []struct {
-		title  string
-		input  interface{}
-		result interface{}
-		exp    interface{}
-	}{
-		{
-			title:  "input is array and result is slice",
-			input:  [1]int{1},
-			result: []int{},
-			exp:    []int{1},
-		},
+	var result []int
+	input := [1]int{1}
+	expected := []int{1}
+	if err := Decode(input, &result); err != nil {
+		t.Fatalf("got an err: %s", err.Error())
 	}
 
-	for _, d := range data {
-		d := d
-		t.Run(d.title, func(t *testing.T) {
-			t.Parallel()
-			if err := Decode(d.input, &d.result); err != nil {
-				t.Fatalf("got an err: %s", err.Error())
-			}
-
-			if !reflect.DeepEqual(d.exp, d.result) {
-				t.Errorf("wanted %+v, got %+v", d.exp, d.result)
-			}
-		})
+	if !reflect.DeepEqual(expected, result) {
+		t.Errorf("wanted %+v, got %+v", expected, result)
 	}
 }
 
