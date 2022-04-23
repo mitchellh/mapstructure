@@ -138,6 +138,11 @@ type Slice struct {
 	Vbar []string
 }
 
+type SliceOfByte struct {
+	Vfoo string
+	Vbar []byte
+}
+
 type SliceOfAlias struct {
 	Vfoo string
 	Vbar SliceAlias
@@ -1652,6 +1657,34 @@ func TestSlice(t *testing.T) {
 
 	testSliceInput(t, inputStringSlice, outputStringSlice)
 	testSliceInput(t, inputStringSlicePointer, outputStringSlice)
+}
+
+func TestNotEmptyByteSlice(t *testing.T) {
+	t.Parallel()
+
+	inputByteSlice := map[string]interface{}{
+		"vfoo": "foo",
+		"vbar": []byte(`{"bar": "bar"}`),
+	}
+
+	result := SliceOfByte{
+		Vfoo: "another foo",
+		Vbar: []byte(`{"bar": "bar bar bar bar bar bar bar bar"}`),
+	}
+
+	err := Decode(inputByteSlice, &result)
+	if err != nil {
+		t.Fatalf("got unexpected error: %s", err)
+	}
+
+	expected := SliceOfByte{
+		Vfoo: "foo",
+		Vbar: []byte(`{"bar": "bar"}`),
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("bad: %#v", result)
+	}
 }
 
 func TestInvalidSlice(t *testing.T) {
