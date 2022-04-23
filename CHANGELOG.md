@@ -1,3 +1,7 @@
+## 1.5.1
+
+* Wrap errors so they're compatible with `errors.Is` and `errors.As` [GH-282]
+
 ## 1.5.0
 
 * New option `IgnoreUntaggedFields` to ignore decoding to any fields
