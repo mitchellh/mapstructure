@@ -1123,6 +1123,8 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 	if valSlice.IsNil() || d.config.ZeroFields {
 		// Make a new slice to hold our result, same size as the original data.
 		valSlice = reflect.MakeSlice(sliceType, dataVal.Len(), dataVal.Len())
+	} else if valSlice.Len() > dataVal.Len() {
+		valSlice = valSlice.Slice(0, dataVal.Len())
 	}
 
 	// Accumulate any errors
