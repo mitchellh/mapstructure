@@ -601,3 +601,27 @@ func TestMapSquash(t *testing.T) {
 		t.Fatal("expected false")
 	}
 }
+
+// GH-238: Empty key name when decoding map from struct with only omitempty flag
+func TestMapOmitEmptyWithEmptyFieldnameInTag(t *testing.T) {
+	type Struct struct {
+		Username string `mapstructure:",omitempty"`
+		Age      int    `mapstructure:",omitempty"`
+	}
+
+	s := Struct{
+		Username: "Joe",
+	}
+	var m map[string]interface{}
+
+	if err := Decode(s, &m); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(m) != 1 {
+		t.Fatalf("fail: %#v", m)
+	}
+	if m["Username"] != "Joe" {
+		t.Fatalf("fail: %#v", m)
+	}
+}
