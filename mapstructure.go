@@ -453,6 +453,13 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 		return nil
 	}
 
+	if outVal.CanAddr() {
+		v := outVal.Addr()
+		if u, ok := v.Interface().(decoder); ok {
+			return u.Decode(input)
+		}
+	}
+
 	if d.config.DecodeHook != nil {
 		// We have a DecodeHook, so let's pre-process the input.
 		var err error
@@ -1539,4 +1546,8 @@ func dereferencePtrToStructIfNeeded(v reflect.Value, tagName string) reflect.Val
 		return deref
 	}
 	return v
+}
+
+type decoder interface {
+	Decode(interface{}) error
 }
