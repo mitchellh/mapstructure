@@ -2732,6 +2732,51 @@ func TestDecoder_IgnoreUntaggedFields(t *testing.T) {
 	}
 }
 
+func TestDecoder_Decode_SquashWithPrefix(t *testing.T) {
+	type Git struct {
+		Remote string `mapstructure:"remote"`
+	}
+
+	type GitHub struct {
+		Git   `mapstructure:"git,squash"`
+		Token string `mapstructure:"token"`
+	}
+
+	type Config struct {
+		GitHub `mapstructure:"github,squash"`
+	}
+
+	var cnf Config
+	decoder, err := NewDecoder(&DecoderConfig{
+		DecodeHook:       nil,
+		ErrorUnused:      false,
+		ZeroFields:       false,
+		WeaklyTypedInput: false,
+		Squash:           false,
+		Metadata:         nil,
+		Result:           &cnf,
+		TagName:          "",
+		MatchName:        nil,
+	})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	input := map[string]interface{}{
+		"GITHUB_GIT_REMOTE": "git@github.com:mitchellh/mapstructure.git",
+		"GITHUB_TOKEN":      "secret",
+	}
+	if err := decoder.Decode(input); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if cnf.Remote != input["GITHUB_GIT_REMOTE"].(string) {
+		t.Errorf("expected: %#v, obtained: %#v", input["GITHUB_GIT_REMOTE"], cnf.Remote)
+	}
+	if cnf.Token != input["GITHUB_TOKEN"].(string) {
+		t.Errorf("expected: %#v, obtained: %#v", input["GITHUB_TOKEN"], cnf.Token)
+	}
+}
+
 func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice) {
 	var result Slice
 	err := Decode(input, &result)

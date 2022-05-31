@@ -1291,20 +1291,23 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 	// Compile the list of all the fields that we're going to be decoding
 	// from all the structs.
 	type field struct {
-		field reflect.StructField
-		val   reflect.Value
+		field  reflect.StructField
+		val    reflect.Value
+		prefix string
 	}
 
 	// remainField is set to a valid field set with the "remain" tag if
 	// we are keeping track of remaining values.
 	var remainField *field
 
-	fields := []field{}
+	var fields []field
+	fieldPrefixes := make(map[reflect.Value]string)
 	for len(structs) > 0 {
 		structVal := structs[0]
-		structs = structs[1:]
-
 		structType := structVal.Type()
+		fieldPrefix := fieldPrefixes[structVal]
+
+		structs = structs[1:]
 
 		for i := 0; i < structType.NumField(); i++ {
 			fieldType := structType.Field(i)
@@ -1338,29 +1341,34 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 						fmt.Errorf("%s: unsupported type for squash: %s", fieldType.Name, fieldVal.Kind()))
 				} else {
 					structs = append(structs, fieldVal)
+					if prefix := tagParts[0]; prefix != "" {
+						fieldPrefixes[fieldVal] = addPrefix(prefix, fieldPrefix)
+					}
 				}
 				continue
 			}
 
 			// Build our field
 			if remain {
-				remainField = &field{fieldType, fieldVal}
+				remainField = &field{fieldType, fieldVal, fieldPrefix}
 			} else {
 				// Normal struct field, store it away
-				fields = append(fields, field{fieldType, fieldVal})
+				fields = append(fields, field{fieldType, fieldVal, fieldPrefix})
 			}
 		}
 	}
 
-	// for fieldType, field := range fields {
 	for _, f := range fields {
-		field, fieldValue := f.field, f.val
+		field, fieldValue, fieldPrefix := f.field, f.val, f.prefix
 		fieldName := field.Name
 
 		tagValue := field.Tag.Get(d.config.TagName)
 		tagValue = strings.SplitN(tagValue, ",", 2)[0]
 		if tagValue != "" {
 			fieldName = tagValue
+		}
+		if fieldPrefix != "" {
+			fieldName = addPrefix(fieldName, fieldPrefix)
 		}
 
 		rawMapKey := reflect.ValueOf(fieldName)
@@ -1539,4 +1547,11 @@ func dereferencePtrToStructIfNeeded(v reflect.Value, tagName string) reflect.Val
 		return deref
 	}
 	return v
+}
+
+func addPrefix(s string, prefix string) string {
+	if prefix == "" {
+		return s
+	}
+	return prefix + "_" + s
 }
