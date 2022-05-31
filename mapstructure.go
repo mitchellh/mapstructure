@@ -518,13 +518,13 @@ func (d *Decoder) decodeBasic(name string, data interface{}, val reflect.Value) 
 			copied = true
 
 			// Make *T
-			copy := reflect.New(elem.Type())
+			clone := reflect.New(elem.Type())
 
 			// *T = elem
-			copy.Elem().Set(elem)
+			clone.Elem().Set(elem)
 
 			// Set elem so we decode into it
-			elem = copy
+			elem = clone
 		}
 
 		// Decode. If we have an error then return. We also return right
@@ -857,7 +857,7 @@ func (d *Decoder) decodeMapFromMap(name string, dataVal reflect.Value, val refle
 	valElemType := valType.Elem()
 
 	// Accumulate errors
-	errors := make([]string, 0)
+	errs := make([]string, 0)
 
 	// If the input data is empty, then we just match what the input data is.
 	if dataVal.Len() == 0 {
@@ -879,7 +879,7 @@ func (d *Decoder) decodeMapFromMap(name string, dataVal reflect.Value, val refle
 		// First decode the key into the proper type
 		currentKey := reflect.Indirect(reflect.New(valKeyType))
 		if err := d.decode(fieldName, k.Interface(), currentKey); err != nil {
-			errors = appendErrors(errors, err)
+			errs = appendErrors(errs, err)
 			continue
 		}
 
@@ -887,7 +887,7 @@ func (d *Decoder) decodeMapFromMap(name string, dataVal reflect.Value, val refle
 		v := dataVal.MapIndex(k).Interface()
 		currentVal := reflect.Indirect(reflect.New(valElemType))
 		if err := d.decode(fieldName, v, currentVal); err != nil {
-			errors = appendErrors(errors, err)
+			errs = appendErrors(errs, err)
 			continue
 		}
 
@@ -898,14 +898,14 @@ func (d *Decoder) decodeMapFromMap(name string, dataVal reflect.Value, val refle
 	val.Set(valMap)
 
 	// If we had errors, return those
-	if len(errors) > 0 {
-		return &Error{errors}
+	if len(errs) > 0 {
+		return &Error{errs}
 	}
 
 	return nil
 }
 
-func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val reflect.Value, valMap reflect.Value) error {
+func (d *Decoder) decodeMapFromStruct(_ string, dataVal reflect.Value, val reflect.Value, valMap reflect.Value) error {
 	typ := dataVal.Type()
 	for i := 0; i < typ.NumField(); i++ {
 		// Get the StructField first since this is a cheap operation. If the
@@ -1128,7 +1128,7 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 	}
 
 	// Accumulate any errors
-	errors := make([]string, 0)
+	errs := make([]string, 0)
 
 	for i := 0; i < dataVal.Len(); i++ {
 		currentData := dataVal.Index(i).Interface()
@@ -1139,7 +1139,7 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 
 		fieldName := name + "[" + strconv.Itoa(i) + "]"
 		if err := d.decode(fieldName, currentData, currentField); err != nil {
-			errors = appendErrors(errors, err)
+			errs = appendErrors(errs, err)
 		}
 	}
 
@@ -1147,8 +1147,8 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 	val.Set(valSlice)
 
 	// If there were errors, we return those
-	if len(errors) > 0 {
-		return &Error{errors}
+	if len(errs) > 0 {
+		return &Error{errs}
 	}
 
 	return nil
@@ -1198,7 +1198,7 @@ func (d *Decoder) decodeArray(name string, data interface{}, val reflect.Value) 
 	}
 
 	// Accumulate any errors
-	errors := make([]string, 0)
+	errs := make([]string, 0)
 
 	for i := 0; i < dataVal.Len(); i++ {
 		currentData := dataVal.Index(i).Interface()
@@ -1206,7 +1206,7 @@ func (d *Decoder) decodeArray(name string, data interface{}, val reflect.Value) 
 
 		fieldName := name + "[" + strconv.Itoa(i) + "]"
 		if err := d.decode(fieldName, currentData, currentField); err != nil {
-			errors = appendErrors(errors, err)
+			errs = appendErrors(errs, err)
 		}
 	}
 
@@ -1214,8 +1214,8 @@ func (d *Decoder) decodeArray(name string, data interface{}, val reflect.Value) 
 	val.Set(valArray)
 
 	// If there were errors, we return those
-	if len(errors) > 0 {
-		return &Error{errors}
+	if len(errs) > 0 {
+		return &Error{errs}
 	}
 
 	return nil
@@ -1280,7 +1280,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 	}
 
 	targetValKeysUnused := make(map[interface{}]struct{})
-	errors := make([]string, 0)
+	errs := make([]string, 0)
 
 	// This slice will keep track of all the structs we'll be decoding.
 	// There can be more than one struct if there are embedded structs
@@ -1337,7 +1337,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 
 			if squash {
 				if fieldVal.Kind() != reflect.Struct {
-					errors = appendErrors(errors,
+					errs = appendErrors(errs,
 						fmt.Errorf("%s: unsupported type for squash: %s", fieldType.Name, fieldVal.Kind()))
 				} else {
 					structs = append(structs, fieldVal)
@@ -1419,7 +1419,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 		}
 
 		if err := d.decode(fieldName, rawMapVal.Interface(), fieldValue); err != nil {
-			errors = appendErrors(errors, err)
+			errs = appendErrors(errs, err)
 		}
 	}
 
@@ -1434,7 +1434,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 
 		// Decode it as-if we were just decoding this map onto our map.
 		if err := d.decodeMap(name, remain, remainField.val); err != nil {
-			errors = appendErrors(errors, err)
+			errs = appendErrors(errs, err)
 		}
 
 		// Set the map to nil so we have none so that the next check will
@@ -1450,7 +1450,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 		sort.Strings(keys)
 
 		err := fmt.Errorf("'%s' has invalid keys: %s", name, strings.Join(keys, ", "))
-		errors = appendErrors(errors, err)
+		errs = appendErrors(errs, err)
 	}
 
 	if d.config.ErrorUnset && len(targetValKeysUnused) > 0 {
@@ -1461,11 +1461,11 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 		sort.Strings(keys)
 
 		err := fmt.Errorf("'%s' has unset fields: %s", name, strings.Join(keys, ", "))
-		errors = appendErrors(errors, err)
+		errs = appendErrors(errs, err)
 	}
 
-	if len(errors) > 0 {
-		return &Error{errors}
+	if len(errs) > 0 {
+		return &Error{errs}
 	}
 
 	// Add the unused keys to the list of unused keys if we're tracking metadata
