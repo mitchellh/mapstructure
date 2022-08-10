@@ -1116,6 +1116,9 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 
 	// If the input value is nil, then don't allocate since empty != nil
 	if dataValKind != reflect.Array && dataVal.IsNil() {
+		if !val.IsNil()&&val.CanSet()&&d.config.ZeroFields {
+			val.Set(reflect.Zero(valType))
+		}
 		return nil
 	}
 
