@@ -204,6 +204,67 @@ func TestComposeDecodeHookFunc_safe_nofuncs(t *testing.T) {
 	}
 }
 
+func TestRecoveringDecodeHook(t *testing.T) {
+	f1 := func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		return data.(string) + "bar", nil
+	}
+	f := RecoveringDecodeHookFunc(f1)
+
+	result, err := DecodeHookExec(
+		f, reflect.ValueOf(""), reflect.ValueOf([]byte("")))
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+	if result.(string) != "bar" {
+		t.Fatalf("bad: %#v", result)
+	}
+}
+
+func TestRecoveringDecodeHook_err(t *testing.T) {
+	f1 := func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if f.Kind() == reflect.String {
+			panic(errors.New("noooo"))
+		}
+		return data, nil
+	}
+	f := RecoveringDecodeHookFunc(f1)
+
+	type myStruct struct {
+		A string
+		B string
+	}
+	src := map[string]string{
+		"A": "one",
+		"B": "two",
+	}
+	dst := &myStruct{}
+	dConf := &DecoderConfig{
+		Result:      dst,
+		ErrorUnused: true,
+		DecodeHook:  f,
+	}
+	d, err := NewDecoder(dConf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = d.Decode(src)
+	if err == nil {
+		t.Fatalf("bad: should return an error")
+	}
+	if err.Error() != `2 error(s) decoding:
+
+* error decoding 'A': internal error while parsing: noooo
+* error decoding 'B': internal error while parsing: noooo` {
+		t.Fatalf("bad: %s", err)
+	}
+}
+
 func TestStringToSliceHookFunc(t *testing.T) {
 	f := StringToSliceHookFunc(",")
 
