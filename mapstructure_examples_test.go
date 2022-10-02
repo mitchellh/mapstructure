@@ -228,6 +228,41 @@ func ExampleDecode_remainingData() {
 	// mapstructure.Person{Name:"Mitchell", Age:91, Other:map[string]interface {}{"email":"mitchell@example.com"}}
 }
 
+func ExampleDecode_remainingDataDecodeBackToMapInFlatFormat() {
+	// Note that the mapstructure tags defined in the struct type
+	// can indicate which fields the values are mapped to.
+	type Person struct {
+		Name  string
+		Age   int
+		Other map[string]interface{} `mapstructure:",remain"`
+	}
+
+	input := map[string]interface{}{
+		"name": "Luffy",
+		"age":  19,
+		"powers": []string{
+			"Rubber Man",
+			"Conqueror Haki",
+		},
+	}
+
+	var person Person
+	err := Decode(input, &person)
+	if err != nil {
+		panic(err)
+	}
+
+	result := make(map[string]interface{})
+	err = Decode(&person, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%#v", result)
+	// Output:
+	// map[string]interface {}{"Age":19, "Name":"Luffy", "powers":[]string{"Rubber Man", "Conqueror Haki"}}
+}
+
 func ExampleDecode_omitempty() {
 	// Add omitempty annotation to avoid map keys for empty values
 	type Family struct {

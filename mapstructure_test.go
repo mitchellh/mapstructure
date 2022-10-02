@@ -2245,6 +2245,38 @@ func TestDecodeTable(t *testing.T) {
 			&map[string]interface{}{"visible": nil},
 			false,
 		},
+		{
+			"remainder with decode to map",
+			&Remainder{
+				A: "Alabasta",
+				Extra: map[string]interface{}{
+					"B": "Baratie",
+					"C": "Cocoyasi",
+				},
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{
+				"A": "Alabasta",
+				"B": "Baratie",
+				"C": "Cocoyasi",
+			},
+			false,
+		},
+		{
+			"remainder with decode to map with non-map field",
+			&struct {
+				A     string
+				Extra *struct{} `mapstructure:",remain"`
+			}{
+				A:     "Alabasta",
+				Extra: nil,
+			},
+			&map[string]interface{}{},
+			&map[string]interface{}{
+				"A": "Alabasta",
+			},
+			true,
+		},
 	}
 
 	for _, tt := range tests {

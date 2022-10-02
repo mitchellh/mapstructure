@@ -283,3 +283,29 @@ func Benchmark_DecodeTagged(b *testing.B) {
 		Decode(input, &result)
 	}
 }
+
+func Benchmark_DecodeWithRemainingFields(b *testing.B) {
+	type Person struct {
+		Name  string
+		Other map[string]interface{} `mapstructure:",remain"`
+	}
+
+	input := map[string]interface{}{
+		"name": "Luffy",
+		"age":  19,
+		"powers": []string{
+			"Rubber Man",
+			"Conqueror Haki",
+		},
+	}
+
+	for i := 0; i < b.N; i++ {
+		// Decoding Map -> Struct
+		var person Person
+		_ = Decode(input, &person)
+
+		// Decoding Struct -> Map
+		result := make(map[string]interface{})
+		_ = Decode(&person, &result)
+	}
+}
