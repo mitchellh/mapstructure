@@ -2788,6 +2788,70 @@ func testArrayInput(t *testing.T, input map[string]interface{}, expected *Array)
 	}
 }
 
+func TestDecode_structToGenericMap(t *testing.T) {
+	type SourceChild struct {
+		String string `mapstructure:"string"`
+	}
+
+	type SourceParent struct {
+		Child SourceChild `mapstructure:"child"`
+	}
+
+	var target map[string]interface{}
+
+	source := SourceParent{
+		Child: SourceChild{
+			String: "hello",
+		},
+	}
+
+	if err := Decode(source, &target); err != nil {
+		t.Fatalf("got error: %s", err)
+	}
+
+	expected := map[string]interface{}{
+		"child": map[string]interface{}{
+			"string": "hello",
+		},
+	}
+
+	if !reflect.DeepEqual(target, expected) {
+		t.Fatalf("bad: \nexpected: %#v\nresult: %#v", expected, target)
+	}
+}
+
+func TestDecode_structToTypedMap(t *testing.T) {
+	type SourceChild struct {
+		String string `mapstructure:"string"`
+	}
+
+	type SourceParent struct {
+		Child SourceChild `mapstructure:"child"`
+	}
+
+	var target map[string]map[string]interface{}
+
+	source := SourceParent{
+		Child: SourceChild{
+			String: "hello",
+		},
+	}
+
+	if err := Decode(source, &target); err != nil {
+		t.Fatalf("got error: %s", err)
+	}
+
+	expected := map[string]map[string]interface{}{
+		"child": {
+			"string": "hello",
+		},
+	}
+
+	if !reflect.DeepEqual(target, expected) {
+		t.Fatalf("bad: \nexpected: %#v\nresult: %#v", expected, target)
+	}
+}
+
 func stringPtr(v string) *string              { return &v }
 func intPtr(v int) *int                       { return &v }
 func uintPtr(v uint) *uint                    { return &v }
