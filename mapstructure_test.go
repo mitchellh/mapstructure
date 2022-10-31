@@ -2790,7 +2790,9 @@ func testArrayInput(t *testing.T, input map[string]interface{}, expected *Array)
 
 func TestDecode_structToGenericMap(t *testing.T) {
 	type SourceChild struct {
-		String string `mapstructure:"string"`
+		String string             `mapstructure:"string"`
+		Int    int                `mapstructure:"int"`
+		Map    map[string]float32 `mapstructure:"map"`
 	}
 
 	type SourceParent struct {
@@ -2802,6 +2804,11 @@ func TestDecode_structToGenericMap(t *testing.T) {
 	source := SourceParent{
 		Child: SourceChild{
 			String: "hello",
+			Int:    1,
+			Map: map[string]float32{
+				"one": 1.0,
+				"two": 2.0,
+			},
 		},
 	}
 
@@ -2812,6 +2819,11 @@ func TestDecode_structToGenericMap(t *testing.T) {
 	expected := map[string]interface{}{
 		"child": map[string]interface{}{
 			"string": "hello",
+			"int":    1,
+			"map": map[string]float32{
+				"one": 1.0,
+				"two": 2.0,
+			},
 		},
 	}
 
@@ -2822,7 +2834,9 @@ func TestDecode_structToGenericMap(t *testing.T) {
 
 func TestDecode_structToTypedMap(t *testing.T) {
 	type SourceChild struct {
-		String string `mapstructure:"string"`
+		String string             `mapstructure:"string"`
+		Int    int                `mapstructure:"int"`
+		Map    map[string]float32 `mapstructure:"map"`
 	}
 
 	type SourceParent struct {
@@ -2834,6 +2848,11 @@ func TestDecode_structToTypedMap(t *testing.T) {
 	source := SourceParent{
 		Child: SourceChild{
 			String: "hello",
+			Int:    1,
+			Map: map[string]float32{
+				"one": 1.0,
+				"two": 2.0,
+			},
 		},
 	}
 
@@ -2844,6 +2863,11 @@ func TestDecode_structToTypedMap(t *testing.T) {
 	expected := map[string]map[string]interface{}{
 		"child": {
 			"string": "hello",
+			"int":    1,
+			"map": map[string]float32{
+				"one": 1.0,
+				"two": 2.0,
+			},
 		},
 	}
 
