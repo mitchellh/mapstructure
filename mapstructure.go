@@ -456,7 +456,7 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	if outVal.CanAddr() {
 		v := outVal.Addr()
 		if u, ok := v.Interface().(decoder); ok {
-			return u.Decode(input)
+			return u.DecodeMapstructure(input)
 		}
 	}
 
@@ -1549,5 +1549,5 @@ func dereferencePtrToStructIfNeeded(v reflect.Value, tagName string) reflect.Val
 }
 
 type decoder interface {
-	Decode(interface{}) error
+	DecodeMapstructure(interface{}) error
 }

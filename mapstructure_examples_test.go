@@ -259,7 +259,7 @@ type Someone struct {
 	Name string
 }
 
-func (p *Someone) Decode(v interface{}) error {
+func (p *Someone) DecodeMapstructure(v interface{}) error {
 	if name, ok := v.(string); ok {
 		p.Name = name
 		return nil
