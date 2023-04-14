@@ -1441,7 +1441,12 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 		}
 		sort.Strings(keys)
 
-		err := fmt.Errorf("'%s' has invalid keys: %s", name, strings.Join(keys, ", "))
+		var err error
+		if name == "" {
+			err = fmt.Errorf("invalid keys: %s", strings.Join(keys, ", "))
+		} else {
+			err = fmt.Errorf("'%s' has invalid keys: %s", name, strings.Join(keys, ", "))
+		}
 		errors = appendErrors(errors, err)
 	}
 
