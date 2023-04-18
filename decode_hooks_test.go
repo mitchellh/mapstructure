@@ -1,6 +1,7 @@
 package mapstructure
 
 import (
+	"encoding/json"
 	"errors"
 	"math/big"
 	"net"
@@ -542,6 +543,8 @@ func TestStructToMapHookFuncTabled(t *testing.T) {
 }
 
 func TestTextUnmarshallerHookFunc(t *testing.T) {
+	type MyString string
+
 	cases := []struct {
 		f, t   reflect.Value
 		result interface{}
@@ -550,8 +553,9 @@ func TestTextUnmarshallerHookFunc(t *testing.T) {
 		{reflect.ValueOf("42"), reflect.ValueOf(big.Int{}), big.NewInt(42), false},
 		{reflect.ValueOf("invalid"), reflect.ValueOf(big.Int{}), nil, true},
 		{reflect.ValueOf("5"), reflect.ValueOf("5"), "5", false},
+		{reflect.ValueOf(json.Number("42")), reflect.ValueOf(big.Int{}), big.NewInt(42), false},
+		{reflect.ValueOf(MyString("42")), reflect.ValueOf(big.Int{}), big.NewInt(42), false},
 	}
-
 	for i, tc := range cases {
 		f := TextUnmarshallerHookFunc()
 		actual, err := DecodeHookExec(f, tc.f, tc.t)
