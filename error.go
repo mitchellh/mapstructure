@@ -68,12 +68,12 @@ func (ns *Namespace) PrependFld(flds ...string) *Namespace {
 	return ns
 }
 
-func (ns Namespace) Len() int {
+func (ns *Namespace) Len() int {
 	return len(ns.items)
 }
 
 // Get() return the i-th namespace item. If i < 0 return the last item.
-func (ns Namespace) Get(i int) interface{} {
+func (ns *Namespace) Get(i int) interface{} {
 	if i < 0 {
 		i = len(ns.items) - 1
 	}
@@ -84,7 +84,7 @@ func (ns Namespace) Get(i int) interface{} {
 }
 
 // GetAsString() as Get() but return the item string representation
-func (ns Namespace) GetAsString(i int) string {
+func (ns *Namespace) GetAsString(i int) string {
 	if item := ns.Get(i); item != nil {
 		str := ns.string(item)
 		return str
@@ -92,7 +92,7 @@ func (ns Namespace) GetAsString(i int) string {
 	return ""
 }
 
-func (ns Namespace) string(item interface{}) string {
+func (ns *Namespace) string(item interface{}) string {
 	var result string
 	switch value := item.(type) {
 	case NamespaceFld:
@@ -105,7 +105,7 @@ func (ns Namespace) string(item interface{}) string {
 	return result
 }
 
-func (ns Namespace) Format(fldSeparator string, idxSeparator string, keySeparator string) string {
+func (ns *Namespace) Format(fldSeparator string, idxSeparator string, keySeparator string) string {
 	var result, sep string
 
 	if len(ns.items) > 0 {
@@ -126,17 +126,19 @@ func (ns Namespace) Format(fldSeparator string, idxSeparator string, keySeparato
 	return result
 }
 
-func (ns Namespace) String() string {
+func (ns *Namespace) String() string {
 	return ns.Format(".", "", "")
 }
 
-func (ns Namespace) Duplicate() *Namespace {
+func (ns *Namespace) Duplicate() *Namespace {
 	return &Namespace{items: ns.items[:]}
 }
 
 type DecodingError struct {
 	namespace Namespace
 	header    string
+	srcValue  interface{}
+	dstValue  interface{}
 	error     error
 }
 
@@ -150,48 +152,69 @@ func NewDecodingErrorWrap(err error) *DecodingError {
 	return &DecodingError{error: err}
 }
 
-func (dErr *DecodingError) WithHeader(format string, args ...interface{}) *DecodingError {
-	dErr.header = fmt.Sprintf(format, args...)
-	return dErr
+func (e *DecodingError) WithHeader(format string, args ...interface{}) *DecodingError {
+	e.header = fmt.Sprintf(format, args...)
+	return e
+}
+
+func (e *DecodingError) WithSrcValue(value interface{}) *DecodingError {
+	e.srcValue = value
+	return e
+}
+
+func (e *DecodingError) WithDstValue(value interface{}) *DecodingError {
+	e.srcValue = value
+	return e
 }
 
 // Duplicate() won't duplicate any wrapped error in DecodingError for it doesn't
-// know how to do it without loosing the error type (i.e. via errors.New()).
-func (dErr DecodingError) Duplicate() *DecodingError {
+// know how to do it without loosing the error type (i.e. via errors.New()). Same
+// applies to the value.
+func (e *DecodingError) Duplicate() *DecodingError {
 	return &DecodingError{
-		namespace: *dErr.namespace.Duplicate(),
-		error:     dErr.error,
+		namespace: *e.namespace.Duplicate(),
+		error:     e.error,
+		srcValue:  e.srcValue,
+		dstValue:  e.dstValue,
 	}
 }
 
-func (dErr *DecodingError) GetNamespace() Namespace {
-	return *dErr.namespace.Duplicate()
+func (e *DecodingError) GetSrcValue() interface{} {
+	return e.srcValue
 }
 
-func (dErr *DecodingError) SetNamespace(namespace Namespace) *DecodingError {
-	dErr.namespace = *namespace.Duplicate()
-	return dErr
+func (e *DecodingError) GetDstValue() interface{} {
+	return e.dstValue
 }
 
-func (dErr *DecodingError) PrependNamespace(ns Namespace) *DecodingError {
-	dErr.namespace.PrependNamespace(ns)
-	return dErr
+func (e *DecodingError) GetNamespace() Namespace {
+	return *e.namespace.Duplicate()
 }
 
-func (dErr *DecodingError) AppendNamespace(ns Namespace) *DecodingError {
-	dErr.namespace.AppendNamespace(ns)
-	return dErr
+func (e *DecodingError) SetNamespace(namespace Namespace) *DecodingError {
+	e.namespace = *namespace.Duplicate()
+	return e
 }
 
-func (dErr *DecodingError) Error() string {
-	if dErr.namespace.Len() > 0 {
-		return fmt.Sprintf("while decoding '%s': %s%s", dErr.namespace, dErr.header, dErr.error.Error())
+func (e *DecodingError) PrependNamespace(ns Namespace) *DecodingError {
+	e.namespace.PrependNamespace(ns)
+	return e
+}
+
+func (e *DecodingError) AppendNamespace(ns Namespace) *DecodingError {
+	e.namespace.AppendNamespace(ns)
+	return e
+}
+
+func (e *DecodingError) Error() string {
+	if e.namespace.Len() > 0 {
+		return fmt.Sprintf("while decoding '%s': %s%s", &e.namespace, e.header, e.error.Error())
 	}
-	return dErr.error.Error()
+	return e.error.Error()
 }
 
-func (dErr *DecodingError) Unwrap() error {
-	return dErr.error
+func (e *DecodingError) Unwrap() error {
+	return e.error
 }
 
 // Error implements the error interface and can represents multiple
@@ -212,7 +235,7 @@ func (e *DecodingErrors) Get(i int) *DecodingError {
 	if i >= len(e.errors) {
 		return nil
 	}
-	return &e.errors[i]
+	return e.errors[i].Duplicate()
 }
 
 func (e *DecodingErrors) Append(err error) *DecodingErrors {
@@ -244,20 +267,20 @@ func (e *DecodingErrors) Duplicate() *DecodingErrors {
 	return e_
 }
 
-func (dErr *DecodingErrors) PrependNamespace(ns Namespace) *DecodingErrors {
-	errors := dErr.errors
-	for i, err := range dErr.errors {
+func (e *DecodingErrors) PrependNamespace(ns Namespace) *DecodingErrors {
+	errors := e.errors
+	for i, err := range e.errors {
 		errors[i] = *err.PrependNamespace(ns)
 	}
-	return dErr
+	return e
 }
 
-func (dErr *DecodingErrors) AppendNamespace(ns Namespace) *DecodingErrors {
-	errors := dErr.errors
-	for i, err := range dErr.errors {
+func (e *DecodingErrors) AppendNamespace(ns Namespace) *DecodingErrors {
+	errors := e.errors
+	for i, err := range e.errors {
 		errors[i] = *err.AppendNamespace(ns)
 	}
-	return dErr
+	return e
 }
 
 func (e *DecodingErrors) Error() string {
