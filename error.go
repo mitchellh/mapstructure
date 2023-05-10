@@ -187,8 +187,8 @@ func (e *DecodingError) GetDstValue() interface{} {
 	return e.dstValue
 }
 
-func (e *DecodingError) GetNamespace() Namespace {
-	return *e.namespace.Duplicate()
+func (e *DecodingError) GetNamespace() *Namespace {
+	return e.namespace.Duplicate()
 }
 
 func (e *DecodingError) SetNamespace(namespace Namespace) *DecodingError {
