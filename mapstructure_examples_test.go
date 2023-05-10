@@ -62,11 +62,11 @@ func ExampleDecode_errors() {
 	// Output:
 	// 5 error(s) decoding:
 	//
-	// * 'Age' expected type 'int', got unconvertible type 'string', value: 'bad value'
-	// * 'Emails[0]' expected type 'string', got unconvertible type 'int', value: '1'
-	// * 'Emails[1]' expected type 'string', got unconvertible type 'int', value: '2'
-	// * 'Emails[2]' expected type 'string', got unconvertible type 'int', value: '3'
-	// * 'Name' expected type 'string', got unconvertible type 'int', value: '123'
+	// * while decoding 'Age': expected type 'int', got unconvertible type 'string', value: 'bad value'
+	// * while decoding 'Emails[0]': expected type 'string', got unconvertible type 'int', value: '1'
+	// * while decoding 'Emails[1]': expected type 'string', got unconvertible type 'int', value: '2'
+	// * while decoding 'Emails[2]': expected type 'string', got unconvertible type 'int', value: '3'
+	// * while decoding 'Name': expected type 'string', got unconvertible type 'int', value: '123'
 }
 
 func ExampleDecode_metadata() {
