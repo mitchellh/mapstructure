@@ -2279,7 +2279,7 @@ func TestInvalidType(t *testing.T) {
 	}
 
 	if derr.Get(0).Error() !=
-		"while decoding 'Vstring': expected type 'string', got unconvertible type 'int', value: '42'" {
+		"@'Vstring': expected type 'string', got unconvertible type 'int', value: '42'" {
 		t.Errorf("got unexpected error: %s", err)
 	}
 
@@ -2297,7 +2297,7 @@ func TestInvalidType(t *testing.T) {
 		t.Fatalf("error should be kind of DecodingErrors, instead: %#v", err)
 	}
 
-	if derr.Get(0).Error() != "while decoding 'Vuint': cannot parse: -42 overflows uint" {
+	if derr.Get(0).Error() != "@'Vuint': cannot parse: -42 overflows uint" {
 		t.Errorf("got unexpected error: %s", err)
 	}
 
@@ -2315,7 +2315,7 @@ func TestInvalidType(t *testing.T) {
 		t.Fatalf("error should be kind of DecodingErrors, instead: %#v", err)
 	}
 
-	if derr.Get(0).Error() != "while decoding 'Vuint': cannot parse: -42.000000 overflows uint" {
+	if derr.Get(0).Error() != "@'Vuint': cannot parse: -42.000000 overflows uint" {
 		t.Errorf("got unexpected error: %s", err)
 	}
 }

@@ -461,7 +461,7 @@ func (d *Decoder) decode(ns Namespace, input interface{}, outVal reflect.Value) 
 		// namespace as parameter (hence the namespace of the returned errors is relative), we
 		// must update the errors namespace before to return them to the caller.
 		if err != nil {
-			return AsLocalizedError(err).PrependNamespace(ns)
+			return AsDecodingErrors(AsLocalizedError(err).PrependNamespace(ns))
 		}
 	}
 
@@ -495,10 +495,10 @@ func (d *Decoder) decode(ns Namespace, input interface{}, outVal reflect.Value) 
 		err = d.decodeFunc(*ns.Duplicate(), input, outVal)
 	default:
 		// If we reached this point then we weren't able to decode it
-		return NewDecodingErrorFormat("unsupported type: '%s'",
+		return AsDecodingErrors(NewDecodingErrorFormat("unsupported type: '%s'",
 			outputKind).SetSrcValue(
 			input).SetDstValue(
-			outVal.Interface()).SetNamespace(ns)
+			outVal.Interface()).SetNamespace(ns))
 	}
 
 	// If we reached here, then we successfully decoded SOMETHING, so
@@ -506,8 +506,10 @@ func (d *Decoder) decode(ns Namespace, input interface{}, outVal reflect.Value) 
 	if addMetaKey && d.config.Metadata != nil && ns.Len() > 0 {
 		d.config.Metadata.Keys = append(d.config.Metadata.Keys, ns.String())
 	}
-
-	return err
+	if err == nil {
+		return nil
+	}
+	return AsDecodingErrors(err)
 }
 
 // This decodes a basic type (bool, int, string, etc.) and sets the

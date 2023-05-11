@@ -167,6 +167,9 @@ func NewDecodingErrorWrap(err error) *DecodingError {
 }
 
 func AsDecodingError(err error) *DecodingError {
+	if err == nil {
+		return nil
+	}
 	if e, ok := err.(*DecodingError); ok {
 		return e
 	}
@@ -229,7 +232,7 @@ func (e *DecodingError) AppendNamespace(ns Namespace) LocalizedError {
 
 func (e *DecodingError) Error() string {
 	if e.namespace.Len() > 0 {
-		return fmt.Sprintf("while decoding '%s': %s%s", &e.namespace, e.header, e.error.Error())
+		return fmt.Sprintf("@'%s': %s%s", &e.namespace, e.header, e.error.Error())
 	}
 	return e.error.Error()
 }
@@ -263,6 +266,16 @@ func NewDecodingErrors() *DecodingErrors {
 	return &DecodingErrors{}
 }
 
+func AsDecodingErrors(err error) *DecodingErrors {
+	if err == nil {
+		return nil
+	}
+	if e, ok := err.(*DecodingErrors); ok {
+		return e
+	}
+	return NewDecodingErrors().Append(err)
+}
+
 func (e *DecodingErrors) SetFormatter(formatter DecodingErrorsFormatter) *DecodingErrors {
 	e.formatter = formatter
 	return e
@@ -288,10 +301,8 @@ func (e *DecodingErrors) Append(err error) *DecodingErrors {
 	switch err_ := err.(type) {
 	case *DecodingErrors:
 		e.errors = append(e.errors, err_.errors...)
-	case *DecodingError:
-		e.errors = append(e.errors, *err_)
 	default:
-		e.errors = append(e.errors, *NewDecodingErrorWrap(err))
+		e.errors = append(e.errors, *AsDecodingError(err))
 	}
 	return e
 }
