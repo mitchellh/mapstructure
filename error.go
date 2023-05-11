@@ -152,17 +152,17 @@ func NewDecodingErrorWrap(err error) *DecodingError {
 	return &DecodingError{error: err}
 }
 
-func (e *DecodingError) WithHeader(format string, args ...interface{}) *DecodingError {
+func (e *DecodingError) SetHeader(format string, args ...interface{}) *DecodingError {
 	e.header = fmt.Sprintf(format, args...)
 	return e
 }
 
-func (e *DecodingError) WithSrcValue(value interface{}) *DecodingError {
+func (e *DecodingError) SetSrcValue(value interface{}) *DecodingError {
 	e.srcValue = value
 	return e
 }
 
-func (e *DecodingError) WithDstValue(value interface{}) *DecodingError {
+func (e *DecodingError) SetDstValue(value interface{}) *DecodingError {
 	e.srcValue = value
 	return e
 }
@@ -219,12 +219,32 @@ func (e *DecodingError) Unwrap() error {
 
 // Error implements the error interface and can represents multiple
 // errors that occur in the course of a single decode.
+
+type DecodingErrorsFormatter func(e *DecodingErrors) string
+
+func DefaultDecodingErrorsFormatter(e *DecodingErrors) string {
+	nErrors := e.Len()
+	points := make([]string, nErrors)
+	for i := 0; i < nErrors; i++ {
+		points[i] = fmt.Sprintf("* %s", e.Get(i).Error())
+	}
+	sort.Strings(points)
+	return fmt.Sprintf("%d error(s) decoding:\n\n%s",
+		nErrors, strings.Join(points, "\n"))
+}
+
 type DecodingErrors struct {
-	errors []DecodingError
+	formatter DecodingErrorsFormatter
+	errors    []DecodingError
 }
 
 func NewDecodingErrors() *DecodingErrors {
 	return &DecodingErrors{}
+}
+
+func (e *DecodingErrors) SetFormatter(formatter DecodingErrorsFormatter) *DecodingErrors {
+	e.formatter = formatter
+	return e
 }
 
 func (e *DecodingErrors) Len() int {
@@ -250,7 +270,7 @@ func (e *DecodingErrors) Append(err error) *DecodingErrors {
 	case *DecodingError:
 		e.errors = append(e.errors, *err_)
 	default:
-		e.errors = append(e.errors, *NewDecodingErrorWrap(e))
+		e.errors = append(e.errors, *NewDecodingErrorWrap(err))
 	}
 	return e
 }
@@ -284,13 +304,11 @@ func (e *DecodingErrors) AppendNamespace(ns Namespace) *DecodingErrors {
 }
 
 func (e *DecodingErrors) Error() string {
-	points := make([]string, len(e.errors))
-	for i, err := range e.errors {
-		points[i] = fmt.Sprintf("* %s", &err)
+	formatter := e.formatter
+	if formatter == nil {
+		formatter = DefaultDecodingErrorsFormatter
 	}
-	sort.Strings(points)
-	return fmt.Sprintf("%d error(s) decoding:\n\n%s",
-		len(e.errors), strings.Join(points, "\n"))
+	return formatter(e)
 }
 
 // WrappedErrors implements the errwrap.Wrapper interface to make this

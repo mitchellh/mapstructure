@@ -81,21 +81,28 @@ func ComposeDecodeHookFunc(fs ...DecodeHookFunc) DecodeHookFunc {
 // If all hooks return an error, OrComposeDecodeHookFunc returns an error concatenating all error messages.
 func OrComposeDecodeHookFunc(ff ...DecodeHookFunc) DecodeHookFunc {
 	return func(a, b reflect.Value) (interface{}, error) {
-		var allErrs string
 		var out interface{}
 		var err error
 
+		allErrs := NewDecodingErrors().SetFormatter(func(e *DecodingErrors) string {
+			fmtErr := ""
+			for i := 0; i < e.Len(); i++ {
+				fmtErr += e.Get(i).Error() + "\n"
+			}
+			return fmtErr
+		})
 		for _, f := range ff {
 			out, err = DecodeHookExec(f, a, b)
 			if err != nil {
-				allErrs += err.Error() + "\n"
+				allErrs.Append(err)
 				continue
 			}
-
 			return out, nil
 		}
-
-		return nil, errors.New(allErrs)
+		if allErrs.Len() > 0 {
+			return nil, allErrs
+		}
+		return nil, nil
 	}
 }
 
