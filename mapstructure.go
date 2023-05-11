@@ -461,15 +461,7 @@ func (d *Decoder) decode(ns Namespace, input interface{}, outVal reflect.Value) 
 		// namespace as parameter (hence the namespace of the returned errors is relative), we
 		// must update the errors namespace before to return them to the caller.
 		if err != nil {
-			switch err_ := err.(type) {
-			case *DecodingError:
-				err_.PrependNamespace(ns)
-			case *DecodingErrors:
-				err_.PrependNamespace(ns)
-			default:
-				err = NewDecodingErrorWrap(err).SetNamespace(ns)
-			}
-			return err
+			return AsLocalizedError(err).PrependNamespace(ns)
 		}
 	}
 

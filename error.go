@@ -134,8 +134,22 @@ func (ns *Namespace) Duplicate() *Namespace {
 	return &Namespace{items: ns.items[:]}
 }
 
+type LocalizedError interface {
+	SetNamespace(ns Namespace) LocalizedError
+	PrependNamespace(ns Namespace) LocalizedError
+	AppendNamespace(ns Namespace) LocalizedError
+	Error() string
+}
+
+func AsLocalizedError(err error) LocalizedError {
+	if e, ok := err.(LocalizedError); ok {
+		return e
+	}
+	return AsDecodingError(err)
+}
+
 type DecodingError struct {
-	namespace Namespace
+	namespace Namespace // namespace refers to the destination
 	header    string
 	srcValue  interface{}
 	dstValue  interface{}
@@ -150,6 +164,13 @@ func NewDecodingErrorFormat(format string, args ...interface{}) *DecodingError {
 
 func NewDecodingErrorWrap(err error) *DecodingError {
 	return &DecodingError{error: err}
+}
+
+func AsDecodingError(err error) *DecodingError {
+	if e, ok := err.(*DecodingError); ok {
+		return e
+	}
+	return NewDecodingErrorWrap(err)
 }
 
 func (e *DecodingError) SetHeader(format string, args ...interface{}) *DecodingError {
@@ -169,7 +190,7 @@ func (e *DecodingError) SetDstValue(value interface{}) *DecodingError {
 
 // Duplicate() won't duplicate any wrapped error in DecodingError for it doesn't
 // know how to do it without loosing the error type (i.e. via errors.New()). Same
-// applies to the value.
+// applies to srcValue & dstValue.
 func (e *DecodingError) Duplicate() *DecodingError {
 	return &DecodingError{
 		namespace: *e.namespace.Duplicate(),
@@ -191,17 +212,17 @@ func (e *DecodingError) GetNamespace() *Namespace {
 	return e.namespace.Duplicate()
 }
 
-func (e *DecodingError) SetNamespace(namespace Namespace) *DecodingError {
+func (e *DecodingError) SetNamespace(namespace Namespace) LocalizedError {
 	e.namespace = *namespace.Duplicate()
 	return e
 }
 
-func (e *DecodingError) PrependNamespace(ns Namespace) *DecodingError {
+func (e *DecodingError) PrependNamespace(ns Namespace) LocalizedError {
 	e.namespace.PrependNamespace(ns)
 	return e
 }
 
-func (e *DecodingError) AppendNamespace(ns Namespace) *DecodingError {
+func (e *DecodingError) AppendNamespace(ns Namespace) LocalizedError {
 	e.namespace.AppendNamespace(ns)
 	return e
 }
@@ -287,18 +308,26 @@ func (e *DecodingErrors) Duplicate() *DecodingErrors {
 	return e_
 }
 
-func (e *DecodingErrors) PrependNamespace(ns Namespace) *DecodingErrors {
+func (e *DecodingErrors) SetNamespace(ns Namespace) LocalizedError {
 	errors := e.errors
 	for i, err := range e.errors {
-		errors[i] = *err.PrependNamespace(ns)
+		errors[i] = *err.SetNamespace(ns).(*DecodingError)
 	}
 	return e
 }
 
-func (e *DecodingErrors) AppendNamespace(ns Namespace) *DecodingErrors {
+func (e *DecodingErrors) PrependNamespace(ns Namespace) LocalizedError {
 	errors := e.errors
 	for i, err := range e.errors {
-		errors[i] = *err.AppendNamespace(ns)
+		errors[i] = *err.PrependNamespace(ns).(*DecodingError)
+	}
+	return e
+}
+
+func (e *DecodingErrors) AppendNamespace(ns Namespace) LocalizedError {
+	errors := e.errors
+	for i, err := range e.errors {
+		errors[i] = *err.AppendNamespace(ns).(*DecodingError)
 	}
 	return e
 }
