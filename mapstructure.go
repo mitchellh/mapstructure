@@ -1030,7 +1030,7 @@ func (d *Decoder) decodeMapFromStruct(ns Namespace, dataVal reflect.Value, val r
 			addrVal := reflect.New(vMap.Type())
 			reflect.Indirect(addrVal).Set(vMap)
 
-			err := d.decode(*ns.Duplicate().AppendFld(keyName), x.Interface(), reflect.Indirect(addrVal))
+			err := d.decode(*ns.Duplicate().AppendKey(keyName), x.Interface(), reflect.Indirect(addrVal))
 			if err != nil {
 				return err
 			}
@@ -1387,7 +1387,7 @@ func (d *Decoder) decodeStructFromMap(ns Namespace, dataVal, val reflect.Value) 
 					errors.Append(NewDecodingErrorFormat("unsupported type for squash: %s",
 						fieldVal.Kind()).SetSrcValue(
 						fieldVal.Interface()).SetDstValue(
-						val.Interface()).SetNamespace(*ns.Duplicate().AppendFld(fieldType.Name)))
+						val.Interface()).SetNamespace(*ns.Duplicate().AppendFld(*NewNamespaceFld().SetName(fieldType.Name))))
 				} else {
 					structs = append(structs, fieldVal)
 				}
@@ -1463,9 +1463,9 @@ func (d *Decoder) decodeStructFromMap(ns Namespace, dataVal, val reflect.Value) 
 		// 	fieldName = ns.String() + "." + fieldName
 		// }
 
-		if err := d.decode(*ns.Duplicate().AppendFld(fieldName),
+		if err := d.decode(*ns.Duplicate().AppendFld(*NewNamespaceFld().SetName(field.Name).SetTag(fieldName).UseName(false)),
 			rawMapVal.Interface(), fieldValue); err != nil {
-			errors.Append(err)
+			errors.Append(AsLocalizedError(err).SetNamespaceUseFieldName(true))
 		}
 	}
 

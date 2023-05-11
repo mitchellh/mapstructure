@@ -9,7 +9,46 @@ import (
 
 type NamespaceKey interface{}
 type NamespaceIdx int
-type NamespaceFld string
+
+type NamespaceFld struct {
+	useName bool
+	name    string
+	tag     string
+}
+
+func NewNamespaceFld() *NamespaceFld {
+	return &NamespaceFld{useName: true}
+}
+
+func (nf *NamespaceFld) UseName(useFieldName bool) *NamespaceFld {
+	nf.useName = useFieldName
+	return nf
+}
+
+func (nf *NamespaceFld) SetName(name string) *NamespaceFld {
+	nf.name = name
+	return nf
+}
+
+func (nf *NamespaceFld) SetTag(tag string) *NamespaceFld {
+	nf.tag = tag
+	return nf
+}
+
+func (nf *NamespaceFld) GetName() string {
+	return nf.name
+}
+
+func (nf *NamespaceFld) GetTag() string {
+	return nf.tag
+}
+
+func (nf *NamespaceFld) String() string {
+	if nf.useName {
+		return nf.name
+	}
+	return nf.tag
+}
 
 type Namespace struct {
 	items []interface{}
@@ -55,16 +94,25 @@ func (ns *Namespace) PrependIdx(idxs ...int) *Namespace {
 	return ns
 }
 
-func (ns *Namespace) AppendFld(flds ...string) *Namespace {
+func (ns *Namespace) AppendFld(flds ...NamespaceFld) *Namespace {
 	for _, f := range flds {
-		ns.items = append(ns.items, NamespaceFld(f))
+		ns.items = append(ns.items, f)
 	}
 	return ns
 }
 
-func (ns *Namespace) PrependFld(flds ...string) *Namespace {
+func (ns *Namespace) PrependFld(flds ...NamespaceFld) *Namespace {
 	ppns := (&Namespace{}).AppendFld(flds...)
 	ns.items = append(ppns.items, ns.items...)
+	return ns
+}
+
+func (ns *Namespace) UseFldName(useFldName bool) *Namespace {
+	for i, item := range ns.items {
+		if fld, ok := item.(NamespaceFld); ok {
+			ns.items[i] = *fld.UseName(useFldName)
+		}
+	}
 	return ns
 }
 
@@ -96,7 +144,7 @@ func (ns *Namespace) string(item interface{}) string {
 	var result string
 	switch value := item.(type) {
 	case NamespaceFld:
-		result = string(value)
+		result = value.String()
 	case NamespaceIdx:
 		result = fmt.Sprintf("[%d]", int(value))
 	case NamespaceKey:
@@ -138,6 +186,7 @@ type LocalizedError interface {
 	SetNamespace(ns Namespace) LocalizedError
 	PrependNamespace(ns Namespace) LocalizedError
 	AppendNamespace(ns Namespace) LocalizedError
+	SetNamespaceUseFieldName(useFieldName bool) LocalizedError
 	Error() string
 }
 
@@ -227,6 +276,11 @@ func (e *DecodingError) PrependNamespace(ns Namespace) LocalizedError {
 
 func (e *DecodingError) AppendNamespace(ns Namespace) LocalizedError {
 	e.namespace.AppendNamespace(ns)
+	return e
+}
+
+func (e *DecodingError) SetNamespaceUseFieldName(useFieldName bool) LocalizedError {
+	e.namespace.UseFldName(useFieldName)
 	return e
 }
 
@@ -339,6 +393,13 @@ func (e *DecodingErrors) AppendNamespace(ns Namespace) LocalizedError {
 	errors := e.errors
 	for i, err := range e.errors {
 		errors[i] = *err.AppendNamespace(ns).(*DecodingError)
+	}
+	return e
+}
+
+func (e *DecodingErrors) SetNamespaceUseFieldName(useFieldName bool) LocalizedError {
+	for i, err := range e.errors {
+		e.errors[i] = *err.SetNamespaceUseFieldName(useFieldName).(*DecodingError)
 	}
 	return e
 }
