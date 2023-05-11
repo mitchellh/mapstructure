@@ -1387,7 +1387,7 @@ func (d *Decoder) decodeStructFromMap(ns Namespace, dataVal, val reflect.Value) 
 					errors.Append(NewDecodingErrorFormat("unsupported type for squash: %s",
 						fieldVal.Kind()).SetSrcValue(
 						fieldVal.Interface()).SetDstValue(
-						val.Interface()).SetNamespace(*ns.Duplicate().AppendFld(*NewNamespaceFld().SetName(fieldType.Name))))
+						val.Interface()).SetNamespace(*ns.Duplicate().AppendFldName(fieldType.Name)))
 				} else {
 					structs = append(structs, fieldVal)
 				}

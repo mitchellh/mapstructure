@@ -107,6 +107,30 @@ func (ns *Namespace) PrependFld(flds ...NamespaceFld) *Namespace {
 	return ns
 }
 
+func (ns *Namespace) PrependFldName(fldNames ...string) *Namespace {
+	ns.items = append(NewNamespace().AppendFldName(fldNames...).items, ns.items...)
+	return ns
+}
+
+func (ns *Namespace) AppendFldName(fldNames ...string) *Namespace {
+	for _, fn := range fldNames {
+		ns.items = append(ns.items, *NewNamespaceFld().SetName(fn))
+	}
+	return ns
+}
+
+func (ns *Namespace) PrependFldTag(fldTags ...string) *Namespace {
+	ns.items = append(NewNamespace().AppendFldName(fldTags...).items, ns.items...)
+	return ns
+}
+
+func (ns *Namespace) AppendFldTag(fldTags ...string) *Namespace {
+	for _, tn := range fldTags {
+		ns.items = append(ns.items, *NewNamespaceFld().SetName(tn))
+	}
+	return ns
+}
+
 func (ns *Namespace) UseFldName(useFldName bool) *Namespace {
 	for i, item := range ns.items {
 		if fld, ok := item.(NamespaceFld); ok {
