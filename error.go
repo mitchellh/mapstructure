@@ -11,22 +11,19 @@ type NamespaceKey interface{}
 type NamespaceIdx int
 
 type NamespaceFld struct {
-	useName bool
-	name    string
-	tag     string
+	useTag bool
+	name   string
+	tag    string
 }
 
-func NewNamespaceFld() *NamespaceFld {
-	return &NamespaceFld{useName: true}
+func NewNamespaceFld(name string) *NamespaceFld {
+	return &NamespaceFld{
+		name: name,
+	}
 }
 
-func (nf *NamespaceFld) UseName(useFieldName bool) *NamespaceFld {
-	nf.useName = useFieldName
-	return nf
-}
-
-func (nf *NamespaceFld) SetName(name string) *NamespaceFld {
-	nf.name = name
+func (nf *NamespaceFld) UseTag(useTag bool) *NamespaceFld {
+	nf.useTag = useTag
 	return nf
 }
 
@@ -44,18 +41,53 @@ func (nf *NamespaceFld) GetTag() string {
 }
 
 func (nf *NamespaceFld) String() string {
-	if nf.useName {
-		return nf.name
+	// tag wille be used if it's defined
+	if nf.useTag && nf.tag != "" {
+		return nf.tag
 	}
-	return nf.tag
+	return nf.name
+}
+
+type NamespaceFormatter func(ns Namespace) string
+
+func NamespaceFormatterDefault(ns Namespace) string {
+	var result string
+
+	valueToStr := func(item interface{}, sep string) {
+		switch value := item.(type) {
+		case NamespaceFld:
+			result += sep + value.String()
+		case NamespaceIdx:
+			result += fmt.Sprintf("[%d]", int(value))
+		case NamespaceKey:
+			result += fmt.Sprintf("[%v]", value)
+		}
+	}
+	if len(ns.items) > 0 {
+		valueToStr(ns.items[0], "")
+	}
+	for i := 1; i < len(ns.items); i++ {
+		valueToStr(ns.items[i], ".")
+	}
+	return result
 }
 
 type Namespace struct {
-	items []interface{}
+	formatter NamespaceFormatter
+	items     []interface{}
 }
 
 func NewNamespace() *Namespace {
-	return &Namespace{}
+	return &Namespace{
+		formatter: NamespaceFormatterDefault,
+	}
+}
+
+func (ns *Namespace) SetFormatter(formatter NamespaceFormatter) *Namespace {
+	if formatter != nil {
+		ns.formatter = formatter
+	}
+	return ns
 }
 
 func (ns *Namespace) AppendNamespace(namespace Namespace) *Namespace {
@@ -107,34 +139,26 @@ func (ns *Namespace) PrependFld(flds ...NamespaceFld) *Namespace {
 	return ns
 }
 
+// AppendFldName() just calls AppendFld(): makes the syntax a little lighter
+func (ns *Namespace) AppendFldName(fldNames ...string) *Namespace {
+	for _, fn := range fldNames {
+		ns.items = append(ns.items, *NewNamespaceFld(fn))
+	}
+	return ns
+}
+
+// PrependFldName() just calls PrependFld(): makes the syntax a little lighter
 func (ns *Namespace) PrependFldName(fldNames ...string) *Namespace {
 	ns.items = append(NewNamespace().AppendFldName(fldNames...).items, ns.items...)
 	return ns
 }
 
-func (ns *Namespace) AppendFldName(fldNames ...string) *Namespace {
-	for _, fn := range fldNames {
-		ns.items = append(ns.items, *NewNamespaceFld().SetName(fn))
-	}
-	return ns
-}
-
-func (ns *Namespace) PrependFldTag(fldTags ...string) *Namespace {
-	ns.items = append(NewNamespace().AppendFldName(fldTags...).items, ns.items...)
-	return ns
-}
-
-func (ns *Namespace) AppendFldTag(fldTags ...string) *Namespace {
-	for _, tn := range fldTags {
-		ns.items = append(ns.items, *NewNamespaceFld().SetName(tn))
-	}
-	return ns
-}
-
-func (ns *Namespace) UseFldName(useFldName bool) *Namespace {
+// UseFldTag() set preference on using the tag in place of the field name
+// when the former it's defined. It affects the vale returned by String()
+func (ns *Namespace) UseFldTag(useFldTag bool) *Namespace {
 	for i, item := range ns.items {
 		if fld, ok := item.(NamespaceFld); ok {
-			ns.items[i] = *fld.UseName(useFldName)
+			ns.items[i] = *fld.UseTag(useFldTag)
 		}
 	}
 	return ns
@@ -155,62 +179,21 @@ func (ns *Namespace) Get(i int) interface{} {
 	return ns.items[i]
 }
 
-// GetAsString() as Get() but return the item string representation
-func (ns *Namespace) GetAsString(i int) string {
-	if item := ns.Get(i); item != nil {
-		str := ns.string(item)
-		return str
-	}
-	return ""
-}
-
-func (ns *Namespace) string(item interface{}) string {
-	var result string
-	switch value := item.(type) {
-	case NamespaceFld:
-		result = value.String()
-	case NamespaceIdx:
-		result = fmt.Sprintf("[%d]", int(value))
-	case NamespaceKey:
-		result = fmt.Sprintf("[%v]", value)
-	}
-	return result
-}
-
-func (ns *Namespace) Format(fldSeparator string, idxSeparator string, keySeparator string) string {
-	var result, sep string
-
-	if len(ns.items) > 0 {
-		result = ns.string(ns.items[0])
-	}
-	for i := 1; i < len(ns.items); i++ {
-		item := ns.items[i]
-		switch item.(type) {
-		case NamespaceFld:
-			sep = fldSeparator
-		case NamespaceIdx:
-			sep = idxSeparator
-		case NamespaceKey:
-			sep = keySeparator
-		}
-		result += sep + ns.string(item)
-	}
-	return result
-}
-
 func (ns *Namespace) String() string {
-	return ns.Format(".", "", "")
+	return ns.formatter(*ns)
 }
 
 func (ns *Namespace) Duplicate() *Namespace {
-	return &Namespace{items: ns.items[:]}
+	ns_ := *ns
+	ns_.items = ns.items[:]
+	return &ns_
 }
 
 type LocalizedError interface {
 	SetNamespace(ns Namespace) LocalizedError
 	PrependNamespace(ns Namespace) LocalizedError
 	AppendNamespace(ns Namespace) LocalizedError
-	SetNamespaceUseFieldName(useFieldName bool) LocalizedError
+	SetNamespaceUseFldTag(useFieldTag bool) LocalizedError
 	Error() string
 }
 
@@ -221,22 +204,78 @@ func AsLocalizedError(err error) LocalizedError {
 	return AsDecodingError(err)
 }
 
+type DecodingErrorKind int
+
+const (
+	// destination type is not supported
+	DecodingErrorUnsupportedType DecodingErrorKind = iota
+	// source type is unexpected: can't be assigned/converted to destination
+	DecodingErrorUnexpectedType
+	// source value of a different type cannot be parsed into the destination type (WeaklyTypedInput)
+	DecodingErrorParseFailure
+	// source value of a different type cannot be parsed into the destination type because of overflow (WeaklyTypedInput)
+	DecodingErrorParseOverflow
+	// source value of a different type cannot be decoded into the destination type through encoding/json pkg
+	DecodingErrorJSONDecodeFailure
+	// failed to squash a source struct field into destination (field's not a struct)
+	DecodingErrorSrcSquashFailure
+	// failed to squash a destination struct field into destination (field's not a struct)
+	DecodingErrorDstSquashFailure
+	// destination value is an array and source value is of greater size
+	DecodingErrorIncompatibleSize
+	// when destination is a struct and source is a map some keys of which do not correspond to any struct field (with ErrorUnused flag)
+	DecodingErrorUnusedKeys
+	// when destination is a struct and source is a map whose keys do not cover all the struct fields (with ErrorUnset flag)
+	DecodingErrorUnsetFields
+	// a generic error is a not better specified one
+	DecodingErrorGeneric
+	// custom user error, which also marks the border between internal mapstructure errors and new possible user defined errors
+	DecodingErrorCustom
+)
+
+func (k DecodingErrorKind) String() string {
+	switch k {
+	case DecodingErrorUnsupportedType:
+		return "unsupported type"
+	case DecodingErrorUnexpectedType:
+		return "unexpected type"
+	case DecodingErrorParseFailure:
+		return "parse failure"
+	case DecodingErrorJSONDecodeFailure:
+		return "JSON decode failure"
+	case DecodingErrorSrcSquashFailure:
+		return "source squash failure"
+	case DecodingErrorDstSquashFailure:
+		return "destination squash failure"
+	case DecodingErrorIncompatibleSize:
+		return "incompatible size"
+	case DecodingErrorUnusedKeys:
+		return "unused keys"
+	case DecodingErrorUnsetFields:
+		return "unset fields"
+	case DecodingErrorGeneric:
+		return "generic error"
+	case DecodingErrorCustom:
+		fallthrough
+	default:
+		return fmt.Sprintf("custom(%d)", k)
+	}
+}
+
 type DecodingError struct {
 	namespace Namespace // namespace refers to the destination
+	kind      DecodingErrorKind
 	header    string
 	srcValue  interface{}
 	dstValue  interface{}
 	error     error
 }
 
-func NewDecodingErrorFormat(format string, args ...interface{}) *DecodingError {
+func NewDecodingError(kind DecodingErrorKind) *DecodingError {
 	return &DecodingError{
-		error: fmt.Errorf(format, args...),
+		kind:  kind,
+		error: fmt.Errorf("%s", kind),
 	}
-}
-
-func NewDecodingErrorWrap(err error) *DecodingError {
-	return &DecodingError{error: err}
 }
 
 func AsDecodingError(err error) *DecodingError {
@@ -246,7 +285,17 @@ func AsDecodingError(err error) *DecodingError {
 	if e, ok := err.(*DecodingError); ok {
 		return e
 	}
-	return NewDecodingErrorWrap(err)
+	return NewDecodingError(DecodingErrorGeneric).Wrap(err)
+}
+
+func (e *DecodingError) Format(format string, args ...interface{}) *DecodingError {
+	return &DecodingError{
+		error: fmt.Errorf(format, args...),
+	}
+}
+
+func (e *DecodingError) Wrap(err error) *DecodingError {
+	return &DecodingError{error: err}
 }
 
 func (e *DecodingError) SetHeader(format string, args ...interface{}) *DecodingError {
@@ -268,12 +317,17 @@ func (e *DecodingError) SetDstValue(value interface{}) *DecodingError {
 // know how to do it without loosing the error type (i.e. via errors.New()). Same
 // applies to srcValue & dstValue.
 func (e *DecodingError) Duplicate() *DecodingError {
-	return &DecodingError{
-		namespace: *e.namespace.Duplicate(),
-		error:     e.error,
-		srcValue:  e.srcValue,
-		dstValue:  e.dstValue,
-	}
+	e_ := *e
+	e_.namespace = *e.namespace.Duplicate()
+	return &e_
+}
+
+func (e *DecodingError) IsCustom() bool {
+	return e.kind >= DecodingErrorCustom
+}
+
+func (e *DecodingError) GetKind() DecodingErrorKind {
+	return e.kind
 }
 
 func (e *DecodingError) GetSrcValue() interface{} {
@@ -303,8 +357,8 @@ func (e *DecodingError) AppendNamespace(ns Namespace) LocalizedError {
 	return e
 }
 
-func (e *DecodingError) SetNamespaceUseFieldName(useFieldName bool) LocalizedError {
-	e.namespace.UseFldName(useFieldName)
+func (e *DecodingError) SetNamespaceUseFldTag(useFldTag bool) LocalizedError {
+	e.namespace.UseFldTag(useFldTag)
 	return e
 }
 
@@ -325,10 +379,10 @@ func (e *DecodingError) Unwrap() error {
 type DecodingErrorsFormatter func(e *DecodingErrors) string
 
 func DefaultDecodingErrorsFormatter(e *DecodingErrors) string {
-	nErrors := e.Len()
+	nErrors := len(e.errors)
 	points := make([]string, nErrors)
 	for i := 0; i < nErrors; i++ {
-		points[i] = fmt.Sprintf("* %s", e.Get(i).Error())
+		points[i] = fmt.Sprintf("* %s", e.errors[i].Error())
 	}
 	sort.Strings(points)
 	return fmt.Sprintf("%d error(s) decoding:\n\n%s",
@@ -421,9 +475,9 @@ func (e *DecodingErrors) AppendNamespace(ns Namespace) LocalizedError {
 	return e
 }
 
-func (e *DecodingErrors) SetNamespaceUseFieldName(useFieldName bool) LocalizedError {
+func (e *DecodingErrors) SetNamespaceUseFldTag(useFldTag bool) LocalizedError {
 	for i, err := range e.errors {
-		e.errors[i] = *err.SetNamespaceUseFieldName(useFieldName).(*DecodingError)
+		e.errors[i] = *err.SetNamespaceUseFldTag(useFldTag).(*DecodingError)
 	}
 	return e
 }

@@ -495,7 +495,7 @@ func (d *Decoder) decode(ns Namespace, input interface{}, outVal reflect.Value) 
 		err = d.decodeFunc(*ns.Duplicate(), input, outVal)
 	default:
 		// If we reached this point then we weren't able to decode it
-		return AsDecodingErrors(NewDecodingErrorFormat("unsupported type: '%s'",
+		return AsDecodingErrors(NewDecodingError(DecodingErrorUnsupportedType).Format("unsupported type: '%s'",
 			outputKind).SetSrcValue(
 			input).SetDstValue(
 			outVal.Interface()).SetNamespace(ns))
@@ -561,7 +561,8 @@ func (d *Decoder) decodeBasic(ns Namespace, data interface{}, val reflect.Value)
 
 	dataValType := dataVal.Type()
 	if !dataValType.AssignableTo(val.Type()) {
-		return NewDecodingErrorFormat("expected type '%s', got '%s'",
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
+			"expected type '%s', got '%s'",
 			val.Type(), dataValType).SetSrcValue(
 			data).SetDstValue(
 			val.Interface()).SetNamespace(ns)
@@ -615,7 +616,8 @@ func (d *Decoder) decodeString(ns Namespace, data interface{}, val reflect.Value
 	}
 
 	if !converted {
-		return NewDecodingErrorFormat("expected type '%s', got unconvertible type '%s', value: '%v'",
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
+			"expected type '%s', got unconvertible type '%s', value: '%v'",
 			val.Type(), dataVal.Type(), data).SetSrcValue(
 			data).SetDstValue(
 			val.Interface()).SetNamespace(ns)
@@ -652,7 +654,7 @@ func (d *Decoder) decodeInt(ns Namespace, data interface{}, val reflect.Value) e
 		if err == nil {
 			val.SetInt(i)
 		} else {
-			return NewDecodingErrorWrap(err).SetHeader(
+			return NewDecodingError(DecodingErrorParseFailure).Wrap(err).SetHeader(
 				"cannot parse as int: ").SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
@@ -661,14 +663,15 @@ func (d *Decoder) decodeInt(ns Namespace, data interface{}, val reflect.Value) e
 		jn := data.(json.Number)
 		i, err := jn.Int64()
 		if err != nil {
-			return NewDecodingErrorWrap(err).SetHeader(
+			return NewDecodingError(DecodingErrorJSONDecodeFailure).Wrap(err).SetHeader(
 				"cannot decode json.Number: ").SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
 		}
 		val.SetInt(i)
 	default:
-		return NewDecodingErrorFormat("expected type '%s', got unconvertible type '%s', value: '%v'",
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
+			"expected type '%s', got unconvertible type '%s', value: '%v'",
 			val.Type(), dataVal.Type(), data).SetSrcValue(
 			data).SetDstValue(
 			val.Interface()).SetNamespace(ns)
@@ -686,7 +689,7 @@ func (d *Decoder) decodeUint(ns Namespace, data interface{}, val reflect.Value) 
 	case dataKind == reflect.Int:
 		i := dataVal.Int()
 		if i < 0 && !d.config.WeaklyTypedInput {
-			return NewDecodingErrorFormat("cannot parse: %d overflows uint",
+			return NewDecodingError(DecodingErrorParseOverflow).Format("cannot parse: %d overflows uint",
 				i).SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
@@ -697,7 +700,7 @@ func (d *Decoder) decodeUint(ns Namespace, data interface{}, val reflect.Value) 
 	case dataKind == reflect.Float32:
 		f := dataVal.Float()
 		if f < 0 && !d.config.WeaklyTypedInput {
-			return NewDecodingErrorFormat("cannot parse: %f overflows uint",
+			return NewDecodingError(DecodingErrorParseOverflow).Format("cannot parse: %f overflows uint",
 				f).SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
@@ -719,7 +722,7 @@ func (d *Decoder) decodeUint(ns Namespace, data interface{}, val reflect.Value) 
 		if err == nil {
 			val.SetUint(i)
 		} else {
-			return NewDecodingErrorWrap(err).SetHeader(
+			return NewDecodingError(DecodingErrorParseFailure).Wrap(err).SetHeader(
 				"cannot parse as uint: ").SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
@@ -728,14 +731,14 @@ func (d *Decoder) decodeUint(ns Namespace, data interface{}, val reflect.Value) 
 		jn := data.(json.Number)
 		i, err := strconv.ParseUint(string(jn), 0, 64)
 		if err != nil {
-			return NewDecodingErrorWrap(err).SetHeader(
+			return NewDecodingError(DecodingErrorJSONDecodeFailure).Wrap(err).SetHeader(
 				"cannot parse as json.Number: ").SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
 		}
 		val.SetUint(i)
 	default:
-		return NewDecodingErrorFormat(
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
 			"expected type '%s', got unconvertible type '%s', value: '%v'",
 			val.Type(), dataVal.Type(), data).SetSrcValue(
 			data).SetDstValue(
@@ -765,13 +768,13 @@ func (d *Decoder) decodeBool(ns Namespace, data interface{}, val reflect.Value) 
 		} else if dataVal.String() == "" {
 			val.SetBool(false)
 		} else {
-			return NewDecodingErrorWrap(err).SetHeader(
+			return NewDecodingError(DecodingErrorParseFailure).Wrap(err).SetHeader(
 				"cannot parse as bool: ").SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
 		}
 	default:
-		return NewDecodingErrorFormat(
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
 			"expected type '%s', got unconvertible type '%s', value: '%v'",
 			val.Type(), dataVal.Type(), data).SetSrcValue(
 			data).SetDstValue(
@@ -809,7 +812,7 @@ func (d *Decoder) decodeFloat(ns Namespace, data interface{}, val reflect.Value)
 		if err == nil {
 			val.SetFloat(f)
 		} else {
-			return NewDecodingErrorWrap(err).SetHeader(
+			return NewDecodingError(DecodingErrorParseFailure).Wrap(err).SetHeader(
 				"cannot parse as float: ").SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
@@ -818,14 +821,14 @@ func (d *Decoder) decodeFloat(ns Namespace, data interface{}, val reflect.Value)
 		jn := data.(json.Number)
 		i, err := jn.Float64()
 		if err != nil {
-			return NewDecodingErrorWrap(err).SetHeader(
+			return NewDecodingError(DecodingErrorJSONDecodeFailure).Wrap(err).SetHeader(
 				"cannot parse as json.Number: ").SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
 		}
 		val.SetFloat(i)
 	default:
-		return NewDecodingErrorFormat(
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
 			"expected type '%s', got unconvertible type '%s', value: '%v'",
 			val.Type(), dataVal.Type(), data).SetSrcValue(
 			data).SetDstValue(
@@ -867,7 +870,8 @@ func (d *Decoder) decodeMap(ns Namespace, data interface{}, val reflect.Value) e
 		fallthrough
 
 	default:
-		return NewDecodingErrorFormat("expected a map, got '%s'",
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
+			"expected a map, got '%s'",
 			dataVal.Kind()).SetSrcValue(
 			data).SetDstValue(
 			val.Interface()).SetNamespace(ns)
@@ -882,7 +886,7 @@ func (d *Decoder) decodeMapFromSlice(ns Namespace, dataVal reflect.Value, val re
 	}
 
 	for i := 0; i < dataVal.Len(); i++ {
-		// CHECK: namespace refers to the "to" value not the "from"
+		// namespace refers to the "to" value not the "from"
 		err := d.decode(*ns.Duplicate(), dataVal.Index(i).Interface(), val)
 		if err != nil {
 			return err
@@ -917,7 +921,7 @@ func (d *Decoder) decodeMapFromMap(ns Namespace, dataVal reflect.Value, val refl
 	for _, k := range dataVal.MapKeys() {
 		// First decode the key into the proper type
 		currentKey := reflect.Indirect(reflect.New(valKeyType))
-		// CHECK
+
 		if err := d.decode(*ns.Duplicate().AppendKey(k.Interface()), k.Interface(), currentKey); err != nil {
 			errors.Append(err)
 			continue
@@ -957,10 +961,14 @@ func (d *Decoder) decodeMapFromStruct(ns Namespace, dataVal reflect.Value, val r
 		// to the map value.
 		v := dataVal.Field(i)
 		if !v.Type().AssignableTo(valMap.Type().Elem()) {
-			return NewDecodingErrorFormat("cannot assign type '%s' to map value field of type '%s'",
-				v.Type(), valMap.Type().Elem()).SetSrcValue(
-				v.Interface()).SetDstValue(
-				val.Interface()).SetNamespace(ns) // CHECK
+			// We localize the error at map level. The source value will be the whole structure and
+			// the destination the map, because if just one struct field is not assignable then the
+			// whole struct cannot be mapped.
+			return NewDecodingError(DecodingErrorUnexpectedType).Format(
+				"cannot assign field '%s' of type '%s' to map value of type '%s'",
+				f.Name, v.Type(), valMap.Type().Elem()).SetSrcValue(
+				dataVal.Interface()).SetDstValue(
+				val.Interface()).SetNamespace(ns)
 		}
 
 		tagValue := f.Tag.Get(d.config.TagName)
@@ -995,10 +1003,12 @@ func (d *Decoder) decodeMapFromStruct(ns Namespace, dataVal reflect.Value, val r
 
 				// The final type must be a struct
 				if dv.Kind() != reflect.Struct {
-					return NewDecodingErrorFormat("cannot squash non-struct type '%s'",
+					// As before, we localize the error at the map level
+					return NewDecodingError(DecodingErrorSrcSquashFailure).Format(
+						"cannot squash non-struct type '%s'",
 						dv.Type()).SetSrcValue(
-						v.Interface()).SetDstValue(
-						val.Interface()).SetNamespace(ns) // CHECK
+						dataVal.Interface()).SetDstValue(
+						val.Interface()).SetNamespace(ns)
 				}
 			}
 			if keyNameTagValue := tagValue[:index]; keyNameTagValue != "" {
@@ -1111,7 +1121,8 @@ func (d *Decoder) decodeFunc(ns Namespace, data interface{}, val reflect.Value) 
 	// into that. Then set the value of the pointer to this type.
 	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	if val.Type() != dataVal.Type() {
-		return NewDecodingErrorFormat("expected type '%s', got unconvertible type '%s', value: '%v'",
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
+			"expected type '%s', got unconvertible type '%s', value: '%v'",
 			val.Type(), dataVal.Type(), data).SetSrcValue(
 			data).SetDstValue(
 			val.Interface()).SetNamespace(ns)
@@ -1155,7 +1166,8 @@ func (d *Decoder) decodeSlice(ns Namespace, data interface{}, val reflect.Value)
 			}
 		}
 
-		return NewDecodingErrorFormat("source data must be an array or slice, got %s",
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
+			"source data must be an array or slice, got %s",
 			dataValKind).SetSrcValue(
 			data).SetDstValue(
 			val.Interface()).SetNamespace(ns)
@@ -1227,14 +1239,16 @@ func (d *Decoder) decodeArray(ns Namespace, data interface{}, val reflect.Value)
 				}
 			}
 
-			return NewDecodingErrorFormat("source data must be an array or slice, got %s",
+			return NewDecodingError(DecodingErrorUnexpectedType).Format(
+				"source data must be an array or slice, got %s",
 				dataValKind).SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
 
 		}
 		if dataVal.Len() > arrayType.Len() {
-			return NewDecodingErrorFormat("expected source data to have length less or equal to %d, got %d",
+			return NewDecodingError(DecodingErrorIncompatibleSize).Format(
+				"expected source data to have length less or equal to %d, got %d",
 				arrayType.Len(), dataVal.Len()).SetSrcValue(
 				data).SetDstValue(
 				val.Interface()).SetNamespace(ns)
@@ -1305,7 +1319,8 @@ func (d *Decoder) decodeStruct(ns Namespace, data interface{}, val reflect.Value
 		return err
 
 	default:
-		return NewDecodingErrorFormat("expected a map, got '%s'",
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
+			"expected a map, got '%s'",
 			dataVal.Kind()).SetSrcValue(
 			data).SetDstValue(
 			val.Interface()).SetNamespace(ns)
@@ -1315,7 +1330,8 @@ func (d *Decoder) decodeStruct(ns Namespace, data interface{}, val reflect.Value
 func (d *Decoder) decodeStructFromMap(ns Namespace, dataVal, val reflect.Value) error {
 	dataValType := dataVal.Type()
 	if kind := dataValType.Key().Kind(); kind != reflect.String && kind != reflect.Interface {
-		return NewDecodingErrorFormat("needs a map with string keys, has '%s' keys",
+		return NewDecodingError(DecodingErrorUnexpectedType).Format(
+			"needs a map with string keys, has '%s' keys",
 			dataValType.Key().Kind()).SetSrcValue(
 			dataVal.Interface()).SetDstValue(
 			val.Interface()).SetNamespace(ns)
@@ -1383,8 +1399,11 @@ func (d *Decoder) decodeStructFromMap(ns Namespace, dataVal, val reflect.Value) 
 
 			if squash {
 				if fieldVal.Kind() != reflect.Struct {
-					// CHECK
-					errors.Append(NewDecodingErrorFormat("unsupported type for squash: %s",
+					// This is a special case in which the error is not related to a source value but
+					// to the impossibility of squashing a struct field of the destination (which is not
+					// a struct) into the destination itself.
+					errors.Append(NewDecodingError(DecodingErrorDstSquashFailure).Format(
+						"unsupported type for squash: %s",
 						fieldVal.Kind()).SetSrcValue(
 						fieldVal.Interface()).SetDstValue(
 						val.Interface()).SetNamespace(*ns.Duplicate().AppendFldName(fieldType.Name)))
@@ -1456,16 +1475,9 @@ func (d *Decoder) decodeStructFromMap(ns Namespace, dataVal, val reflect.Value) 
 		// Delete the key we're using from the unused map so we stop tracking
 		delete(dataValKeysUnused, rawMapKey.Interface())
 
-		// If the name is empty string, then we're at the root, and we
-		// don't dot-join the fields.
-
-		// if ns.Len() > 0 { // CHECK
-		// 	fieldName = ns.String() + "." + fieldName
-		// }
-
-		if err := d.decode(*ns.Duplicate().AppendFld(*NewNamespaceFld().SetName(field.Name).SetTag(fieldName).UseName(false)),
+		if err := d.decode(*ns.Duplicate().AppendFld(*NewNamespaceFld(field.Name).SetTag(fieldName).UseTag(true)),
 			rawMapVal.Interface(), fieldValue); err != nil {
-			errors.Append(AsLocalizedError(err).SetNamespaceUseFieldName(true))
+			errors.Append(AsLocalizedError(err).SetNamespaceUseFldTag(false))
 		}
 	}
 
@@ -1495,7 +1507,7 @@ func (d *Decoder) decodeStructFromMap(ns Namespace, dataVal, val reflect.Value) 
 		}
 		sort.Strings(keys)
 
-		err := NewDecodingErrorFormat("has invalid keys: %s",
+		err := NewDecodingError(DecodingErrorUnusedKeys).Format("has invalid keys: %s",
 			strings.Join(keys, ", ")).SetSrcValue(
 			dataVal.Interface()).SetDstValue(
 			val.Interface()).SetNamespace(ns)
@@ -1509,7 +1521,7 @@ func (d *Decoder) decodeStructFromMap(ns Namespace, dataVal, val reflect.Value) 
 		}
 		sort.Strings(keys)
 
-		err := NewDecodingErrorFormat("has unset fields: %s",
+		err := NewDecodingError(DecodingErrorUnsetFields).Format("has unset fields: %s",
 			strings.Join(keys, ", ")).SetDstValue(
 			val.Interface()).SetNamespace(ns)
 		errors.Append(err)

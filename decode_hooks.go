@@ -85,11 +85,11 @@ func OrComposeDecodeHookFunc(ff ...DecodeHookFunc) DecodeHookFunc {
 		var err error
 
 		allErrs := NewDecodingErrors().SetFormatter(func(e *DecodingErrors) string {
-			fmtErr := ""
-			for i := 0; i < e.Len(); i++ {
-				fmtErr += e.Get(i).Error() + "\n"
+			errsStr := make([]string, len(e.errors))
+			for i := 0; i < len(e.errors); i++ {
+				errsStr[i] = e.errors[i].Error()
 			}
-			return fmtErr
+			return strings.Join(errsStr, "\n")
 		})
 		for _, f := range ff {
 			out, err = DecodeHookExec(f, a, b)
