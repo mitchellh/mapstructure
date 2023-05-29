@@ -103,10 +103,13 @@ func OrComposeDecodeHookFunc(ff ...DecodeHookFunc) DecodeHookFunc {
 // string to []string by splitting on the given sep.
 func StringToSliceHookFunc(sep string) DecodeHookFunc {
 	return func(
-		f reflect.Kind,
-		t reflect.Kind,
+		f reflect.Type,
+		t reflect.Type,
 		data interface{}) (interface{}, error) {
-		if f != reflect.String || t != reflect.Slice {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+		if t != reflect.SliceOf(f) {
 			return data, nil
 		}
 
