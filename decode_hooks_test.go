@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/big"
 	"net"
+	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -349,6 +350,45 @@ func TestStringToIPNetHookFunc(t *testing.T) {
 
 	for i, tc := range cases {
 		f := StringToIPNetHookFunc()
+		actual, err := DecodeHookExec(f, tc.f, tc.t)
+		if tc.err != (err != nil) {
+			t.Fatalf("case %d: expected err %#v", i, tc.err)
+		}
+		if !reflect.DeepEqual(actual, tc.result) {
+			t.Fatalf(
+				"case %d: expected %#v, got %#v",
+				i, tc.result, actual)
+		}
+	}
+}
+
+func TestStringToURLHookFunc(t *testing.T) {
+	f := StringToURLHookFunc()
+
+	urlValue := reflect.ValueOf(&url.URL{})
+	strValue := reflect.ValueOf("")
+
+	cases := []struct {
+		f, t   reflect.Value
+		result interface{}
+		err    bool
+	}{
+		{reflect.ValueOf("https://u:p@example.com?p=1"), urlValue,
+			&url.URL{
+				Scheme:   "https",
+				Host:     "example.com",
+				User:     url.UserPassword("u", "p"),
+				RawQuery: "p=1",
+			}, false},
+		{reflect.ValueOf("https://example.com"), strValue, "https://example.com", false},
+		{strValue, urlValue, &url.URL{}, false},
+		{reflect.ValueOf("example"), urlValue,
+			&url.URL{
+				Path: "example",
+			}, false},
+	}
+
+	for i, tc := range cases {
 		actual, err := DecodeHookExec(f, tc.f, tc.t)
 		if tc.err != (err != nil) {
 			t.Fatalf("case %d: expected err %#v", i, tc.err)
