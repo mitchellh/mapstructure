@@ -1131,8 +1131,8 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 		if valElemType.Kind() == reflect.Uint8 {
 			bytesVal := reflect.Indirect(reflect.ValueOf(bytesData))
 			val.Set(bytesVal)
+			return nil
 		}
-		return nil
 	}
 
 	// Accumulate any errors
