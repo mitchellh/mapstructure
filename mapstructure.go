@@ -1126,10 +1126,12 @@ func (d *Decoder) decodeSlice(name string, data interface{}, val reflect.Value) 
 	} else if valSlice.Len() > dataVal.Len() {
 		valSlice = valSlice.Slice(0, dataVal.Len())
 	}
-	
+
 	if bytesData, ok := data.([]byte); ok {
-		bytesVal := reflect.Indirect(reflect.ValueOf(bytesData))
-		val.Set(bytesVal)
+		if valElemType.Kind() == reflect.Uint8 {
+			bytesVal := reflect.Indirect(reflect.ValueOf(bytesData))
+			val.Set(bytesVal)
+		}
 		return nil
 	}
 
