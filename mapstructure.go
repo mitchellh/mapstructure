@@ -1163,7 +1163,7 @@ func (d *Decoder) decodeArray(name string, data interface{}, val reflect.Value) 
 
 	valArray := val
 
-	if valArray.Interface() == reflect.Zero(valArray.Type()).Interface() || d.config.ZeroFields {
+	if valArray.Comparable() && valArray.Interface() == reflect.Zero(valArray.Type()).Interface() || d.config.ZeroFields {
 		// Check input type
 		if dataValKind != reflect.Array && dataValKind != reflect.Slice {
 			if d.config.WeaklyTypedInput {
