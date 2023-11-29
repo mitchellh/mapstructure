@@ -2794,3 +2794,92 @@ func uintPtr(v uint) *uint                    { return &v }
 func boolPtr(v bool) *bool                    { return &v }
 func floatPtr(v float64) *float64             { return &v }
 func interfacePtr(v interface{}) *interface{} { return &v }
+
+func TestDecoder_decodeTime(t *testing.T) {
+	type fields struct {
+		config *DecoderConfig
+	}
+	type args struct {
+		name   string
+		input  interface{}
+		outVal reflect.Value
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "Decode time.Time",
+			fields: fields{
+				config: &DecoderConfig{},
+			},
+			args: args{
+				name:   "TestField",
+				input:  time.Now(),
+				outVal: reflect.New(reflect.TypeOf(time.Time{})).Elem(),
+			},
+			wantErr: false,
+		},
+		{
+			name: "Decode *time.Time",
+			fields: fields{
+				config: &DecoderConfig{},
+			},
+			args: args{
+				name:   "TestField",
+				input:  time.Now(),
+				outVal: reflect.New(reflect.TypeOf(new(time.Time))).Elem(),
+			},
+			wantErr: false,
+		},
+		{
+			name: "Decode nil *time.Time",
+			fields: fields{
+				config: &DecoderConfig{},
+			},
+			args: args{
+				name:   "TestField",
+				input:  nil,
+				outVal: reflect.New(reflect.TypeOf(new(time.Time))).Elem(),
+			},
+			wantErr: false,
+		},
+		{
+			name: "Invalid input type",
+			fields: fields{
+				config: &DecoderConfig{},
+			},
+			args: args{
+				name:   "TestField",
+				input:  "invalid_input",
+				outVal: reflect.New(reflect.TypeOf(time.Time{})).Elem(),
+			},
+			wantErr: true,
+		},
+		{
+			name: "Decode string time",
+			fields: fields{
+				config: &DecoderConfig{},
+			},
+			args: args{
+				name:   "TestField",
+				input:  "2023-11-30T12:34:56Z",
+				outVal: reflect.New(reflect.TypeOf(time.Time{})).Elem(),
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := &Decoder{
+				config: tt.fields.config,
+			}
+			if err := d.decodeTime(tt.args.name, tt.args.input, tt.args.outVal); (err != nil) != tt.wantErr {
+				t.Errorf("decodeTime() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
