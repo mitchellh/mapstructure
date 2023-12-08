@@ -188,7 +188,6 @@ func TestNestedTypePointerWithDefaults(t *testing.T) {
 	if result.Vbar.Vuint != 42 {
 		t.Errorf("vuint value should be 42: %#v", result.Vbar.Vuint)
 	}
-
 }
 
 type NestedSlice struct {
@@ -284,7 +283,6 @@ func TestNestedTypeWithDefaults(t *testing.T) {
 	if result.Vbar.Vuint != 42 {
 		t.Errorf("vuint value should be 42: %#v", result.Vbar.Vuint)
 	}
-
 }
 
 // #67 panic() on extending slices (decodeSlice with disabled ZeroValues)
@@ -526,7 +524,6 @@ func TestDecodeIntermediateMapsSettable(t *testing.T) {
 			return data, nil
 		},
 	})
-
 	if err != nil {
 		t.Fatalf("failed to create decoder: %v", err)
 	}
@@ -624,4 +621,111 @@ func TestMapOmitEmptyWithEmptyFieldnameInTag(t *testing.T) {
 	if m["Username"] != "Joe" {
 		t.Fatalf("fail: %#v", m)
 	}
+}
+
+// GH-347: Decoding maps with multiple indirection results in an error
+func TestDecodeToMapWithMultipleIndirection(t *testing.T) {
+	t.Run("Struct", func(t *testing.T) {
+		type Struct struct {
+			Foo string `mapstructure:"foo"`
+		}
+
+		v := Struct{
+			Foo: "bar",
+		}
+
+		i := &v
+		ii := &i
+		iii := &ii
+
+		var actual map[string]interface{}
+
+		if err := Decode(iii, &actual); err != nil {
+			t.Fatal(err)
+		}
+
+		expected := map[string]interface{}{
+			"foo": "bar",
+		}
+
+		if !reflect.DeepEqual(actual, expected) {
+			t.Fatalf("expected: %#v, got: %#v", expected, actual)
+		}
+	})
+
+	t.Run("Map", func(t *testing.T) {
+		v := map[string]interface{}{
+			"foo": "bar",
+		}
+
+		i := &v
+		ii := &i
+		iii := &ii
+
+		var actual map[string]interface{}
+
+		if err := Decode(iii, &actual); err != nil {
+			t.Fatal(err)
+		}
+
+		expected := map[string]interface{}{
+			"foo": "bar",
+		}
+
+		if !reflect.DeepEqual(actual, expected) {
+			t.Fatalf("expected: %#v, got: %#v", expected, actual)
+		}
+	})
+
+	t.Run("Array", func(t *testing.T) {
+		v := [1]map[string]interface{}{
+			{
+				"foo": "bar",
+			},
+		}
+
+		i := &v
+		ii := &i
+		iii := &ii
+
+		var actual map[string]interface{}
+
+		if err := WeakDecode(iii, &actual); err != nil {
+			t.Fatal(err)
+		}
+
+		expected := map[string]interface{}{
+			"foo": "bar",
+		}
+
+		if !reflect.DeepEqual(actual, expected) {
+			t.Fatalf("expected: %#v, got: %#v", expected, actual)
+		}
+	})
+
+	t.Run("Slice", func(t *testing.T) {
+		v := []map[string]interface{}{
+			{
+				"foo": "bar",
+			},
+		}
+
+		i := &v
+		ii := &i
+		iii := &ii
+
+		var actual map[string]interface{}
+
+		if err := WeakDecode(iii, &actual); err != nil {
+			t.Fatal(err)
+		}
+
+		expected := map[string]interface{}{
+			"foo": "bar",
+		}
+
+		if !reflect.DeepEqual(actual, expected) {
+			t.Fatalf("expected: %#v, got: %#v", expected, actual)
+		}
+	})
 }
