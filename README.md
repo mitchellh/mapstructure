@@ -13,8 +13,9 @@ structure.
 
 Standard `go get`:
 
-```
-$ go get github.com/mitchellh/mapstructure
+```sh
+go get github.com/mitchellh/mapstructure
+FOO=bar
 ```
 
 ## Usage & Example
