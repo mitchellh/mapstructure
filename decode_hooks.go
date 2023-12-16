@@ -99,6 +99,19 @@ func OrComposeDecodeHookFunc(ff ...DecodeHookFunc) DecodeHookFunc {
 	}
 }
 
+// RecoveringDecodeHookFunc executes the input hook function and turns a panic into an error.
+func RecoveringDecodeHookFunc(hook DecodeHookFunc) DecodeHookFunc {
+	return func(from, to reflect.Value) (v interface{}, err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				v = nil
+				err = fmt.Errorf("internal error while parsing: %s", r)
+			}
+		}()
+		return DecodeHookExec(hook, from, to)
+	}
+}
+
 // StringToSliceHookFunc returns a DecodeHookFunc that converts
 // string to []string by splitting on the given sep.
 func StringToSliceHookFunc(sep string) DecodeHookFunc {
