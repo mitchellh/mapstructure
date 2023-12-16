@@ -625,3 +625,37 @@ func TestMapOmitEmptyWithEmptyFieldnameInTag(t *testing.T) {
 		t.Fatalf("fail: %#v", m)
 	}
 }
+
+func TestNoZeroFillSlice(t *testing.T) {
+	var a []interface{}
+	inputStringSlice := map[string]interface{}{
+		"vfoo": "foo",
+		"vbar": a,
+	}
+	var result = Slice{
+		Vfoo: "a",
+		Vbar: []string{"a", "b"},
+	}
+	config := &DecoderConfig{
+		Metadata:         nil,
+		ZeroFields:       true,
+		Result:           &result,
+		WeaklyTypedInput: true,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("got error: %s", err)
+	}
+
+	err = decoder.Decode(inputStringSlice)
+	if err != nil {
+		t.Fatalf("got error: %s", err)
+	}
+	if result.Vfoo != "foo" {
+		t.Errorf("want want get %s", result.Vfoo)
+	}
+	if len(result.Vbar) != 0 {
+		t.Errorf("want len(result.Vbar) == 0, get %d", len(result.Vbar))
+	}
+}
