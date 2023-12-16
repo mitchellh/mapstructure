@@ -253,6 +253,13 @@ type DecoderConfig struct {
 	//  }
 	Squash bool
 
+	// Deep will map structures in slices instead of copying them
+	//
+	//  type Parent struct {
+	//      Children []Child `mapstructure:",deep"`
+	//  }
+	Deep bool
+
 	// Metadata is the struct that will contain extra metadata about
 	// the decoding. If this is nil, then no metadata will be tracked.
 	Metadata *Metadata
@@ -932,6 +939,9 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 		// If Squash is set in the config, we squash the field down.
 		squash := d.config.Squash && v.Kind() == reflect.Struct && f.Anonymous
 
+		// If Deep is set in the config, set as default value.
+		deep := d.config.Deep
+
 		v = dereferencePtrToStructIfNeeded(v, d.config.TagName)
 
 		// Determine the name of the key in the map
@@ -957,6 +967,9 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 					return fmt.Errorf("cannot squash non-struct type '%s'", v.Type())
 				}
 			}
+
+			deep = deep || strings.Index(tagValue[index+1:], "deep") != -1
+
 			if keyNameTagValue := tagValue[:index]; keyNameTagValue != "" {
 				keyName = keyNameTagValue
 			}
@@ -1002,6 +1015,41 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			} else {
 				valMap.SetMapIndex(reflect.ValueOf(keyName), vMap)
 			}
+
+		case reflect.Slice:
+			if deep {
+				var childType reflect.Type
+				switch v.Type().Elem().Kind() {
+				case reflect.Struct:
+					childType = reflect.TypeOf(map[string]interface{}{})
+				default:
+					childType = v.Type().Elem()
+				}
+
+				sType := reflect.SliceOf(childType)
+
+				addrVal := reflect.New(sType)
+
+				vSlice := reflect.MakeSlice(sType, v.Len(), v.Cap())
+
+				if v.Len() > 0 {
+					reflect.Indirect(addrVal).Set(vSlice)
+
+					err := d.decode(keyName, v.Interface(), reflect.Indirect(addrVal))
+					if err != nil {
+						return err
+					}
+				}
+
+				vSlice = reflect.Indirect(addrVal)
+
+				valMap.SetMapIndex(reflect.ValueOf(keyName), vSlice)
+
+				break
+			}
+
+			// When deep mapping is not needed, fallthrough to normal copy
+			fallthrough
 
 		default:
 			valMap.SetMapIndex(reflect.ValueOf(keyName), v)
@@ -1530,13 +1578,24 @@ func isStructTypeConvertibleToMap(typ reflect.Type, checkMapstructureTags bool, 
 }
 
 func dereferencePtrToStructIfNeeded(v reflect.Value, tagName string) reflect.Value {
-	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+
+	if v.Kind() != reflect.Ptr {
 		return v
 	}
-	deref := v.Elem()
-	derefT := deref.Type()
-	if isStructTypeConvertibleToMap(derefT, true, tagName) {
-		return deref
+
+	switch v.Elem().Kind() {
+	case reflect.Slice:
+		return v.Elem()
+
+	case reflect.Struct:
+		deref := v.Elem()
+		derefT := deref.Type()
+		if isStructTypeConvertibleToMap(derefT, true, tagName) {
+			return deref
+		}
+		return v
+
+	default:
+		return v
 	}
-	return v
 }

@@ -2788,6 +2788,49 @@ func testArrayInput(t *testing.T, input map[string]interface{}, expected *Array)
 	}
 }
 
+func TestDecode_structArrayDeepMap(t *testing.T) {
+	type SourceChild struct {
+		String string `mapstructure:"some-string"`
+	}
+
+	type SourceParent struct {
+		ChildrenA []SourceChild  `mapstructure:"children-a,deep"`
+		ChildrenB *[]SourceChild `mapstructure:"children-b,deep"`
+	}
+
+	var target map[string]interface{}
+
+	source := SourceParent{
+		ChildrenA: []SourceChild{
+			{String: "one"},
+			{String: "two"},
+		},
+		ChildrenB: &[]SourceChild{
+			{String: "one"},
+			{String: "two"},
+		},
+	}
+
+	if err := Decode(source, &target); err != nil {
+		t.Fatalf("got error: %s", err)
+	}
+
+	expected := map[string]interface{}{
+		"children-a": []map[string]interface{}{
+			{"some-string": "one"},
+			{"some-string": "two"},
+		},
+		"children-b": []map[string]interface{}{
+			{"some-string": "one"},
+			{"some-string": "two"},
+		},
+	}
+
+	if !reflect.DeepEqual(target, expected) {
+		t.Fatalf("failed: \nexpected: %#v\nresult: %#v", expected, target)
+	}
+}
+
 func stringPtr(v string) *string              { return &v }
 func intPtr(v int) *int                       { return &v }
 func uintPtr(v uint) *uint                    { return &v }
