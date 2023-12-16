@@ -16,12 +16,14 @@ type Error struct {
 func (e *Error) Error() string {
 	points := make([]string, len(e.Errors))
 	for i, err := range e.Errors {
+		// split by newlines and indent each line
+		err = strings.Replace(err, "\n", "\n  ", -1)
 		points[i] = fmt.Sprintf("* %s", err)
 	}
 
 	sort.Strings(points)
 	return fmt.Sprintf(
-		"%d error(s) decoding:\n\n%s",
+		"%d error(s) decoding:\n%s",
 		len(e.Errors), strings.Join(points, "\n"))
 }
 
