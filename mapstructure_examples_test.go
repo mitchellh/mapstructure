@@ -254,3 +254,32 @@ func ExampleDecode_omitempty() {
 	// Output:
 	// &map[Age:0 FirstName:Somebody]
 }
+
+type Someone struct {
+	Name string
+}
+
+func (p *Someone) DecodeMapstructure(v interface{}) error {
+	if name, ok := v.(string); ok {
+		p.Name = name
+		return nil
+	}
+	return fmt.Errorf("undecipherable name")
+}
+
+func ExampleDecode_custom_decoder_type() {
+	type Profile struct {
+		Friends []Someone
+	}
+	input := map[string]interface{}{
+		"friends": []string{"Mitchell"},
+	}
+	var result Profile
+	err := Decode(input, &result)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%#v", result)
+	// Output:
+	// mapstructure.Profile{Friends:[]mapstructure.Someone{mapstructure.Someone{Name:"Mitchell"}}}
+}
