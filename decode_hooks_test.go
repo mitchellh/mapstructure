@@ -168,7 +168,7 @@ func TestOrComposeDecodeHookFunc_err(t *testing.T) {
 	if err == nil {
 		t.Fatalf("bad: should return an error")
 	}
-	if err.Error() != "f1 error\nf2 error\n" {
+	if err.Error() != "f1 error\nf2 error" {
 		t.Fatalf("bad: %s", err)
 	}
 }
