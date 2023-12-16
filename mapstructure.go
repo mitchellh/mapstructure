@@ -918,9 +918,6 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 		// Next get the actual value of this field and verify it is assignable
 		// to the map value.
 		v := dataVal.Field(i)
-		if !v.Type().AssignableTo(valMap.Type().Elem()) {
-			return fmt.Errorf("cannot assign type '%s' to map value field of type '%s'", v.Type(), valMap.Type().Elem())
-		}
 
 		tagValue := f.Tag.Get(d.config.TagName)
 		keyName := f.Name
@@ -973,9 +970,21 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			x := reflect.New(v.Type())
 			x.Elem().Set(v)
 
-			vType := valMap.Type()
-			vKeyType := vType.Key()
-			vElemType := vType.Elem()
+			var vKeyType reflect.Type
+			var vElemType reflect.Type
+			switch valMap.Type().Elem().Kind() {
+			case reflect.Map:
+				// When the target field is a typed map, use the map type
+				vType := valMap.Type().Elem()
+				vKeyType = vType.Key()
+				vElemType = vType.Elem()
+
+			default:
+				// For any other target field type, use the root map type (map[string]interface{})
+				vKeyType = valMap.Type().Key()
+				vElemType = valMap.Type().Elem()
+			}
+
 			mType := reflect.MapOf(vKeyType, vElemType)
 			vMap := reflect.MakeMap(mType)
 
@@ -1004,6 +1013,10 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			}
 
 		default:
+			if !v.Type().AssignableTo(valMap.Type().Elem()) {
+				return fmt.Errorf("cannot assign type '%s' to map value field of type '%s'", v.Type(), valMap.Type().Elem())
+			}
+
 			valMap.SetMapIndex(reflect.ValueOf(keyName), v)
 		}
 	}

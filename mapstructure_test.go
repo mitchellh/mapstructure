@@ -2788,6 +2788,94 @@ func testArrayInput(t *testing.T, input map[string]interface{}, expected *Array)
 	}
 }
 
+func TestDecode_structToGenericMap(t *testing.T) {
+	type SourceChild struct {
+		String string             `mapstructure:"string"`
+		Int    int                `mapstructure:"int"`
+		Map    map[string]float32 `mapstructure:"map"`
+	}
+
+	type SourceParent struct {
+		Child SourceChild `mapstructure:"child"`
+	}
+
+	var target map[string]interface{}
+
+	source := SourceParent{
+		Child: SourceChild{
+			String: "hello",
+			Int:    1,
+			Map: map[string]float32{
+				"one": 1.0,
+				"two": 2.0,
+			},
+		},
+	}
+
+	if err := Decode(source, &target); err != nil {
+		t.Fatalf("got error: %s", err)
+	}
+
+	expected := map[string]interface{}{
+		"child": map[string]interface{}{
+			"string": "hello",
+			"int":    1,
+			"map": map[string]float32{
+				"one": 1.0,
+				"two": 2.0,
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(target, expected) {
+		t.Fatalf("bad: \nexpected: %#v\nresult: %#v", expected, target)
+	}
+}
+
+func TestDecode_structToTypedMap(t *testing.T) {
+	type SourceChild struct {
+		String string             `mapstructure:"string"`
+		Int    int                `mapstructure:"int"`
+		Map    map[string]float32 `mapstructure:"map"`
+	}
+
+	type SourceParent struct {
+		Child SourceChild `mapstructure:"child"`
+	}
+
+	var target map[string]map[string]interface{}
+
+	source := SourceParent{
+		Child: SourceChild{
+			String: "hello",
+			Int:    1,
+			Map: map[string]float32{
+				"one": 1.0,
+				"two": 2.0,
+			},
+		},
+	}
+
+	if err := Decode(source, &target); err != nil {
+		t.Fatalf("got error: %s", err)
+	}
+
+	expected := map[string]map[string]interface{}{
+		"child": {
+			"string": "hello",
+			"int":    1,
+			"map": map[string]float32{
+				"one": 1.0,
+				"two": 2.0,
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(target, expected) {
+		t.Fatalf("bad: \nexpected: %#v\nresult: %#v", expected, target)
+	}
+}
+
 func stringPtr(v string) *string              { return &v }
 func intPtr(v int) *int                       { return &v }
 func uintPtr(v uint) *uint                    { return &v }
