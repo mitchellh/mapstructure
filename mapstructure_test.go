@@ -2732,6 +2732,135 @@ func TestDecoder_IgnoreUntaggedFields(t *testing.T) {
 	}
 }
 
+type CustomDecoder_PostDecode_Brief struct {
+	FullName     string
+	PrimaryEmail string
+}
+
+type CustomDecoder_PostDecode_Contact struct {
+	Name     string   `mapstructure:"name"`
+	LastName string   `mapstructure:"last_name"`
+	Emails   []string `mapstructure:"emails"`
+	Brief    *CustomDecoder_PostDecode_Brief
+}
+
+func (t *CustomDecoder_PostDecode_Contact) PostDecode() error {
+	primaryEmail := ""
+
+	if t.Emails != nil && len(t.Emails) > 0 {
+		primaryEmail = t.Emails[0]
+	}
+
+	t.Brief = &CustomDecoder_PostDecode_Brief{
+		FullName:     t.Name + " " + t.LastName,
+		PrimaryEmail: primaryEmail,
+	}
+
+	return nil
+}
+
+func TestDecoder_CustomDecoder_PostDecode(t *testing.T) {
+	t.Parallel()
+
+	input := []map[string]interface{}{
+		{
+			"name":      "John",
+			"last_name": "Doe",
+			"emails":    []string{"john.doe@gmail.com"},
+		},
+	}
+
+	expected := []*CustomDecoder_PostDecode_Contact{
+		{
+			Name:     "John",
+			LastName: "Doe",
+			Emails:   []string{"john.doe@gmail.com"},
+			Brief: &CustomDecoder_PostDecode_Brief{
+				FullName:     "John Doe",
+				PrimaryEmail: "john.doe@gmail.com",
+			},
+		},
+	}
+
+	var actual []*CustomDecoder_PostDecode_Contact
+
+	config := &DecoderConfig{
+		Result:               &actual,
+		IgnoreUntaggedFields: true,
+		CustomPostDecoder:    true,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("Decode() expected: %#v, got: %#v", expected, actual)
+	}
+}
+
+type CustomDecoder_PostDecode_PrimaryEmail string
+
+func (s CustomDecoder_PostDecode_PrimaryEmail) ptr() *CustomDecoder_PostDecode_PrimaryEmail {
+	return &s
+}
+
+func (s *CustomDecoder_PostDecode_PrimaryEmail) PostDecode() error {
+	v := *s
+
+	*s = "#1 " + v
+
+	return nil
+}
+
+func TestDecoder_CustomDecoder_PostDecodeC(t *testing.T) {
+	t.Parallel()
+
+	input := []map[string]interface{}{
+		{
+			"primary_email": "john.doe@gmail.com",
+		},
+	}
+
+	type Target struct {
+		PrimaryEmail *CustomDecoder_PostDecode_PrimaryEmail `mapstructure:"primary_email"`
+	}
+
+	expected := []*Target{
+		{
+			PrimaryEmail: CustomDecoder_PostDecode_PrimaryEmail("#1 john.doe@gmail.com").ptr(),
+		},
+	}
+
+	var actual []*Target
+
+	config := &DecoderConfig{
+		Result:               &actual,
+		IgnoreUntaggedFields: true,
+		CustomPostDecoder:    true,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("Decode() expected: %#v, got: %#v", expected, actual)
+	}
+}
+
 func testSliceInput(t *testing.T, input map[string]interface{}, expected *Slice) {
 	var result Slice
 	err := Decode(input, &result)

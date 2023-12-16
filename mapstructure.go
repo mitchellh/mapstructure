@@ -273,6 +273,10 @@ type DecoderConfig struct {
 	// field name or tag. Defaults to `strings.EqualFold`. This can be used
 	// to implement case-sensitive tag values, support snake casing, etc.
 	MatchName func(mapKey, fieldName string) bool
+
+	// If CustomPostDecoder is true, then after standard decoding
+	// for types that implements CustomDecoder the CustomDecoder.PostDecode function is run.
+	CustomPostDecoder bool
 }
 
 // A Decoder takes a raw interface value and turns it into structured
@@ -283,6 +287,15 @@ type DecoderConfig struct {
 // up the most basic Decoder.
 type Decoder struct {
 	config *DecoderConfig
+}
+
+// CustomDecoder is the interface implemented by types that
+// can decode themselves.
+// This interface does something similar to json Marshaler .
+//
+// PostDecode is run after main decode implementation for each type.
+type CustomDecoder interface {
+	PostDecode() error
 }
 
 // Metadata contains information about decoding a structure that
@@ -493,6 +506,12 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	default:
 		// If we reached this point then we weren't able to decode it
 		return fmt.Errorf("%s: unsupported type: %s", name, outputKind)
+	}
+
+	if d.config.CustomPostDecoder {
+		if m, ok := outVal.Interface().(CustomDecoder); ok && m != nil {
+			err = m.PostDecode()
+		}
 	}
 
 	// If we reached here, then we successfully decoded SOMETHING, so
