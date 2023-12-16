@@ -956,6 +956,18 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 				if v.Kind() != reflect.Struct {
 					return fmt.Errorf("cannot squash non-struct type '%s'", v.Type())
 				}
+			} else {
+				if strings.Index(tagValue[index+1:], "remain") != -1 {
+					if v.Kind() != reflect.Map {
+						return fmt.Errorf("error remain-tag field with invalid type: '%s'", v.Type())
+					}
+
+					ptr := v.MapRange()
+					for ptr.Next() {
+						valMap.SetMapIndex(ptr.Key(), ptr.Value())
+					}
+					continue
+				}
 			}
 			if keyNameTagValue := tagValue[:index]; keyNameTagValue != "" {
 				keyName = keyNameTagValue
