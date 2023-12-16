@@ -590,6 +590,7 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 		case reflect.Uint8:
 			var uints []uint8
 			if dataKind == reflect.Array {
+				// nolint:gosimple
 				uints = make([]uint8, dataVal.Len(), dataVal.Len())
 				for i := range uints {
 					uints[i] = dataVal.Index(i).Interface().(uint8)
@@ -939,12 +940,12 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			if tagValue[:index] == "-" {
 				continue
 			}
-			// If "omitempty" is specified in the tag, it ignores empty values.
+			// nolint:gosimple // If "omitempty" is specified in the tag, it ignores empty values.
 			if strings.Index(tagValue[index+1:], "omitempty") != -1 && isEmptyValue(v) {
 				continue
 			}
 
-			// If "squash" is specified in the tag, we squash the field down.
+			// nolint:gosimple // If "squash" is specified in the tag, we squash the field down.
 			squash = squash || strings.Index(tagValue[index+1:], "squash") != -1
 			if squash {
 				// When squashing, the embedded type can be a pointer to a struct.
