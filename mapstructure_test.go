@@ -1178,6 +1178,88 @@ func TestDecode_FuncHook(t *testing.T) {
 	}
 }
 
+func TestDecode_SamePointerHook(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"A": "foo",
+		"B": "foo",
+	}
+
+	ptr := stringPtr("bar")
+
+	decodeHook := func(f, t reflect.Type, v interface{}) (interface{}, error) {
+		if str, ok := v.(string); ok && str == "foo" {
+			return ptr, nil
+		}
+		return v, nil
+	}
+
+	var result struct {
+		A *string
+		B *string
+	}
+	config := &DecoderConfig{
+		DecodeHook: decodeHook,
+		Result:     &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if result.A != result.B {
+		t.Errorf("decoded pointers should be the same")
+	}
+}
+
+func TestDecode_SameInterfaceHook(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"A": "foo",
+		"B": "foo",
+	}
+
+	var intf io.Reader = strings.NewReader("bar")
+
+	decodeHook := func(f, t reflect.Type, v interface{}) (interface{}, error) {
+		if str, ok := v.(string); ok && str == "foo" {
+			return intf, nil
+		}
+		return v, nil
+	}
+
+	var result struct {
+		A io.Reader
+		B io.Reader
+	}
+	config := &DecoderConfig{
+		DecodeHook: decodeHook,
+		Result:     &result,
+	}
+
+	decoder, err := NewDecoder(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = decoder.Decode(input)
+	if err != nil {
+		t.Fatalf("got an err: %s", err)
+	}
+
+	if result.A != result.B {
+		t.Errorf("decoded interfaces should be the same")
+	}
+}
+
 func TestDecode_NonStruct(t *testing.T) {
 	t.Parallel()
 

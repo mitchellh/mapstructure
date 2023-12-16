@@ -453,6 +453,7 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 		return nil
 	}
 
+	hooked := false
 	if d.config.DecodeHook != nil {
 		// We have a DecodeHook, so let's pre-process the input.
 		var err error
@@ -460,39 +461,49 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 		if err != nil {
 			return fmt.Errorf("error decoding '%s': %w", name, err)
 		}
+		if input != nil && reflect.TypeOf(input).Comparable() &&
+			inputVal.Type().Comparable() &&
+			input != inputVal.Interface() {
+			//hook was changed input value
+			hooked = true
+		}
 	}
 
 	var err error
-	outputKind := getKind(outVal)
 	addMetaKey := true
-	switch outputKind {
-	case reflect.Bool:
-		err = d.decodeBool(name, input, outVal)
-	case reflect.Interface:
-		err = d.decodeBasic(name, input, outVal)
-	case reflect.String:
-		err = d.decodeString(name, input, outVal)
-	case reflect.Int:
-		err = d.decodeInt(name, input, outVal)
-	case reflect.Uint:
-		err = d.decodeUint(name, input, outVal)
-	case reflect.Float32:
-		err = d.decodeFloat(name, input, outVal)
-	case reflect.Struct:
-		err = d.decodeStruct(name, input, outVal)
-	case reflect.Map:
-		err = d.decodeMap(name, input, outVal)
-	case reflect.Ptr:
-		addMetaKey, err = d.decodePtr(name, input, outVal)
-	case reflect.Slice:
-		err = d.decodeSlice(name, input, outVal)
-	case reflect.Array:
-		err = d.decodeArray(name, input, outVal)
-	case reflect.Func:
-		err = d.decodeFunc(name, input, outVal)
-	default:
-		// If we reached this point then we weren't able to decode it
-		return fmt.Errorf("%s: unsupported type: %s", name, outputKind)
+	if hooked && reflect.TypeOf(input).AssignableTo(outVal.Type()) {
+		outVal.Set(reflect.ValueOf(input))
+	} else {
+		outputKind := getKind(outVal)
+		switch outputKind {
+		case reflect.Bool:
+			err = d.decodeBool(name, input, outVal)
+		case reflect.Interface:
+			err = d.decodeBasic(name, input, outVal)
+		case reflect.String:
+			err = d.decodeString(name, input, outVal)
+		case reflect.Int:
+			err = d.decodeInt(name, input, outVal)
+		case reflect.Uint:
+			err = d.decodeUint(name, input, outVal)
+		case reflect.Float32:
+			err = d.decodeFloat(name, input, outVal)
+		case reflect.Struct:
+			err = d.decodeStruct(name, input, outVal)
+		case reflect.Map:
+			err = d.decodeMap(name, input, outVal)
+		case reflect.Ptr:
+			addMetaKey, err = d.decodePtr(name, input, outVal)
+		case reflect.Slice:
+			err = d.decodeSlice(name, input, outVal)
+		case reflect.Array:
+			err = d.decodeArray(name, input, outVal)
+		case reflect.Func:
+			err = d.decodeFunc(name, input, outVal)
+		default:
+			// If we reached this point then we weren't able to decode it
+			return fmt.Errorf("%s: unsupported type: %s", name, outputKind)
+		}
 	}
 
 	// If we reached here, then we successfully decoded SOMETHING, so
