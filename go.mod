@@ -1,3 +1,3 @@
 module github.com/mitchellh/mapstructure
 
-go 1.14
+go 1.18
