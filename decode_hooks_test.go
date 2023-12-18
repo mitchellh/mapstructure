@@ -221,13 +221,14 @@ func TestStringToSliceHookFunc(t *testing.T) {
 	f := StringToSliceHookFunc(",")
 
 	strValue := reflect.ValueOf("42")
-	sliceValue := reflect.ValueOf([]byte("42"))
+	sliceValue := reflect.ValueOf([]string{"42"})
 	cases := []struct {
 		f, t   reflect.Value
 		result interface{}
 		err    bool
 	}{
-		{sliceValue, sliceValue, []byte("42"), false},
+		{sliceValue, sliceValue, []string{"42"}, false},
+		{reflect.ValueOf([]byte("42")), reflect.ValueOf([]byte{}), []byte("42"), false},
 		{strValue, strValue, "42", false},
 		{
 			reflect.ValueOf("foo,bar,baz"),
