@@ -228,6 +228,7 @@ func TestStringToSliceHookFunc(t *testing.T) {
 		err    bool
 	}{
 		{sliceValue, sliceValue, []string{"42"}, false},
+		{reflect.ValueOf([]byte("42")), reflect.ValueOf([]byte{}), []byte("42"), false},
 		{strValue, strValue, "42", false},
 		{
 			reflect.ValueOf("foo,bar,baz"),
