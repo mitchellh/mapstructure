@@ -811,8 +811,14 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 		valMap = reflect.MakeMap(mapType)
 	}
 
+	dataVal := reflect.ValueOf(data)
+
+	// Resolve any levels of indirection
+	for dataVal.Kind() == reflect.Pointer {
+		dataVal = reflect.Indirect(dataVal)
+	}
+
 	// Check input type and based on the input type jump to the proper func
-	dataVal := reflect.Indirect(reflect.ValueOf(data))
 	switch dataVal.Kind() {
 	case reflect.Map:
 		return d.decodeMapFromMap(name, dataVal, val, valMap)
