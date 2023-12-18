@@ -40,8 +40,8 @@ func typedDecodeHook(h DecodeHookFunc) DecodeHookFunc {
 // that took reflect.Kind instead of reflect.Type.
 func DecodeHookExec(
 	raw DecodeHookFunc,
-	from reflect.Value, to reflect.Value) (interface{}, error) {
-
+	from reflect.Value, to reflect.Value,
+) (interface{}, error) {
 	switch f := typedDecodeHook(raw).(type) {
 	case DecodeHookFuncType:
 		return f(from.Type(), to.Type(), from.Interface())
@@ -105,7 +105,8 @@ func StringToSliceHookFunc(sep string) DecodeHookFunc {
 	return func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f != reflect.String || t != reflect.Slice {
 			return data, nil
 		}
@@ -125,7 +126,8 @@ func StringToTimeDurationHookFunc() DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
@@ -144,7 +146,8 @@ func StringToIPHookFunc() DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
@@ -168,7 +171,8 @@ func StringToIPNetHookFunc() DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
@@ -188,7 +192,8 @@ func StringToTimeHookFunc(layout string) DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
@@ -209,7 +214,8 @@ func StringToTimeHookFunc(layout string) DecodeHookFunc {
 func WeaklyTypedHook(
 	f reflect.Kind,
 	t reflect.Kind,
-	data interface{}) (interface{}, error) {
+	data interface{},
+) (interface{}, error) {
 	dataVal := reflect.ValueOf(data)
 	switch t {
 	case reflect.String:
@@ -262,7 +268,8 @@ func TextUnmarshallerHookFunc() DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}

@@ -14,14 +14,16 @@ func TestComposeDecodeHookFunc(t *testing.T) {
 	f1 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return data.(string) + "foo", nil
 	}
 
 	f2 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return data.(string) + "bar", nil
 	}
 
@@ -61,14 +63,16 @@ func TestComposeDecodeHookFunc_kinds(t *testing.T) {
 	f1 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return int(42), nil
 	}
 
 	f2 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		f2From = f
 		return data, nil
 	}
@@ -89,14 +93,16 @@ func TestOrComposeDecodeHookFunc(t *testing.T) {
 	f1 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return data.(string) + "foo", nil
 	}
 
 	f2 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return data.(string) + "bar", nil
 	}
 
@@ -116,21 +122,24 @@ func TestOrComposeDecodeHookFunc_correctValueIsLast(t *testing.T) {
 	f1 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return nil, errors.New("f1 error")
 	}
 
 	f2 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return nil, errors.New("f2 error")
 	}
 
 	f3 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return data.(string) + "bar", nil
 	}
 
@@ -150,14 +159,16 @@ func TestOrComposeDecodeHookFunc_err(t *testing.T) {
 	f1 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return nil, errors.New("f1 error")
 	}
 
 	f2 := func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
+		data interface{},
+	) (interface{}, error) {
 		return nil, errors.New("f2 error")
 	}
 
@@ -281,8 +292,10 @@ func TestStringToTimeHookFunc(t *testing.T) {
 		result interface{}
 		err    bool
 	}{
-		{reflect.ValueOf("2006-01-02T15:04:05Z"), timeValue, time.RFC3339,
-			time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC), false},
+		{
+			reflect.ValueOf("2006-01-02T15:04:05Z"), timeValue, time.RFC3339,
+			time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC), false,
+		},
 		{strValue, timeValue, time.RFC3339, time.Time{}, true},
 		{strValue, strValue, time.RFC3339, "5", false},
 	}
@@ -309,8 +322,10 @@ func TestStringToIPHookFunc(t *testing.T) {
 		result interface{}
 		err    bool
 	}{
-		{reflect.ValueOf("1.2.3.4"), ipValue,
-			net.IPv4(0x01, 0x02, 0x03, 0x04), false},
+		{
+			reflect.ValueOf("1.2.3.4"), ipValue,
+			net.IPv4(0x01, 0x02, 0x03, 0x04), false,
+		},
 		{strValue, ipValue, net.IP{}, true},
 		{strValue, strValue, "5", false},
 	}
@@ -339,11 +354,13 @@ func TestStringToIPNetHookFunc(t *testing.T) {
 		result interface{}
 		err    bool
 	}{
-		{reflect.ValueOf("1.2.3.4/24"), ipNetValue,
+		{
+			reflect.ValueOf("1.2.3.4/24"), ipNetValue,
 			&net.IPNet{
 				IP:   net.IP{0x01, 0x02, 0x03, 0x00},
 				Mask: net.IPv4Mask(0xff, 0xff, 0xff, 0x00),
-			}, false},
+			}, false,
+		},
 		{strValue, ipNetValue, nilNet, true},
 		{strValue, strValue, "5", false},
 	}
@@ -538,7 +555,6 @@ func TestStructToMapHookFuncTabled(t *testing.T) {
 					tc.expected, tc.receiver)
 			}
 		})
-
 	}
 }
 

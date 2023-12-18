@@ -15,9 +15,9 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    # - gci
-    # - gofmt
-    # - gofumpt
-    # - goimports
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
     - staticcheck
     # - stylecheck
