@@ -1381,6 +1381,7 @@ func TestDecoder_ErrorUnused_NotSetable(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+
 func TestDecoder_ErrorUnset(t *testing.T) {
 	t.Parallel()
 
@@ -2108,7 +2109,7 @@ func TestDecodeTable(t *testing.T) {
 			"struct with slice of struct property",
 			&SliceOfStruct{
 				Value: []Basic{
-					Basic{
+					{
 						Vstring: "vstring",
 						Vint:    2,
 						Vuint:   3,
@@ -2123,7 +2124,7 @@ func TestDecodeTable(t *testing.T) {
 			&map[string]interface{}{},
 			&map[string]interface{}{
 				"Value": []Basic{
-					Basic{
+					{
 						Vstring: "vstring",
 						Vint:    2,
 						Vuint:   3,
@@ -2148,7 +2149,8 @@ func TestDecodeTable(t *testing.T) {
 				"Vfoo": "vfoo",
 				"Vother": map[string]string{
 					"vother": "vother",
-				}},
+				},
+			},
 			false,
 		},
 		{
@@ -2405,7 +2407,8 @@ func TestMetadata(t *testing.T) {
 
 	expectedUnset := []string{
 		"Vbar.Vbool", "Vbar.Vdata", "Vbar.Vextra", "Vbar.Vfloat", "Vbar.Vint",
-		"Vbar.VjsonFloat", "Vbar.VjsonInt", "Vbar.VjsonNumber"}
+		"Vbar.VjsonFloat", "Vbar.VjsonInt", "Vbar.VjsonNumber",
+	}
 	sort.Strings(md.Unset)
 	if !reflect.DeepEqual(md.Unset, expectedUnset) {
 		t.Fatalf("bad unset: %#v", md.Unset)

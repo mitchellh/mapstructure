@@ -188,7 +188,6 @@ func TestNestedTypePointerWithDefaults(t *testing.T) {
 	if result.Vbar.Vuint != 42 {
 		t.Errorf("vuint value should be 42: %#v", result.Vbar.Vuint)
 	}
-
 }
 
 type NestedSlice struct {
@@ -284,7 +283,6 @@ func TestNestedTypeWithDefaults(t *testing.T) {
 	if result.Vbar.Vuint != 42 {
 		t.Errorf("vuint value should be 42: %#v", result.Vbar.Vuint)
 	}
-
 }
 
 // #67 panic() on extending slices (decodeSlice with disabled ZeroValues)
@@ -526,7 +524,6 @@ func TestDecodeIntermediateMapsSettable(t *testing.T) {
 			return data, nil
 		},
 	})
-
 	if err != nil {
 		t.Fatalf("failed to create decoder: %v", err)
 	}
