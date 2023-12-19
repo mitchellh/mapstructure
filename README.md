@@ -15,8 +15,6 @@ structure.
 
 ## Installation
 
-For the time being, you can use this library as a drop-in replacement for the original library:
-
 ```shell
 go get github.com/go-viper/mapstructure/v2
 ```
