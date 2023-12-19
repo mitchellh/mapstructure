@@ -1,7 +1,7 @@
 # mapstructure
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/go-viper/mapstructure/ci.yaml?branch=main&style=flat-square)](https://github.com/go-viper/mapstructure/actions?query=workflow%3ACI)
-[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/mod/github.com/go-viper/mapstructure)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/mod/github.com/go-viper/mapstructure/v2)
 ![Go Version](https://img.shields.io/badge/go%20version-%3E=1.18-61CFDD.svg?style=flat-square)
 
 mapstructure is a Go library for decoding generic map values to structures
@@ -18,14 +18,12 @@ structure.
 For the time being, you can use this library as a drop-in replacement for the original library:
 
 ```shell
-go get github.com/mitchellh/mapstructure
-go mod edit -replace github.com/mitchellh/mapstructure=github.com/go-viper/mapstructure
-go mod tidy
+go get github.com/go-viper/mapstructure/v2
 ```
 
 ## Usage & Example
 
-For usage and examples see the [documentation](https://pkg.go.dev/mod/github.com/go-viper/mapstructure).
+For usage and examples see the [documentation](https://pkg.go.dev/mod/github.com/go-viper/mapstructure/v2).
 
 The `Decode` function has examples associated with it there.
 
