@@ -478,6 +478,8 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 		err = d.decodeUint(name, input, outVal)
 	case reflect.Float32:
 		err = d.decodeFloat(name, input, outVal)
+	case reflect.Complex64:
+		err = d.decodeComplex(name, input, outVal)
 	case reflect.Struct:
 		err = d.decodeStruct(name, input, outVal)
 	case reflect.Map:
@@ -787,6 +789,22 @@ func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) 
 				"error decoding json.Number into %s: %s", name, err)
 		}
 		val.SetFloat(i)
+	default:
+		return fmt.Errorf(
+			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
+			name, val.Type(), dataVal.Type(), data)
+	}
+
+	return nil
+}
+
+func (d *Decoder) decodeComplex(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
+	dataKind := getKind(dataVal)
+
+	switch {
+	case dataKind == reflect.Complex64:
+		val.SetComplex(dataVal.Complex())
 	default:
 		return fmt.Errorf(
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
@@ -1531,6 +1549,8 @@ func getKind(val reflect.Value) reflect.Kind {
 		return reflect.Uint
 	case kind >= reflect.Float32 && kind <= reflect.Float64:
 		return reflect.Float32
+	case kind >= reflect.Complex64 && kind <= reflect.Complex128:
+		return reflect.Complex64
 	default:
 		return kind
 	}

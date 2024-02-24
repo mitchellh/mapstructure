@@ -28,6 +28,8 @@ type Basic struct {
 	VjsonUint64 uint64
 	VjsonFloat  float64
 	VjsonNumber json.Number
+	Vcomplex64  complex64
+	Vcomplex128 complex128
 }
 
 type BasicPointer struct {
@@ -248,6 +250,8 @@ func TestBasicTypes(t *testing.T) {
 		"vjsonUint64": json.Number("9223372036854775809"), // 2^63 + 1
 		"vjsonFloat":  json.Number("1234.5"),
 		"vjsonNumber": json.Number("1234.5"),
+		"vcomplex64":  complex(float32(42), float32(42)),
+		"vcomplex128": complex(42, 42),
 	}
 
 	var result Basic
@@ -319,6 +323,14 @@ func TestBasicTypes(t *testing.T) {
 
 	if !reflect.DeepEqual(result.VjsonNumber, json.Number("1234.5")) {
 		t.Errorf("vjsonnumber value should be '1234.5': %T, %#v", result.VjsonNumber, result.VjsonNumber)
+	}
+
+	if real(result.Vcomplex64) != 42 || imag(result.Vcomplex64) != 42 {
+		t.Errorf("vcomplex64 value shou be 42+42i: %#v", result.Vcomplex64)
+	}
+
+	if real(result.Vcomplex128) != 42 || imag(result.Vcomplex128) != 42 {
+		t.Errorf("vcomplex64 value shou be 42+42i: %#v", result.Vcomplex128)
 	}
 }
 
@@ -1933,6 +1945,8 @@ func TestDecodeTable(t *testing.T) {
 				"VjsonUint64": uint64(0),
 				"VjsonFloat":  0.0,
 				"VjsonNumber": json.Number(""),
+				"Vcomplex64":  complex64(0),
+				"Vcomplex128": complex128(0),
 			},
 			false,
 		},
@@ -1975,6 +1989,8 @@ func TestDecodeTable(t *testing.T) {
 					"VjsonUint64": uint64(0),
 					"VjsonFloat":  0.0,
 					"VjsonNumber": json.Number(""),
+					"Vcomplex64":  complex64(0),
+					"Vcomplex128": complex128(0),
 				},
 			},
 			false,
