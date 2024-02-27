@@ -300,7 +300,7 @@ func ExampleDecode_decodeHookFunc() {
 	}
 
 	type Person struct {
-		Name   string
+		Name     string
 		Location PersonLocation
 	}
 
@@ -308,7 +308,7 @@ func ExampleDecode_decodeHookFunc() {
 	// a single string field. We write a custom DecodeHookFunc to parse the '#' separated
 	// values into a PersonLocation struct.
 	input := map[string]interface{}{
-		"name": "Mitchell",
+		"name":     "Mitchell",
 		"location": "-35.2809#149.1300",
 	}
 
@@ -340,9 +340,9 @@ func ExampleDecode_decodeHookFunc() {
 	var result Person
 
 	decoder, errDecoder := NewDecoder(&DecoderConfig{
-		Metadata: nil,
+		Metadata:   nil,
 		DecodeHook: toPersonLocationHookFunc(), // Here, use ComposeDecodeHookFunc to run multiple hooks.
-		Result: &result,
+		Result:     &result,
 	})
 	if errDecoder != nil {
 		panic(errDecoder)
