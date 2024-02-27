@@ -2,6 +2,9 @@ package mapstructure
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
 func ExampleDecode() {
@@ -288,4 +291,69 @@ func ExampleDecode_omitempty() {
 	fmt.Printf("%+v", result)
 	// Output:
 	// &map[Age:0 FirstName:Somebody]
+}
+
+func ExampleDecode_decodeHookFunc() {
+	type PersonLocation struct {
+		Latitude   float64
+		Longtitude float64
+	}
+
+	type Person struct {
+		Name     string
+		Location PersonLocation
+	}
+
+	// Example of parsing messy input: here we have latitude, longitude squashed into
+	// a single string field. We write a custom DecodeHookFunc to parse the '#' separated
+	// values into a PersonLocation struct.
+	input := map[string]interface{}{
+		"name":     "Mitchell",
+		"location": "-35.2809#149.1300",
+	}
+
+	toPersonLocationHookFunc := func() DecodeHookFunc {
+		return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+			if t != reflect.TypeOf(PersonLocation{}) {
+				return data, nil
+			}
+
+			switch f.Kind() {
+			case reflect.String:
+				xs := strings.Split(data.(string), "#")
+
+				if len(xs) == 2 {
+					lat, errLat := strconv.ParseFloat(xs[0], 64)
+					lon, errLon := strconv.ParseFloat(xs[1], 64)
+
+					if errLat == nil && errLon == nil {
+						return PersonLocation{Latitude: lat, Longtitude: lon}, nil
+					}
+				} else {
+					return data, nil
+				}
+			}
+			return data, nil
+		}
+	}
+
+	var result Person
+
+	decoder, errDecoder := NewDecoder(&DecoderConfig{
+		Metadata:   nil,
+		DecodeHook: toPersonLocationHookFunc(), // Here, use ComposeDecodeHookFunc to run multiple hooks.
+		Result:     &result,
+	})
+	if errDecoder != nil {
+		panic(errDecoder)
+	}
+
+	err := decoder.Decode(input)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%#v", result)
+	// Output:
+	// mapstructure.Person{Name:"Mitchell", Location:mapstructure.PersonLocation{Latitude:-35.2809, Longtitude:149.13}}
 }
