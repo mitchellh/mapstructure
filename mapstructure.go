@@ -265,6 +265,10 @@ type DecoderConfig struct {
 	// defaults to "mapstructure"
 	TagName string
 
+	// The name of the value in the tag that indicates a field should
+	// be squashed. This defaults to "squash".
+	SquashName string
+
 	// IgnoreUntaggedFields ignores all struct fields without explicit
 	// TagName, comparable to `mapstructure:"-"` as default behaviour.
 	IgnoreUntaggedFields bool
@@ -398,6 +402,10 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 
 	if config.TagName == "" {
 		config.TagName = "mapstructure"
+	}
+
+	if config.SquashName == "" {
+		config.SquashName = "squash"
 	}
 
 	if config.MatchName == nil {
@@ -945,7 +953,7 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			}
 
 			// If "squash" is specified in the tag, we squash the field down.
-			squash = squash || strings.Index(tagValue[index+1:], "squash") != -1
+			squash = squash || strings.Contains(tagValue[index+1:], d.config.SquashName)
 			if squash {
 				// When squashing, the embedded type can be a pointer to a struct.
 				if v.Kind() == reflect.Ptr && v.Elem().Kind() == reflect.Struct {
@@ -1321,7 +1329,7 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 			// We always parse the tags cause we're looking for other tags too
 			tagParts := strings.Split(fieldType.Tag.Get(d.config.TagName), ",")
 			for _, tag := range tagParts[1:] {
-				if tag == "squash" {
+				if tag == d.config.SquashName {
 					squash = true
 					break
 				}

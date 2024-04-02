@@ -48,6 +48,10 @@ type BasicSquash struct {
 	Test Basic `mapstructure:",squash"`
 }
 
+type BasicJSONInline struct {
+	Test Basic `json:",inline"`
+}
+
 type Embedded struct {
 	Basic
 	Vunique string
@@ -461,6 +465,62 @@ func TestDecodeFrom_BasicSquash(t *testing.T) {
 	var result map[string]interface{}
 	err := Decode(input, &result)
 	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if _, ok = result["Test"]; ok {
+		t.Error("test should not be present in map")
+	}
+
+	v, ok = result["Vstring"]
+	if !ok {
+		t.Error("vstring should be present in map")
+	} else if !reflect.DeepEqual(v, "foo") {
+		t.Errorf("vstring value should be 'foo': %#v", v)
+	}
+}
+
+func TestDecode_BasicJSONInline(t *testing.T) {
+	t.Parallel()
+
+	input := map[string]interface{}{
+		"vstring": "foo",
+	}
+
+	var result BasicJSONInline
+	d, err := NewDecoder(&DecoderConfig{TagName: "json", SquashName: "inline", Result: &result})
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if err := d.Decode(input); err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if result.Test.Vstring != "foo" {
+		t.Errorf("vstring value should be 'foo': %#v", result.Test.Vstring)
+	}
+}
+
+func TestDecodeFrom_BasicJSONInline(t *testing.T) {
+	t.Parallel()
+
+	var v interface{}
+	var ok bool
+
+	input := BasicJSONInline{
+		Test: Basic{
+			Vstring: "foo",
+		},
+	}
+
+	var result map[string]interface{}
+	d, err := NewDecoder(&DecoderConfig{TagName: "json", SquashName: "inline", Result: &result})
+	if err != nil {
+		t.Fatalf("got an err: %s", err.Error())
+	}
+
+	if err := d.Decode(input); err != nil {
 		t.Fatalf("got an err: %s", err.Error())
 	}
 
