@@ -625,3 +625,19 @@ func TestMapOmitEmptyWithEmptyFieldnameInTag(t *testing.T) {
 		t.Fatalf("fail: %#v", m)
 	}
 }
+
+// GH-340: Decoding array of slices causes panic
+type HasNonComparableType struct {
+	NonComparableType [2][]byte
+}
+
+func TestDecode_nonComparableType(t *testing.T) {
+	decodeTo := &HasNonComparableType{}
+	expected := [2][]byte{{1, 2}, {3, 4, 5}}
+	if err := Decode(map[string]interface{}{"NonComparableType": expected}, &decodeTo); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(expected, decodeTo.NonComparableType) {
+		t.Fatalf("fail: %#v", decodeTo.NonComparableType)
+	}
+}
