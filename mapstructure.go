@@ -9,84 +9,84 @@
 //
 // The simplest function to start with is Decode.
 //
-// Field Tags
+// # Field Tags
 //
 // When decoding to a struct, mapstructure will use the field name by
 // default to perform the mapping. For example, if a struct has a field
 // "Username" then mapstructure will look for a key in the source value
 // of "username" (case insensitive).
 //
-//     type User struct {
-//         Username string
-//     }
+//	type User struct {
+//	    Username string
+//	}
 //
 // You can change the behavior of mapstructure by using struct tags.
 // The default struct tag that mapstructure looks for is "mapstructure"
 // but you can customize it using DecoderConfig.
 //
-// Renaming Fields
+// # Renaming Fields
 //
 // To rename the key that mapstructure looks for, use the "mapstructure"
 // tag and set a value directly. For example, to change the "username" example
 // above to "user":
 //
-//     type User struct {
-//         Username string `mapstructure:"user"`
-//     }
+//	type User struct {
+//	    Username string `mapstructure:"user"`
+//	}
 //
-// Embedded Structs and Squashing
+// # Embedded Structs and Squashing
 //
 // Embedded structs are treated as if they're another field with that name.
 // By default, the two structs below are equivalent when decoding with
 // mapstructure:
 //
-//     type Person struct {
-//         Name string
-//     }
+//	type Person struct {
+//	    Name string
+//	}
 //
-//     type Friend struct {
-//         Person
-//     }
+//	type Friend struct {
+//	    Person
+//	}
 //
-//     type Friend struct {
-//         Person Person
-//     }
+//	type Friend struct {
+//	    Person Person
+//	}
 //
 // This would require an input that looks like below:
 //
-//     map[string]interface{}{
-//         "person": map[string]interface{}{"name": "alice"},
-//     }
+//	map[string]interface{}{
+//	    "person": map[string]interface{}{"name": "alice"},
+//	}
 //
 // If your "person" value is NOT nested, then you can append ",squash" to
 // your tag value and mapstructure will treat it as if the embedded struct
 // were part of the struct directly. Example:
 //
-//     type Friend struct {
-//         Person `mapstructure:",squash"`
-//     }
+//	type Friend struct {
+//	    Person `mapstructure:",squash"`
+//	}
 //
 // Now the following input would be accepted:
 //
-//     map[string]interface{}{
-//         "name": "alice",
-//     }
+//	map[string]interface{}{
+//	    "name": "alice",
+//	}
 //
 // When decoding from a struct to a map, the squash tag squashes the struct
 // fields into a single map. Using the example structs from above:
 //
-//     Friend{Person: Person{Name: "alice"}}
+//	Friend{Person: Person{Name: "alice"}}
 //
 // Will be decoded into a map:
 //
-//     map[string]interface{}{
-//         "name": "alice",
-//     }
+//	map[string]interface{}{
+//	    "name": "alice",
+//	}
 //
 // DecoderConfig has a field that changes the behavior of mapstructure
 // to always squash embedded structs.
 //
-// Remainder Values
+// # Remainder Values
 //
 // If there are any unmapped keys in the source value, mapstructure by
 // default will silently ignore them. You can error by setting ErrorUnused
@@ -98,20 +98,20 @@
 // probably be a "map[string]interface{}" or "map[interface{}]interface{}".
 // See example below:
 //
-//     type Friend struct {
-//         Name  string
-//         Other map[string]interface{} `mapstructure:",remain"`
-//     }
+//	type Friend struct {
+//	    Name  string
+//	    Other map[string]interface{} `mapstructure:",remain"`
+//	}
 //
 // Given the input below, Other would be populated with the other
 // values that weren't used (everything but "name"):
 //
-//     map[string]interface{}{
-//         "name":    "bob",
-//         "address": "123 Maple St.",
-//     }
+//	map[string]interface{}{
+//	    "name":    "bob",
+//	    "address": "123 Maple St.",
+//	}
 //
-// Omit Empty Values
+// # Omit Empty Values
 //
 // When decoding from a struct to any other value, you may use the
 // ",omitempty" suffix on your tag to omit that value if it equates to
@@ -122,37 +122,37 @@
 // field value is zero and a numeric type, the field is empty, and it won't
 // be encoded into the destination type.
 //
-//     type Source struct {
-//         Age int `mapstructure:",omitempty"`
-//     }
+//	type Source struct {
+//	    Age int `mapstructure:",omitempty"`
+//	}
 //
-// Unexported fields
+// # Unexported fields
 //
 // Since unexported (private) struct fields cannot be set outside the package
 // where they are defined, the decoder will simply skip them.
 //
 // For this output type definition:
 //
-//     type Exported struct {
-//         private string // this unexported field will be skipped
-//         Public string
-//     }
+//	type Exported struct {
+//	    private string // this unexported field will be skipped
+//	    Public string
+//	}
 //
 // Using this map as input:
 //
-//     map[string]interface{}{
-//         "private": "I will be ignored",
-//         "Public":  "I made it through!",
-//     }
+//	map[string]interface{}{
+//	    "private": "I will be ignored",
+//	    "Public":  "I made it through!",
+//	}
 //
 // The following struct will be decoded:
 //
-//     type Exported struct {
-//         private: "" // field is left with an empty string (zero value)
-//         Public: "I made it through!"
-//     }
+//	type Exported struct {
+//	    private: "" // field is left with an empty string (zero value)
+//	    Public: "I made it through!"
+//	}
 //
-// Other Configuration
+// # Other Configuration
 //
 // mapstructure is highly configurable. See the DecoderConfig struct
 // for other features and options that are supported.
@@ -414,11 +414,11 @@ func NewDecoder(config *DecoderConfig) (*Decoder, error) {
 // Decode decodes the given raw interface to the target pointer specified
 // by the configuration.
 func (d *Decoder) Decode(input interface{}) error {
-	return d.decode("", input, reflect.ValueOf(d.config.Result).Elem())
+	return d.decode("", input, reflect.ValueOf(d.config.Result).Elem(), false)
 }
 
 // Decodes an unknown data type into a specific reflection value.
-func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) error {
+func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value, shouldIgnoreZeroFields ...bool) error {
 	var inputVal reflect.Value
 	if input != nil {
 		inputVal = reflect.ValueOf(input)
@@ -433,7 +433,11 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	if input == nil {
 		// If the data is nil, then we don't set anything, unless ZeroFields is set
 		// to true.
-		if d.config.ZeroFields {
+		ignoreZeroFields := false
+		if len(shouldIgnoreZeroFields) > 0 {
+			ignoreZeroFields = shouldIgnoreZeroFields[0]
+		}
+		if !ignoreZeroFields && d.config.ZeroFields {
 			outVal.Set(reflect.Zero(outVal.Type()))
 
 			if d.config.Metadata != nil && name != "" {
@@ -481,7 +485,7 @@ func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) e
 	case reflect.Struct:
 		err = d.decodeStruct(name, input, outVal)
 	case reflect.Map:
-		err = d.decodeMap(name, input, outVal)
+		err = d.decodeMap(name, input, outVal, shouldIgnoreZeroFields...)
 	case reflect.Ptr:
 		addMetaKey, err = d.decodePtr(name, input, outVal)
 	case reflect.Slice:
@@ -572,9 +576,9 @@ func (d *Decoder) decodeString(name string, data interface{}, val reflect.Value)
 		val.SetString(dataVal.String())
 	case dataKind == reflect.Bool && d.config.WeaklyTypedInput:
 		if dataVal.Bool() {
-			val.SetString("1")
+			val.SetString("true")
 		} else {
-			val.SetString("0")
+			val.SetString("false")
 		}
 	case dataKind == reflect.Int && d.config.WeaklyTypedInput:
 		val.SetString(strconv.FormatInt(dataVal.Int(), 10))
@@ -796,7 +800,7 @@ func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) 
 	return nil
 }
 
-func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) error {
+func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value, shouldIgnoreZeroFields ...bool) error {
 	valType := val.Type()
 	valKeyType := valType.Key()
 	valElemType := valType.Elem()
@@ -804,8 +808,13 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 	// By default we overwrite keys in the current map
 	valMap := val
 
+	ignoreZeroFields := false
+	if len(shouldIgnoreZeroFields) > 0 {
+		ignoreZeroFields = shouldIgnoreZeroFields[0]
+	}
+
 	// If the map is nil or we're purposely zeroing fields, make a new map
-	if valMap.IsNil() || d.config.ZeroFields {
+	if valMap.IsNil() || (!ignoreZeroFields && d.config.ZeroFields) {
 		// Make a new map to hold our result
 		mapType := reflect.MapOf(valKeyType, valElemType)
 		valMap = reflect.MakeMap(mapType)
@@ -822,7 +831,8 @@ func (d *Decoder) decodeMap(name string, data interface{}, val reflect.Value) er
 
 	case reflect.Array, reflect.Slice:
 		if d.config.WeaklyTypedInput {
-			return d.decodeMapFromSlice(name, dataVal, val, valMap)
+			ret := d.decodeMapFromSlice(name, dataVal, val, valMap)
+			return ret
 		}
 
 		fallthrough
@@ -840,9 +850,11 @@ func (d *Decoder) decodeMapFromSlice(name string, dataVal reflect.Value, val ref
 	}
 
 	for i := 0; i < dataVal.Len(); i++ {
+		// shoule not ignore config.ZeroFields when i == 0
+		shouldIgnoreZeroFields := i != 0
 		err := d.decode(
 			name+"["+strconv.Itoa(i)+"]",
-			dataVal.Index(i).Interface(), val)
+			dataVal.Index(i).Interface(), val, shouldIgnoreZeroFields)
 		if err != nil {
 			return err
 		}
@@ -986,7 +998,7 @@ func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val re
 			addrVal := reflect.New(vMap.Type())
 			reflect.Indirect(addrVal).Set(vMap)
 
-			err := d.decode(keyName, x.Interface(), reflect.Indirect(addrVal))
+			err := d.decode(keyName, x.Interface(), reflect.Indirect(addrVal), false)
 			if err != nil {
 				return err
 			}
